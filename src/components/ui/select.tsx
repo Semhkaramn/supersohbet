@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { cn } from "@/lib/utils";
 
 interface SelectContextType {
   value: string;
@@ -36,7 +37,10 @@ const SelectTrigger = React.forwardRef<HTMLButtonElement, React.HTMLAttributes<H
       <button
         ref={ref}
         type="button"
-        className={`flex h-10 w-full items-center justify-between rounded-md border border-slate-600 bg-slate-700 px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+        className={cn(
+          "flex h-10 w-full items-center justify-between rounded-md border border-slate-600 bg-slate-700 px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}
         onClick={() => context.setOpen(!context.open)}
         {...props}
       >
@@ -74,7 +78,10 @@ const SelectContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTML
         <SelectContentContext.Provider value={{ children }}>
           <div
             ref={ref}
-            className={`absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-slate-600 bg-slate-700 py-1 shadow-lg ${className}`}
+            className={cn(
+              "absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-slate-600 bg-slate-700 py-1 shadow-lg",
+              className
+            )}
             {...props}
           >
             {children}
@@ -98,9 +105,11 @@ const SelectItem = React.forwardRef<HTMLDivElement, SelectItemProps>(
     return (
       <div
         ref={ref}
-        className={`relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-slate-600 ${
-          context.value === value ? "bg-slate-600" : ""
-        } ${className}`}
+        className={cn(
+          "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-slate-600",
+          context.value === value ? "bg-slate-600" : "",
+          className
+        )}
         onClick={() => {
           context.onValueChange(value);
           context.setOpen(false);
