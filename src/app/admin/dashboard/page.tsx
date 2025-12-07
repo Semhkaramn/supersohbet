@@ -12,7 +12,8 @@ import {
   Heart,
   Settings,
   BarChart3,
-  LogOut
+  LogOut,
+  FileText
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -68,6 +69,13 @@ export default function AdminDashboard() {
       icon: Users,
       href: '/admin/users',
       color: 'from-purple-500 to-purple-600'
+    },
+    {
+      title: 'Görevler',
+      description: 'Görevleri ekle/düzenle',
+      icon: FileText,
+      href: '/admin/tasks',
+      color: 'from-indigo-500 to-indigo-600'
     },
     {
       title: 'Market Yönetimi',
