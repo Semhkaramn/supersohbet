@@ -1,6 +1,6 @@
 import * as React from "react";
 
-export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type BadgeProps = React.HTMLAttributes<HTMLDivElement>
 
 const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
   ({ className = "", ...props }, ref) => {
