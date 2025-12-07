@@ -59,13 +59,12 @@ function TasksContent() {
   return (
     <div className="min-h-screen pb-24">
       {/* Header */}
-      <div className="bg-gradient-to-br from-indigo-600 to-blue-600 p-6">
+      <div className="bg-gradient-to-br from-indigo-600 to-blue-600 p-4">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-bold text-white flex items-center gap-2 mb-2">
-            <FileText className="w-8 h-8" />
+          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+            <FileText className="w-5 h-5" />
             Görevler
           </h1>
-          <p className="text-white/80">Görevleri tamamla, ödül kazan!</p>
         </div>
       </div>
 
