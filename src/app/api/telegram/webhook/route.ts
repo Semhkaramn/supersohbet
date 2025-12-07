@@ -144,27 +144,12 @@ Bu bot ile:
 🛍️ Puanlarınla ödüller satın al
 💰 Sponsor olarak platformu destekle
 
-Başlamak için aşağıdaki butona tıkla!
+Başlamak için yanındaki menü butonuna tıkla! 👆
         `.trim()
 
-        const keyboard = {
-          inline_keyboard: [
-            [
-              {
-                text: '🎁 Ödül Merkezi',
-                web_app: { url: webAppUrl }
-              }
-            ],
-            [
-              {
-                text: '📊 İstatistiklerim',
-                callback_data: 'my_stats'
-              }
-            ]
-          ]
-        }
-
-        await sendTelegramMessage(chatId, welcomeMessage, keyboard)
+        // Menu button BotFather'da app olarak ayarlandığı için
+        // inline keyboard butonlarını kaldırdık
+        await sendTelegramMessage(chatId, welcomeMessage)
 
         // Kullanıcıyı kaydet
         const allowNewUsers = getSetting('allow_new_users', 'true') === 'true'
