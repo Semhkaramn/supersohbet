@@ -75,7 +75,7 @@ export default function AdminShopPage() {
         price: item.price,
         imageUrl: item.imageUrl || '',
         category: item.category,
-        stock: item.stock,
+        stock: item.stock ?? null,
         order: item.order
       })
     } else {
