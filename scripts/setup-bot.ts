@@ -19,7 +19,7 @@ bot.onText(/\/start/, async (msg) => {
   const userId = msg.from?.id
 
   const welcomeMessage = `
-🎉 **Zardan Düşenler Bot'a Hoş Geldin!**
+🎉 **SüperSohbet Bot'a Hoş Geldin!**
 
 Merhaba ${msg.from?.first_name}!
 
