@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, ShoppingCart, Ticket, FileText, Heart } from 'lucide-react'
+import { Home, ShoppingCart, Ticket, Trophy, User } from 'lucide-react'
 
 interface BottomNavProps {
   userId: string
@@ -19,10 +19,10 @@ export default function BottomNav({ userId }: BottomNavProps) {
       active: pathname === '/dashboard'
     },
     {
-      href: `/shop?userId=${userId}`,
-      label: 'Mağaza',
-      icon: ShoppingCart,
-      active: pathname === '/shop'
+      href: `/leaderboard?userId=${userId}`,
+      label: 'Liderlik Sırası',
+      icon: Trophy,
+      active: pathname === '/leaderboard'
     },
     {
       href: `/wheel?userId=${userId}`,
@@ -31,21 +31,21 @@ export default function BottomNav({ userId }: BottomNavProps) {
       active: pathname === '/wheel'
     },
     {
-      href: `/tasks?userId=${userId}`,
-      label: 'Görevler',
-      icon: FileText,
-      active: pathname === '/tasks'
+      href: `/shop?userId=${userId}`,
+      label: 'Mağaza',
+      icon: ShoppingCart,
+      active: pathname === '/shop'
     },
     {
-      href: `/sponsors?userId=${userId}`,
-      label: 'Sponsorlar',
-      icon: Heart,
-      active: pathname === '/sponsors'
+      href: `/profile?userId=${userId}`,
+      label: 'Profil',
+      icon: User,
+      active: pathname === '/profile'
     },
   ]
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-lg border-t border-white/10 pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-lg border-t border-white/10 pb-safe z-50">
       <div className="max-w-2xl mx-auto px-2 py-2">
         <div className="flex items-center justify-around">
           {navItems.map((item) => {
