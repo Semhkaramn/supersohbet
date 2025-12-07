@@ -81,7 +81,7 @@ function SponsorsContent() {
             Sponsorlar
           </h1>
           <p className="text-white/80">
-            Zardan Düşenler platformunu destekleyen ve binlerce kullanıcıya ulaşmak için sponsor olabilirsiniz.
+            SüperSohbet platformunu destekleyen ve binlerce kullanıcıya ulaşmak için sponsor olabilirsiniz.
           </p>
         </div>
       </div>
@@ -95,7 +95,7 @@ function SponsorsContent() {
               Sponsor olmak ister misiniz?
             </h3>
             <p className="text-white/80 mb-4">
-              Zardan Düşenler platformunu desteklemek ve binlerce kullanıcıya ulaşmak için sponsor olabilirsiniz.
+              SüperSohbet platformunu desteklemek ve binlerce kullanıcıya ulaşmak için sponsor olabilirsiniz.
               Farklı sponsorluk paketlerimiz hakkında bilgi almak için bizimle iletişime geçin.
             </p>
             <Button
