@@ -30,13 +30,22 @@ export async function GET(request: NextRequest) {
     const joinedChannelIds = new Set(userChannelJoins.map((join) => join.channelId))
 
     // Kanal listesini katılım durumu ile birlikte döndür
-    const channels = requiredChannels.map((channel) => ({
-      id: channel.id,
-      channelId: channel.channelId,
-      channelName: channel.channelName,
-      channelLink: channel.channelLink,
-      joined: joinedChannelIds.has(channel.id)
-    }))
+    const channels = requiredChannels.map((channel) => {
+      // channelId'den username çıkar (@ işaretini kaldır)
+      let channelUsername = channel.channelId
+      if (channelUsername.startsWith('@')) {
+        channelUsername = channelUsername.substring(1)
+      }
+
+      return {
+        id: channel.id,
+        channelId: channel.channelId,
+        channelName: channel.channelName,
+        channelLink: channel.channelLink,
+        channelUsername: channelUsername.startsWith('-') ? undefined : channelUsername,
+        joined: joinedChannelIds.has(channel.id)
+      }
+    })
 
     return NextResponse.json({ channels })
   } catch (error) {
