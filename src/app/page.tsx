@@ -13,6 +13,21 @@ interface TelegramUser {
   hash: string
 }
 
+interface TelegramWebApp {
+  ready: () => void
+  initDataUnsafe: {
+    user?: TelegramUser
+  }
+}
+
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp: TelegramWebApp
+    }
+  }
+}
+
 export default function HomePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -36,8 +51,8 @@ export default function HomePage() {
       }
     } else {
       // Telegram WebApp API'den veri al
-      if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
-        const tg = (window as any).Telegram.WebApp
+      if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+        const tg = window.Telegram.WebApp
         tg.ready()
 
         const initData = tg.initDataUnsafe
@@ -52,7 +67,7 @@ export default function HomePage() {
     }
   }, [searchParams])
 
-  async function checkUserChannels(user: TelegramUser | any) {
+  async function checkUserChannels(user: TelegramUser) {
     try {
       const response = await fetch('/api/auth/check-channels', {
         method: 'POST',
