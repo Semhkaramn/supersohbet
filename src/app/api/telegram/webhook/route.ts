@@ -20,6 +20,51 @@ function getSetting(key: string, defaultValue: string = '0'): string {
   return settingsCache[key] || defaultValue
 }
 
+async function sendTelegramMessage(chatId: number, text: string, keyboard?: any) {
+  const botToken = getSetting('telegram_bot_token', '')
+  if (!botToken) {
+    console.error('Bot token not set')
+    return
+  }
+
+  const url = `https://api.telegram.org/bot${botToken}/sendMessage`
+  const body: any = {
+    chat_id: chatId,
+    text,
+    parse_mode: 'Markdown'
+  }
+
+  if (keyboard) {
+    body.reply_markup = keyboard
+  }
+
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+  } catch (error) {
+    console.error('Error sending message:', error)
+  }
+}
+
+async function answerCallbackQuery(callbackQueryId: string, text?: string) {
+  const botToken = getSetting('telegram_bot_token', '')
+  if (!botToken) return
+
+  const url = `https://api.telegram.org/bot${botToken}/answerCallbackQuery`
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ callback_query_id: callbackQueryId, text })
+    })
+  } catch (error) {
+    console.error('Error answering callback:', error)
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const update = await request.json()
@@ -32,14 +77,116 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, message: 'Maintenance mode' })
     }
 
+    // Callback query işle
+    if (update.callback_query) {
+      const query = update.callback_query
+      const chatId = query.message?.chat.id
+      const userId = String(query.from.id)
+
+      if (query.data === 'my_stats') {
+        const user = await prisma.user.findUnique({
+          where: { telegramId: userId },
+          include: { rank: true }
+        })
+
+        const statsMessage = user ? `
+📊 **Senin İstatistiklerin**
+
+🌟 Puan: ${user.points.toLocaleString()}
+⭐ XP: ${user.xp.toLocaleString()}
+🏆 Rütbe: ${user.rank?.icon || '🌱'} ${user.rank?.name || 'Yeni Başlayan'}
+💬 Mesaj: ${user.totalMessages.toLocaleString()}
+
+Daha fazla bilgi için Ödül Merkezi'ne git!
+        `.trim() : `
+📊 **Senin İstatistiklerin**
+
+🌟 Puan: 0
+⭐ XP: 0
+🏆 Rütbe: Yeni Başlayan
+💬 Mesaj: 0
+
+Daha fazla bilgi için Ödül Merkezi'ne git!
+        `.trim()
+
+        await answerCallbackQuery(query.id)
+        if (chatId) {
+          await sendTelegramMessage(chatId, statsMessage)
+        }
+      }
+
+      return NextResponse.json({ ok: true })
+    }
+
     // Mesaj varsa işle
     if (update.message && update.message.text) {
       const message = update.message
+      const chatId = message.chat.id
       const userId = String(message.from.id)
       const username = message.from.username
       const firstName = message.from.first_name
       const lastName = message.from.last_name
       const messageText = message.text
+
+      // /start komutu kontrolü
+      if (messageText === '/start' || messageText.startsWith('/start ')) {
+        const webAppUrl = getSetting('telegram_webhook_url', '').replace('/api/telegram/webhook', '') || process.env.NEXT_PUBLIC_APP_URL || 'https://soft-fairy-c52849.netlify.app'
+
+        const welcomeMessage = `
+🎉 **SüperSohbet Bot'a Hoş Geldin!**
+
+Merhaba ${firstName}!
+
+Bu bot ile:
+✨ Mesaj göndererek puan kazan
+🏆 Rütbe atla
+🎁 Günlük şans çarkını çevir
+🛍️ Puanlarınla ödüller satın al
+💰 Sponsor olarak platformu destekle
+
+Başlamak için aşağıdaki butona tıkla!
+        `.trim()
+
+        const keyboard = {
+          inline_keyboard: [
+            [
+              {
+                text: '🎁 Ödül Merkezi',
+                web_app: { url: webAppUrl }
+              }
+            ],
+            [
+              {
+                text: '📊 İstatistiklerim',
+                callback_data: 'my_stats'
+              }
+            ]
+          ]
+        }
+
+        await sendTelegramMessage(chatId, welcomeMessage, keyboard)
+
+        // Kullanıcıyı kaydet
+        const allowNewUsers = getSetting('allow_new_users', 'true') === 'true'
+        if (allowNewUsers) {
+          await prisma.user.upsert({
+            where: { telegramId: userId },
+            update: {
+              username,
+              firstName,
+              lastName
+            },
+            create: {
+              telegramId: userId,
+              username,
+              firstName,
+              lastName
+            }
+          })
+        }
+
+        return NextResponse.json({ ok: true })
+      }
 
       // Ayarları al
       const minMessageLength = parseInt(getSetting('min_message_length', '3'))
