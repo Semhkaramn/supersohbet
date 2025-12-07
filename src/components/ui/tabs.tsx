@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { cn } from "@/lib/utils";
 
 interface TabsContextType {
   value: string;
@@ -29,7 +30,7 @@ const TabsList = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
   ({ className = "", ...props }, ref) => (
     <div
       ref={ref}
-      className={`inline-flex h-10 items-center justify-center rounded-md bg-slate-800 p-1 text-slate-400 ${className}`}
+      className={cn("inline-flex h-10 items-center justify-center rounded-md bg-slate-800 p-1 text-slate-400", className)}
       {...props}
     />
   )
@@ -50,9 +51,11 @@ const TabsTrigger = React.forwardRef<HTMLButtonElement, TabsTriggerProps>(
     return (
       <button
         ref={ref}
-        className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 ${
-          isActive ? "bg-slate-700 text-white shadow-sm" : "text-slate-400 hover:text-white"
-        } ${className}`}
+        className={cn(
+          "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50",
+          isActive ? "bg-slate-700 text-white shadow-sm" : "text-slate-400 hover:text-white",
+          className
+        )}
         onClick={() => context.onValueChange(value)}
         {...props}
       />
@@ -75,7 +78,7 @@ const TabsContent = React.forwardRef<HTMLDivElement, TabsContentProps>(
     return (
       <div
         ref={ref}
-        className={`mt-2 focus-visible:outline-none focus-visible:ring-2 ${className}`}
+        className={cn("mt-2 focus-visible:outline-none focus-visible:ring-2", className)}
         {...props}
       />
     );
