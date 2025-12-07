@@ -14,6 +14,32 @@ export function getTelegramBot(): TelegramBot {
   return bot
 }
 
+// Menu button'u ayarla (mesaj yazma alanının yanındaki buton)
+export async function setupMenuButton(webAppUrl: string): Promise<void> {
+  try {
+    const bot = getTelegramBot()
+    const token = process.env.TELEGRAM_BOT_TOKEN
+    if (!token) return
+
+    // Telegram Bot API'ye doğrudan istek gönder
+    const url = `https://api.telegram.org/bot${token}/setChatMenuButton`
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        menu_button: {
+          type: 'web_app',
+          text: '🎁 Ödül Merkezi',
+          web_app: { url: webAppUrl }
+        }
+      })
+    })
+    console.log('✅ Menu button configured!')
+  } catch (error) {
+    console.error('Error setting menu button:', error)
+  }
+}
+
 // Kullanıcının kanala üye olup olmadığını kontrol et
 export async function checkChannelMembership(
   userId: string,
@@ -21,16 +47,31 @@ export async function checkChannelMembership(
 ): Promise<boolean> {
   try {
     const bot = getTelegramBot()
+
     // userId string olarak geldiği için number'a çeviriyoruz
     const numericUserId = Number.parseInt(userId, 10)
     if (Number.isNaN(numericUserId)) {
       console.error('Invalid userId format:', userId)
       return false
     }
-    const member = await bot.getChatMember(channelId, numericUserId)
-    return ['creator', 'administrator', 'member'].includes(member.status)
+
+    // channelId @ ile başlamıyorsa @ ekle (username için gerekli)
+    let chatId = channelId
+    if (!chatId.startsWith('@') && !chatId.startsWith('-')) {
+      chatId = '@' + chatId
+    }
+
+    console.log(`Checking membership: userId=${numericUserId}, chatId=${chatId}`)
+
+    const member = await bot.getChatMember(chatId, numericUserId)
+    const isMember = ['creator', 'administrator', 'member'].includes(member.status)
+
+    console.log(`Membership result: ${isMember} (status: ${member.status})`)
+
+    return isMember
   } catch (error) {
     console.error('Channel membership check error:', error)
+    console.error('Details:', { userId, channelId })
     return false
   }
 }
