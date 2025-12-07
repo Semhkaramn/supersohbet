@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { cn } from "@/lib/utils";
 
 interface DialogContextType {
   open: boolean;
@@ -53,7 +54,7 @@ const DialogContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTML
         <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 p-4">
           <div
             ref={ref}
-            className={`relative rounded-lg border bg-slate-800 border-slate-700 p-6 shadow-lg ${className}`}
+            className={cn("relative rounded-lg border bg-slate-800 border-slate-700 p-6 shadow-lg", className)}
             {...props}
           >
             <button
@@ -72,20 +73,20 @@ const DialogContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTML
 DialogContent.displayName = "DialogContent";
 
 const DialogHeader = ({ className = "", ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={`flex flex-col space-y-1.5 text-center sm:text-left ${className}`} {...props} />
+  <div className={cn("flex flex-col space-y-1.5 text-center sm:text-left", className)} {...props} />
 );
 DialogHeader.displayName = "DialogHeader";
 
 const DialogTitle = React.forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadingElement>>(
   ({ className = "", ...props }, ref) => (
-    <h2 ref={ref} className={`text-lg font-semibold text-white ${className}`} {...props} />
+    <h2 ref={ref} className={cn("text-lg font-semibold text-white", className)} {...props} />
   )
 );
 DialogTitle.displayName = "DialogTitle";
 
 const DialogDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
   ({ className = "", ...props }, ref) => (
-    <p ref={ref} className={`text-sm text-slate-400 ${className}`} {...props} />
+    <p ref={ref} className={cn("text-sm text-slate-400", className)} {...props} />
   )
 );
 DialogDescription.displayName = "DialogDescription";
