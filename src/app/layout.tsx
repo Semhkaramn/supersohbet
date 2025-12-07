@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Zardan Düşenler Bot - Ödül Merkezi",
+  title: "SüperSohbet Bot - Ödül Merkezi",
   description: "Puan kazan, rütbe atla, ödüller kazan!",
 };
 
