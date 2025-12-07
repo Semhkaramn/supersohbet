@@ -163,7 +163,7 @@ function ChannelsContent() {
             Kanallara Katıl
           </h1>
           <p className="text-gray-300 text-lg">
-            Devam etmek için aşağıdaki kanallara katılman gerekiyo
+            Devam etmek için aşağıdaki kanallara katılman gerekiyor
           </p>
         </div>
 
