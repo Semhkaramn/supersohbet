@@ -95,7 +95,7 @@ function DashboardContent() {
             </Avatar>
             <div className="flex-1">
               <h1 className="text-2xl font-bold text-white">
-                {userData.firstName || userData.username || 'Ejderiya avcısı'}
+                {userData.firstName || userData.username || 'Kullanıcı'}
               </h1>
               <p className="text-white/70 text-sm">@{userData.username || 'kullanici'}</p>
             </div>
@@ -138,7 +138,7 @@ function DashboardContent() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-white">{userData.totalMessages}</p>
-                <p className="text-gray-400 text-sm">Toplam Sipariş</p>
+                <p className="text-gray-400 text-sm">Toplam Mesaj</p>
               </div>
             </div>
           </Card>
