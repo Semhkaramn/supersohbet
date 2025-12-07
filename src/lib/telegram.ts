@@ -21,7 +21,13 @@ export async function checkChannelMembership(
 ): Promise<boolean> {
   try {
     const bot = getTelegramBot()
-    const member = await bot.getChatMember(channelId, userId)
+    // userId string olarak geldiği için number'a çeviriyoruz
+    const numericUserId = Number.parseInt(userId, 10)
+    if (Number.isNaN(numericUserId)) {
+      console.error('Invalid userId format:', userId)
+      return false
+    }
+    const member = await bot.getChatMember(channelId, numericUserId)
     return ['creator', 'administrator', 'member'].includes(member.status)
   } catch (error) {
     console.error('Channel membership check error:', error)
