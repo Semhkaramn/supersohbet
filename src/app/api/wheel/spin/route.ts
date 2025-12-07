@@ -1,0 +1,110 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+
+const SPIN_COST = 250
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { userId } = body
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'User ID required' },
+        { status: 400 }
+      )
+    }
+
+    // Kullanıcıyı getir
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    // Günlük çevirme hakkı kontrolü
+    if (user.dailySpinsLeft <= 0) {
+      return NextResponse.json(
+        { error: 'No spins left today' },
+        { status: 400 }
+      )
+    }
+
+    // Puan kontrolü
+    if (user.points < SPIN_COST) {
+      return NextResponse.json(
+        { error: 'Insufficient points' },
+        { status: 400 }
+      )
+    }
+
+    // Aktif ödülleri getir
+    const prizes = await prisma.wheelPrize.findMany({
+      where: { isActive: true }
+    })
+
+    if (prizes.length === 0) {
+      return NextResponse.json(
+        { error: 'No prizes available' },
+        { status: 400 }
+      )
+    }
+
+    // Rastgele ödül seç (probability'ye göre ağırlıklı)
+    const totalProbability = prizes.reduce((sum, prize) => sum + prize.probability, 0)
+    let random = Math.random() * totalProbability
+    let selectedPrize = prizes[0]
+
+    for (const prize of prizes) {
+      random -= prize.probability
+      if (random <= 0) {
+        selectedPrize = prize
+        break
+      }
+    }
+
+    // Transaction ile işlemleri gerçekleştir
+    await prisma.$transaction(async (tx) => {
+      // Puan düş
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          points: { decrement: SPIN_COST },
+          dailySpinsLeft: { decrement: 1 }
+        }
+      })
+
+      // Kazanılan puanı ekle
+      await tx.user.update({
+        where: { id: userId },
+        data: { points: { increment: selectedPrize.points } }
+      })
+
+      // Çark çevirme kaydı oluştur
+      await tx.wheelSpin.create({
+        data: {
+          userId,
+          prizeId: selectedPrize.id,
+          pointsWon: selectedPrize.points
+        }
+      })
+    })
+
+    return NextResponse.json({
+      success: true,
+      prizeId: selectedPrize.id,
+      pointsWon: selectedPrize.points
+    })
+  } catch (error) {
+    console.error('Wheel spin error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
