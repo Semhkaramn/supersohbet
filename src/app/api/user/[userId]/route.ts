@@ -41,6 +41,14 @@ export async function GET(
       orderBy: { minXp: 'asc' }
     })
 
+    // Leaderboard sıralamasını hesapla (XP'ye göre)
+    const higherXpUsers = await prisma.user.count({
+      where: {
+        xp: { gt: user.xp }
+      }
+    })
+    const leaderboardRank = higherXpUsers + 1
+
     return NextResponse.json({
       id: user.id,
       telegramId: user.telegramId,
@@ -52,7 +60,8 @@ export async function GET(
       totalMessages: user.totalMessages,
       dailySpinsLeft: user.dailySpinsLeft,
       rank: currentRank || user.rank,
-      nextRank
+      nextRank,
+      leaderboardRank
     })
   } catch (error) {
     console.error('Get user error:', error)
