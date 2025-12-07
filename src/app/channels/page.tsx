@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { CheckCircle2, ExternalLink, Loader2 } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Channel {
@@ -23,7 +23,6 @@ function ChannelsContent() {
 
   const [channels, setChannels] = useState<Channel[]>([])
   const [loading, setLoading] = useState(true)
-  const [autoChecking, setAutoChecking] = useState(false)
 
   useEffect(() => {
     if (!userId) {
@@ -60,7 +59,6 @@ function ChannelsContent() {
   }
 
   async function checkAllChannels() {
-    setAutoChecking(true)
     try {
       const unjoinedChannels = channels.filter(ch => !ch.joined)
 
@@ -86,8 +84,6 @@ function ChannelsContent() {
       }
     } catch (error) {
       console.error('Error checking channels:', error)
-    } finally {
-      setAutoChecking(false)
     }
   }
 
@@ -151,15 +147,9 @@ function ChannelsContent() {
           <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 text-transparent bg-clip-text">
             Kanallara Katıl
           </h1>
-          <p className="text-gray-300 text-lg mb-2">
-            Devam etmek için aşağıdaki kanallara katılman gerekiyor
+          <p className="text-gray-300 text-lg">
+            Devam etmek için aşağıdaki kanallara katılman gerekiyo
           </p>
-          {autoChecking && (
-            <div className="flex items-center justify-center gap-2 text-blue-400 text-sm">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Otomatik kontrol ediliyor...</span>
-            </div>
-          )}
         </div>
 
         {/* İlerleme çubuğu */}
@@ -226,7 +216,6 @@ function ChannelsContent() {
                     onClick={() => window.open(channel.channelLink, '_blank')}
                     className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold shadow-lg hover:shadow-blue-500/50 transition-all duration-300"
                   >
-                    <ExternalLink className="w-5 h-5 mr-2" />
                     Katıl
                   </Button>
                 </div>
@@ -235,17 +224,7 @@ function ChannelsContent() {
           })}
         </div>
 
-        {/* Alt bilgi */}
-        <div className="mt-8 text-center">
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-5">
-            <p className="text-blue-200 text-sm mb-2">
-              💡 Kanallara katıldıktan sonra otomatik olarak kontrol edilecek
-            </p>
-            <p className="text-blue-300 font-semibold">
-              Lütfen bekleyin, kanallar otomatik kontrol ediliyor...
-            </p>
-          </div>
-        </div>
+
       </div>
     </div>
   )
