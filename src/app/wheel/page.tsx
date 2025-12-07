@@ -111,40 +111,38 @@ function WheelContent() {
   return (
     <div className="min-h-screen pb-24">
       {/* Header */}
-      <div className="bg-gradient-to-br from-purple-600 to-pink-600 p-6">
+      <div className="bg-gradient-to-br from-purple-600 to-pink-600 p-4">
         <div className="max-w-2xl mx-auto text-center">
-          <h1 className="text-3xl font-bold text-white flex items-center justify-center gap-2 mb-2">
-            <Ticket className="w-8 h-8" />
+          <h1 className="text-xl font-bold text-white flex items-center justify-center gap-2">
+            <Ticket className="w-5 h-5" />
             Şans Çarkı
           </h1>
-          <p className="text-white/80">Çark çevir ve puan kazan!</p>
         </div>
       </div>
 
       {/* Wheel Section */}
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        {/* Spin Info */}
-        <Card className="bg-blue-500/20 border-blue-500/30 p-4 mb-8 text-center">
-          <p className="text-white font-semibold mb-1">Çark Çevirme Bedeli:</p>
-          <p className="text-3xl font-bold text-yellow-300">250 Puan</p>
+      <div className="max-w-2xl mx-auto px-4 py-6">
+        {/* Spin Info - Minimal */}
+        <div className="text-center mb-6">
+          <p className="text-green-400 font-semibold text-sm mb-1">✨ Ücretsiz</p>
           {userData && (
-            <p className="text-white/70 text-sm mt-2">
+            <p className="text-white/60 text-xs">
               Kalan hak: {userData.dailySpinsLeft} çevirme
             </p>
           )}
-        </Card>
+        </div>
 
-        {/* Wheel */}
-        <div className="relative mb-8">
-          <div className="relative w-80 h-80 mx-auto">
+        {/* Wheel - Küçültülmüş */}
+        <div className="relative mb-6">
+          <div className="relative w-64 h-64 mx-auto">
             {/* Arrow */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 z-10">
-              <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-t-[30px] border-t-white drop-shadow-lg"></div>
+              <div className="w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[25px] border-t-white drop-shadow-lg"></div>
             </div>
 
             {/* Wheel Circle */}
             <div
-              className="w-full h-full rounded-full border-8 border-white shadow-2xl relative overflow-hidden"
+              className="w-full h-full rounded-full border-6 border-white shadow-2xl relative overflow-hidden"
               style={{
                 transform: `rotate(${rotation}deg)`,
                 transition: spinning ? 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none'
@@ -162,19 +160,19 @@ function WheelContent() {
                     }}
                   >
                     <div
-                      className="absolute top-8 text-white font-bold text-center"
+                      className="absolute top-6 text-white font-bold text-center"
                       style={{ transform: `rotate(${90 - angle}deg)` }}
                     >
-                      <div className="text-sm">{prize.name}</div>
-                      <div className="text-lg">{prize.points}</div>
+                      <div className="text-xs">{prize.name}</div>
+                      <div className="text-sm">{prize.points}</div>
                     </div>
                   </div>
                 )
               })}
 
               {/* Center Circle */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full border-4 border-white flex items-center justify-center shadow-lg">
-                <Gift className="w-10 h-10 text-white" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full border-4 border-white flex items-center justify-center shadow-lg">
+                <Gift className="w-8 h-8 text-white" />
               </div>
             </div>
           </div>
@@ -201,21 +199,11 @@ function WheelContent() {
           )}
         </Button>
 
-        {/* Recent Wins */}
+        {/* Recent Wins - Gerçek veri gelene kadar boş */}
         <div className="mt-8">
-          <h3 className="text-xl font-bold text-white mb-4">Son Kazananlar</h3>
-          <div className="space-y-2">
-            {[1, 2, 3].map(i => (
-              <Card key={i} className="bg-white/5 border-white/10 p-3 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
-                  {i}
-                </div>
-                <div className="flex-1">
-                  <p className="text-white font-semibold">Kullanıcı #{i}</p>
-                  <p className="text-gray-400 text-sm">1,000 puan kazandı</p>
-                </div>
-              </Card>
-            ))}
+          <h3 className="text-lg font-bold text-white mb-3">Son Kazananlar</h3>
+          <div className="text-center py-8 text-white/40 text-sm">
+            Henüz kazanan yok
           </div>
         </div>
       </div>
