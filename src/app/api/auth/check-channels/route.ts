@@ -48,13 +48,13 @@ export async function POST(request: NextRequest) {
     const userChannelJoins = await prisma.userChannelJoin.findMany({
       where: {
         userId: user.id,
-        channelId: { in: requiredChannels.map(ch => ch.id) }
+        channelId: { in: requiredChannels.map((ch) => ch.id) }
       }
     })
 
-    const joinedChannelIds = userChannelJoins.map(join => join.channelId)
+    const joinedChannelIds = userChannelJoins.map((join) => join.channelId)
     const needsChannelJoin = requiredChannels.some(
-      channel => !joinedChannelIds.includes(channel.id)
+      (channel) => !joinedChannelIds.includes(channel.id)
     )
 
     return NextResponse.json({
