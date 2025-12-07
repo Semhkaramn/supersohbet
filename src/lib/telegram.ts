@@ -1,14 +1,24 @@
 import TelegramBot from 'node-telegram-bot-api'
 import { createHash, createHmac } from 'crypto'
+import { prisma } from './prisma'
 
 let bot: TelegramBot | null = null
+let botToken: string | null = null
 
-export function getTelegramBot(): TelegramBot {
-  if (!bot) {
-    const token = process.env.TELEGRAM_BOT_TOKEN
+export async function getTelegramBot(): Promise<TelegramBot> {
+  if (!bot || !botToken) {
+    // Önce veritabanından token'ı al
+    const tokenSetting = await prisma.settings.findUnique({
+      where: { key: 'telegram_bot_token' }
+    })
+
+    const token = tokenSetting?.value || process.env.TELEGRAM_BOT_TOKEN
+
     if (!token) {
-      throw new Error('TELEGRAM_BOT_TOKEN is not defined')
+      throw new Error('TELEGRAM_BOT_TOKEN bulunamadı! Admin panelinden ayarlayın.')
     }
+
+    botToken = token
     bot = new TelegramBot(token, { polling: false })
   }
   return bot
@@ -17,8 +27,13 @@ export function getTelegramBot(): TelegramBot {
 // Menu button'u ayarla (mesaj yazma alanının yanındaki buton)
 export async function setupMenuButton(webAppUrl: string): Promise<void> {
   try {
-    const bot = getTelegramBot()
-    const token = process.env.TELEGRAM_BOT_TOKEN
+    const bot = await getTelegramBot()
+
+    // Token'ı al
+    const tokenSetting = await prisma.settings.findUnique({
+      where: { key: 'telegram_bot_token' }
+    })
+    const token = tokenSetting?.value || process.env.TELEGRAM_BOT_TOKEN
     if (!token) return
 
     // Telegram Bot API'ye doğrudan istek gönder
@@ -46,7 +61,7 @@ export async function checkChannelMembership(
   channelId: string
 ): Promise<boolean> {
   try {
-    const bot = getTelegramBot()
+    const bot = await getTelegramBot()
 
     // userId string olarak geldiği için number'a çeviriyoruz
     const numericUserId = Number.parseInt(userId, 10)
@@ -83,7 +98,13 @@ export async function checkChannelMembership(
     // Eğer kanal bulunamazsa veya bot kanalda değilse
     if (error?.message?.includes('chat not found') || error?.code === 'ETELEGRAM') {
       console.error('⚠️ Bot bu kanala erişemiyor veya kanal bulunamadı!')
-      console.error('⚠️ Çözüm: Bot\'u kanala admin olarak ekleyin veya kanal ID\'sini kontrol edin')
+      console.error('⚠️ Çözüm: Bot\'u kanala ADMIN olarak ekleyin veya kanal ID\'sini kontrol edin')
+      console.error('📋 Not: Bot admin olmadan kullanıcı üyeliklerini kontrol edemez!')
+    }
+
+    if (error?.message?.includes('not enough rights') || error?.message?.includes('Forbidden')) {
+      console.error('❌ Bot\'un yetkileri yetersiz veya bot kanala eklenmemiş!')
+      console.error('⚠️ Çözüm: Bot\'u kanalda ADMIN yapın ve "Add Members" yetkisi verin!')
     }
 
     return false
@@ -91,20 +112,31 @@ export async function checkChannelMembership(
 }
 
 // Telegram Login Widget doğrulama
-export function verifyTelegramAuth(data: Record<string, string>): boolean {
-  const secret = createHash('sha256')
-    .update(process.env.TELEGRAM_BOT_TOKEN || '')
-    .digest()
+export async function verifyTelegramAuth(data: Record<string, string>): Promise<boolean> {
+  try {
+    // Token'ı veritabanından al
+    const tokenSetting = await prisma.settings.findUnique({
+      where: { key: 'telegram_bot_token' }
+    })
+    const token = tokenSetting?.value || process.env.TELEGRAM_BOT_TOKEN || ''
 
-  const checkString = Object.keys(data)
-    .filter(key => key !== 'hash')
-    .sort()
-    .map(key => `${key}=${data[key]}`)
-    .join('\n')
+    const secret = createHash('sha256')
+      .update(token)
+      .digest()
 
-  const hash = createHmac('sha256', secret)
-    .update(checkString)
-    .digest('hex')
+    const checkString = Object.keys(data)
+      .filter(key => key !== 'hash')
+      .sort()
+      .map(key => `${key}=${data[key]}`)
+      .join('\n')
 
-  return hash === data.hash
+    const hash = createHmac('sha256', secret)
+      .update(checkString)
+      .digest('hex')
+
+    return hash === data.hash
+  } catch (error) {
+    console.error('Telegram auth verification error:', error)
+    return false
+  }
 }
