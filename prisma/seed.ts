@@ -102,6 +102,39 @@ async function main() {
   }
   console.log('✅ Shop items created:', shopItems.length)
 
+  // Sistem ayarları oluştur
+  const settings = [
+    // Telegram Bot Ayarları
+    { key: 'telegram_bot_token', value: '', description: 'Telegram Bot Token', category: 'telegram' },
+    { key: 'telegram_webhook_url', value: '', description: 'Telegram Webhook URL', category: 'telegram' },
+
+    // Puan ve XP Ayarları
+    { key: 'points_per_message', value: '10', description: 'Mesaj başına kazanılan puan', category: 'points' },
+    { key: 'xp_per_message', value: '5', description: 'Mesaj başına kazanılan XP', category: 'points' },
+    { key: 'messages_for_xp', value: '1', description: 'Kaç mesajda bir XP verilecek (1 = her mesajda)', category: 'points' },
+
+    // Mesaj Kısıtlamaları
+    { key: 'min_message_length', value: '3', description: 'Minimum mesaj karakter uzunluğu', category: 'limits' },
+    { key: 'message_cooldown_seconds', value: '5', description: 'Mesajlar arası minimum bekleme süresi (saniye)', category: 'limits' },
+
+    // Çark Ayarları
+    { key: 'wheel_spin_cost', value: '250', description: 'Çark çevirme maliyeti (puan)', category: 'wheel' },
+    { key: 'daily_wheel_spins', value: '3', description: 'Günlük ücretsiz çark hakkı', category: 'wheel' },
+
+    // Genel Ayarlar
+    { key: 'maintenance_mode', value: 'false', description: 'Bakım modu aktif mi?', category: 'general' },
+    { key: 'allow_new_users', value: 'true', description: 'Yeni kullanıcı kayıtları açık mı?', category: 'general' },
+  ]
+
+  for (const setting of settings) {
+    await prisma.settings.upsert({
+      where: { key: setting.key },
+      update: setting,
+      create: setting
+    })
+  }
+  console.log('✅ Settings created:', settings.length)
+
   console.log('🎉 Seeding completed!')
 }
 
