@@ -51,27 +51,41 @@ export async function checkChannelMembership(
     // userId string olarak geldiği için number'a çeviriyoruz
     const numericUserId = Number.parseInt(userId, 10)
     if (Number.isNaN(numericUserId)) {
-      console.error('Invalid userId format:', userId)
+      console.error('❌ Invalid userId format:', userId)
       return false
     }
 
-    // channelId @ ile başlamıyorsa @ ekle (username için gerekli)
-    let chatId = channelId
+    // channelId formatını düzenle
+    // Eğer sadece username ise (örn: "kanalkodileti"), @ ekle
+    // Eğer zaten @ veya - ile başlıyorsa olduğu gibi bırak
+    let chatId = channelId.trim()
     if (!chatId.startsWith('@') && !chatId.startsWith('-')) {
       chatId = '@' + chatId
     }
 
-    console.log(`Checking membership: userId=${numericUserId}, chatId=${chatId}`)
+    console.log(`🔍 Kanal üyelik kontrolü: userId=${numericUserId}, chatId="${chatId}"`)
 
     const member = await bot.getChatMember(chatId, numericUserId)
     const isMember = ['creator', 'administrator', 'member'].includes(member.status)
 
-    console.log(`Membership result: ${isMember} (status: ${member.status})`)
+    console.log(`✅ Üyelik sonucu: ${isMember ? 'ÜYE' : 'ÜYE DEĞİL'} (durum: ${member.status})`)
 
     return isMember
-  } catch (error) {
-    console.error('Channel membership check error:', error)
-    console.error('Details:', { userId, channelId })
+  } catch (error: any) {
+    console.error('❌ Kanal üyelik kontrolü hatası:', error?.message || error)
+    console.error('Detaylar:', {
+      userId,
+      channelId,
+      errorCode: error?.code,
+      errorResponse: error?.response?.body
+    })
+
+    // Eğer kanal bulunamazsa veya bot kanalda değilse
+    if (error?.message?.includes('chat not found') || error?.code === 'ETELEGRAM') {
+      console.error('⚠️ Bot bu kanala erişemiyor veya kanal bulunamadı!')
+      console.error('⚠️ Çözüm: Bot\'u kanala admin olarak ekleyin veya kanal ID\'sini kontrol edin')
+    }
+
     return false
   }
 }
