@@ -30,11 +30,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    console.log('🔍 Üyelik kontrolü başlıyor:', {
+      userTelegramId: user.telegramId,
+      userUsername: user.username,
+      channelTelegramId: channel.channelId,
+      channelName: channel.channelName,
+      userId: user.id,
+      channelDbId: channel.id
+    })
+
     // Telegram API ile kanal üyeliğini kontrol et
     const isMember = await checkChannelMembership(
       user.telegramId,
       channel.channelId
     )
+
+    console.log('📊 Üyelik kontrol sonucu:', {
+      channelName: channel.channelName,
+      channelId: channel.channelId,
+      isMember: isMember
+    })
 
     if (isMember) {
       // Üyeliği veritabanına kaydet
@@ -52,9 +67,11 @@ export async function POST(request: NextRequest) {
         update: {}
       })
 
+      console.log('✅ Üyelik veritabanına kaydedildi')
       return NextResponse.json({ joined: true })
     }
 
+    console.log('❌ Kullanıcı kanala üye değil')
     return NextResponse.json({ joined: false })
   } catch (error) {
     console.error('Verify channel error:', error)
