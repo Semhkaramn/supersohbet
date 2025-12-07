@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import BottomNav from '@/components/BottomNav'
-import { Heart, ExternalLink, TrendingUp } from 'lucide-react'
-import { toast } from 'sonner'
+import { Heart, TrendingUp } from 'lucide-react'
+
 import Image from 'next/image'
 
 interface Sponsor {
@@ -86,29 +86,8 @@ function SponsorsContent() {
         </div>
       </div>
 
-      {/* Become Sponsor CTA */}
+      {/* Sponsors List */}
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <Card className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border-yellow-500/30 p-6 mb-6">
-          <div className="text-center">
-            <Heart className="w-12 h-12 text-yellow-400 mx-auto mb-3" />
-            <h3 className="text-xl font-bold text-white mb-2">
-              Sponsor olmak ister misiniz?
-            </h3>
-            <p className="text-white/80 mb-4">
-              SüperSohbet platformunu desteklemek ve binlerce kullanıcıya ulaşmak için sponsor olabilirsiniz.
-              Farklı sponsorluk paketlerimiz hakkında bilgi almak için bizimle iletişime geçin.
-            </p>
-            <Button
-              onClick={() => toast.info('İletişim için: @zardan_dusenler')}
-              className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold"
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              İletişime Geç
-            </Button>
-          </div>
-        </Card>
-
-        {/* Sponsors List */}
         {sponsors.length === 0 ? (
           <div className="text-center py-12">
             <Heart className="w-16 h-16 text-gray-500 mx-auto mb-4" />
@@ -143,7 +122,6 @@ function SponsorsContent() {
                           size="sm"
                           className="bg-blue-600 hover:bg-blue-700"
                         >
-                          <ExternalLink className="w-4 h-4 mr-1" />
                           Ziyaret Et
                         </Button>
                       )}
