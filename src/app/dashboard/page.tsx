@@ -85,7 +85,7 @@ function DashboardContent() {
   return (
     <div className="min-h-screen pb-24">
       {/* Header / Profile Card */}
-      <div className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 p-6 pb-12">
+      <div className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 p-4 pb-8">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center gap-4 mb-6">
             <Avatar className="w-16 h-16 border-4 border-white/20">
