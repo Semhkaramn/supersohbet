@@ -38,14 +38,7 @@ Başlamak için aşağıdaki butona tıkla!
       [
         {
           text: '🎁 Ödül Merkezi',
-          web_app: { url: `${webAppUrl}?tg_data=${encodeURIComponent(JSON.stringify({
-            id: userId,
-            first_name: msg.from?.first_name,
-            last_name: msg.from?.last_name,
-            username: msg.from?.username,
-            auth_date: Math.floor(Date.now() / 1000),
-            hash: 'temp_hash'
-          }))}` }
+          web_app: { url: webAppUrl }
         }
       ],
       [
