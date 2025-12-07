@@ -34,7 +34,7 @@ function TasksContent() {
 
   async function loadTasks() {
     try {
-      const response = await fetch(`/api/tasks?userId=${userId}`)
+      const response = await fetch(`/api/task?userId=${userId}`)
       const data = await response.json()
       setDailyTasks(data.dailyTasks || [])
       setWeeklyTasks(data.weeklyTasks || [])
