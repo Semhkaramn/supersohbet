@@ -63,6 +63,13 @@ function ChannelsContent() {
       const unjoinedChannels = channels.filter(ch => !ch.joined)
 
       for (const channel of unjoinedChannels) {
+        console.log('🔍 Kanal kontrolü yapılıyor:', {
+          channelId: channel.id,
+          channelTelegramId: channel.channelId,
+          channelName: channel.channelName,
+          userId: userId
+        })
+
         const response = await fetch('/api/channels/verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -70,6 +77,12 @@ function ChannelsContent() {
         })
 
         const data = await response.json()
+
+        console.log('📊 Kanal kontrol sonucu:', {
+          channel: channel.channelName,
+          joined: data.joined,
+          response: data
+        })
 
         if (data.joined) {
           setChannels(prev =>
@@ -80,6 +93,8 @@ function ChannelsContent() {
           toast.success(`${channel.channelName} kanalına katıldınız! ✓`, {
             duration: 3000
           })
+        } else if (data.error) {
+          console.error('❌ Kanal kontrolünde hata:', data.error)
         }
       }
     } catch (error) {
