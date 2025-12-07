@@ -117,7 +117,7 @@ function HomeContent() {
     <div className="flex items-center justify-center min-h-screen p-4">
       <div className="text-center max-w-md">
         <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-500 text-transparent bg-clip-text">
-          Zardan Düşenler Bot
+          SüperSohbet Bot
         </h1>
         <p className="text-gray-300 mb-8">
           Lütfen Telegram üzerinden botu başlatın ve "Ödül Merkezi" butonuna tıklayın.
