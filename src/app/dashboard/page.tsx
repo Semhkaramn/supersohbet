@@ -85,10 +85,13 @@ function DashboardContent() {
   return (
     <div className="min-h-screen pb-24">
       {/* Header / Profile Card */}
-      <div className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 p-4 pb-8">
+      <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-4 pb-8">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center gap-4 mb-6">
-            <Avatar className="w-16 h-16 border-4 border-white/20">
+            <Avatar
+              className="w-16 h-16 border-4 border-white/20 cursor-pointer hover:scale-110 transition-transform"
+              onClick={() => router.push(`/profile?userId=${userId}`)}
+            >
               <AvatarFallback className="bg-white/10 text-white text-xl font-bold">
                 {userData.firstName?.[0] || userData.username?.[0] || '?'}
               </AvatarFallback>
@@ -143,7 +146,10 @@ function DashboardContent() {
             </div>
           </Card>
 
-          <Card className="bg-white/5 backdrop-blur-sm border-white/10 p-4">
+          <Card
+            className="bg-white/5 backdrop-blur-sm border-white/10 p-4 cursor-pointer hover:bg-white/10 transition-colors"
+            onClick={() => router.push(`/leaderboard?userId=${userId}`)}
+          >
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center">
                 <Trophy className="w-6 h-6 text-yellow-400" />
