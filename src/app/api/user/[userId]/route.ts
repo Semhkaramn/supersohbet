@@ -41,13 +41,21 @@ export async function GET(
       orderBy: { minXp: 'asc' }
     })
 
-    // Leaderboard sıralamasını hesapla (XP'ye göre)
-    const higherXpUsers = await prisma.user.count({
+    // Leaderboard sıralamasını hesapla (Puana göre, eşitlikte XP'ye göre)
+    const higherRankedCount = await prisma.user.count({
       where: {
-        xp: { gt: user.xp }
+        OR: [
+          { points: { gt: user.points } },
+          {
+            AND: [
+              { points: user.points },
+              { xp: { gt: user.xp } }
+            ]
+          }
+        ]
       }
     })
-    const leaderboardRank = higherXpUsers + 1
+    const leaderboardRank = higherRankedCount + 1
 
     return NextResponse.json({
       id: user.id,
@@ -61,7 +69,8 @@ export async function GET(
       dailySpinsLeft: user.dailySpinsLeft,
       rank: currentRank || user.rank,
       nextRank,
-      leaderboardRank
+      leaderboardRank,
+      createdAt: user.createdAt
     })
   } catch (error) {
     console.error('Get user error:', error)
