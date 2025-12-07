@@ -29,6 +29,7 @@ interface UserData {
     minXp: number
   }
   dailySpinsLeft: number
+  leaderboardRank?: number
 }
 
 function DashboardContent() {
@@ -148,7 +149,7 @@ function DashboardContent() {
                 <Trophy className="w-6 h-6 text-yellow-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">1</p>
+                <p className="text-2xl font-bold text-white">{userData.leaderboardRank || '-'}</p>
                 <p className="text-gray-400 text-sm">Liderlik Sırası</p>
               </div>
             </div>
