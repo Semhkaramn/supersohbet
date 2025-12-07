@@ -9,15 +9,19 @@ interface TelegramUser {
   last_name?: string
   username?: string
   photo_url?: string
-  auth_date: number
-  hash: string
+  auth_date?: number
+  hash?: string
 }
 
 interface TelegramWebApp {
   ready: () => void
+  expand: () => void
   initDataUnsafe: {
     user?: TelegramUser
+    auth_date?: number
+    hash?: string
   }
+  initData: string
 }
 
 declare global {
@@ -33,38 +37,63 @@ function HomeContent() {
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [debugInfo, setDebugInfo] = useState<string>('')
 
   useEffect(() => {
-    // Telegram auth verilerini kontrol et
-    const telegramData = searchParams.get('tg_data')
-
-    if (telegramData) {
+    const initTelegramApp = async () => {
       try {
-        const userData: TelegramUser = JSON.parse(decodeURIComponent(telegramData))
+        // Telegram WebApp API'yi kontrol et
+        if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+          const tg = window.Telegram.WebApp
+          tg.ready()
+          tg.expand()
 
-        // Backend'e kullanıcı bilgilerini gönder ve kanal kontrolü yap
-        checkUserChannels(userData)
-      } catch (err) {
-        console.error('Telegram auth error:', err)
-        setError('Giriş yapılırken bir hata oluştu')
-        setLoading(false)
-      }
-    } else {
-      // Telegram WebApp API'den veri al
-      if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-        const tg = window.Telegram.WebApp
-        tg.ready()
+          setDebugInfo(`Telegram WebApp yüklendi. InitData: ${tg.initData ? 'Var' : 'Yok'}`)
 
-        const initData = tg.initDataUnsafe
-        if (initData.user) {
-          checkUserChannels(initData.user)
+          // URL'den gelen auth verilerini kontrol et
+          const telegramData = searchParams.get('tg_data')
+
+          if (telegramData) {
+            try {
+              const userData: TelegramUser = JSON.parse(decodeURIComponent(telegramData))
+              await checkUserChannels(userData)
+              return
+            } catch (err) {
+              console.error('URL auth error:', err)
+            }
+          }
+
+          // Telegram WebApp'ten kullanıcı bilgilerini al
+          const initData = tg.initDataUnsafe
+
+          if (initData.user) {
+            setDebugInfo(`Kullanıcı bulundu: ${initData.user.first_name} (ID: ${initData.user.id})`)
+            await checkUserChannels(initData.user)
+          } else {
+            // Biraz bekleyip tekrar dene
+            setTimeout(() => {
+              const retryData = tg.initDataUnsafe
+              if (retryData.user) {
+                setDebugInfo(`İkinci denemede kullanıcı bulundu: ${retryData.user.first_name}`)
+                checkUserChannels(retryData.user)
+              } else {
+                setDebugInfo('Telegram kullanıcı verisi bulunamadı. InitData: ' + JSON.stringify(initData))
+                setLoading(false)
+              }
+            }, 1000)
+          }
         } else {
+          setDebugInfo('Telegram WebApp API bulunamadı')
           setLoading(false)
         }
-      } else {
+      } catch (err) {
+        console.error('Init error:', err)
+        setError('Başlatma hatası: ' + (err instanceof Error ? err.message : String(err)))
         setLoading(false)
       }
     }
+
+    initTelegramApp()
   }, [searchParams])
 
   async function checkUserChannels(user: TelegramUser) {
@@ -78,25 +107,29 @@ function HomeContent() {
       const data = await response.json()
 
       if (data.needsChannelJoin) {
-        // Kanallara katılması gerekiyor
         router.push('/channels?userId=' + data.userId)
       } else {
-        // Tüm kanallara katılmış, dashboard'a yönlendir
         router.push('/dashboard?userId=' + data.userId)
       }
     } catch (err) {
       console.error('Channel check error:', err)
       setError('Kanal kontrolü yapılırken hata oluştu')
+      setDebugInfo('API Hatası: ' + (err instanceof Error ? err.message : String(err)))
       setLoading(false)
     }
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen p-4">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-xl">Yükleniyor...</p>
+          <p className="text-xl mb-2">Yükleniyor...</p>
+          {debugInfo && (
+            <p className="text-sm text-gray-400 mt-4 max-w-md">
+              {debugInfo}
+            </p>
+          )}
         </div>
       </div>
     )
@@ -108,6 +141,11 @@ function HomeContent() {
         <div className="bg-red-500/10 border border-red-500 rounded-lg p-6 max-w-md">
           <h2 className="text-xl font-bold text-red-500 mb-2">Hata</h2>
           <p className="text-red-200">{error}</p>
+          {debugInfo && (
+            <p className="text-sm text-red-300 mt-4 font-mono">
+              {debugInfo}
+            </p>
+          )}
         </div>
       </div>
     )
@@ -126,6 +164,11 @@ function HomeContent() {
           <p className="text-sm text-gray-400">
             Bu sayfaya Telegram bot üzerinden erişmelisiniz.
           </p>
+          {debugInfo && (
+            <p className="text-xs text-gray-500 mt-4 font-mono break-words">
+              Debug: {debugInfo}
+            </p>
+          )}
         </div>
       </div>
     </div>
