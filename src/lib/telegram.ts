@@ -1,4 +1,5 @@
 import TelegramBot from 'node-telegram-bot-api'
+import { createHash, createHmac } from 'crypto'
 
 let bot: TelegramBot | null = null
 
@@ -30,8 +31,7 @@ export async function checkChannelMembership(
 
 // Telegram Login Widget doğrulama
 export function verifyTelegramAuth(data: Record<string, string>): boolean {
-  const secret = require('crypto')
-    .createHash('sha256')
+  const secret = createHash('sha256')
     .update(process.env.TELEGRAM_BOT_TOKEN || '')
     .digest()
 
@@ -41,8 +41,7 @@ export function verifyTelegramAuth(data: Record<string, string>): boolean {
     .map(key => `${key}=${data[key]}`)
     .join('\n')
 
-  const hash = require('crypto')
-    .createHmac('sha256', secret)
+  const hash = createHmac('sha256', secret)
     .update(checkString)
     .digest('hex')
 
