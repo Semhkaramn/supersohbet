@@ -93,7 +93,7 @@ model Rank {
 // Market ürünleri
 model ShopItem {
   id               String          @id @default(cuid())
-  name             String
+  name             String          @unique
   description      String?
   price            Int             // Puan cinsinden
   imageUrl         String?
@@ -125,7 +125,7 @@ model UserPurchase {
 // Çark ödülleri
 model WheelPrize {
   id               String          @id @default(cuid())
-  name             String
+  name             String          @unique
   points           Int
   probability      Float           @default(1.0) // Çıkma olasılığı (1.0 = eşit)
   color            String          @default("#FF6B6B")
