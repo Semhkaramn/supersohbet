@@ -6,6 +6,19 @@ datasource db {
   provider = "postgresql"
 }
 
+// Sistem ayarları
+model Settings {
+  id                    String   @id @default(cuid())
+  key                   String   @unique
+  value                 String
+  description           String?
+  category              String   @default("general")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([category])
+}
+
 // Kullanıcı modeli
 model User {
   id               String          @id @default(cuid())
@@ -19,6 +32,8 @@ model User {
   rank             Rank?           @relation(fields: [rankId], references: [id])
   dailySpinsLeft   Int             @default(1)
   lastSpinReset    DateTime        @default(now())
+  lastMessageAt    DateTime?
+  messageCount     Int             @default(0)
   totalMessages    Int             @default(0)
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
