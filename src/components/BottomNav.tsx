@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, ShoppingCart, Ticket, Trophy, User } from 'lucide-react'
+import { Home, Ticket, Trophy, Heart, Menu } from 'lucide-react'
 
 interface BottomNavProps {
   userId: string
@@ -14,15 +14,9 @@ export default function BottomNav({ userId }: BottomNavProps) {
   const navItems = [
     {
       href: `/dashboard?userId=${userId}`,
-      label: 'Anasayfa',
+      label: 'Ana Menü',
       icon: Home,
       active: pathname === '/dashboard'
-    },
-    {
-      href: `/leaderboard?userId=${userId}`,
-      label: 'Liderlik Sırası',
-      icon: Trophy,
-      active: pathname === '/leaderboard'
     },
     {
       href: `/wheel?userId=${userId}`,
@@ -31,16 +25,22 @@ export default function BottomNav({ userId }: BottomNavProps) {
       active: pathname === '/wheel'
     },
     {
-      href: `/shop?userId=${userId}`,
-      label: 'Mağaza',
-      icon: ShoppingCart,
-      active: pathname === '/shop'
+      href: `/leaderboard?userId=${userId}`,
+      label: 'Liderlik',
+      icon: Trophy,
+      active: pathname === '/leaderboard'
     },
     {
-      href: `/profile?userId=${userId}`,
-      label: 'Profil',
-      icon: User,
-      active: pathname === '/profile'
+      href: `/sponsors?userId=${userId}`,
+      label: 'Sponsorlar',
+      icon: Heart,
+      active: pathname === '/sponsors'
+    },
+    {
+      href: `/menu?userId=${userId}`,
+      label: 'Menü',
+      icon: Menu,
+      active: pathname === '/menu'
     },
   ]
 
