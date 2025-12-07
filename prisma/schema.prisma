@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Kullanıcı modeli
+model User {
+  id               String          @id @default(cuid())
+  telegramId       String          @unique
+  username         String?
+  firstName        String?
+  lastName         String?
+  points           Int             @default(0)
+  xp               Int             @default(0)
+  rankId           String?
+  rank             Rank?           @relation(fields: [rankId], references: [id])
+  dailySpinsLeft   Int             @default(1)
+  lastSpinReset    DateTime        @default(now())
+  totalMessages    Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  channelJoins     UserChannelJoin[]
+  purchases        UserPurchase[]
+  wheelSpins       WheelSpin[]
+
+  @@index([telegramId])
+}
+
+// Zorunlu kanallar
+model RequiredChannel {
+  id               String          @id @default(cuid())
+  channelId        String          @unique // @channel_username veya -100123456789
+  channelName      String
+  channelLink      String
+  isActive         Boolean         @default(true)
+  order            Int             @default(0) // Gösterim sırası
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  userJoins        UserChannelJoin[]
+
+  @@index([isActive])
+}
+
+// Kullanıcı kanal katılım takibi
+model UserChannelJoin {
+  id               String          @id @default(cuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channelId        String
+  channel          RequiredChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  joinedAt         DateTime        @default(now())
+
+  @@unique([userId, channelId])
+  @@index([userId])
+}
+
+// Rütbe sistemi
+model Rank {
+  id               String          @id @default(cuid())
+  name             String          @unique
+  minXp            Int             @unique
+  icon             String          @default("⭐")
+  color            String          @default("#FFD700")
+  order            Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  users            User[]
+
+  @@index([minXp])
+}
+
+// Market ürünleri
+model ShopItem {
+  id               String          @id @default(cuid())
+  name             String
+  description      String?
+  price            Int             // Puan cinsinden
+  imageUrl         String?
+  category         String          @default("Genel")
+  stock            Int?            // null = sınırsız
+  isActive         Boolean         @default(true)
+  order            Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  purchases        UserPurchase[]
+
+  @@index([isActive, category])
+}
+
+// Kullanıcı satın alımları
+model UserPurchase {
+  id               String          @id @default(cuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemId           String
+  item             ShopItem        @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  pointsSpent      Int
+  purchasedAt      DateTime        @default(now())
+
+  @@index([userId])
+}
+
+// Çark ödülleri
+model WheelPrize {
+  id               String          @id @default(cuid())
+  name             String
+  points           Int
+  probability      Float           @default(1.0) // Çıkma olasılığı (1.0 = eşit)
+  color            String          @default("#FF6B6B")
+  isActive         Boolean         @default(true)
+  order            Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  wheelSpins       WheelSpin[]
+
+  @@index([isActive])
+}
+
+// Çark çevirme geçmişi
+model WheelSpin {
+  id               String          @id @default(cuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prizeId          String
+  prize            WheelPrize      @relation(fields: [prizeId], references: [id], onDelete: Cascade)
+  pointsWon        Int
+  spunAt           DateTime        @default(now())
+
+  @@index([userId])
+}
+
+// Sponsorlar
+model Sponsor {
+  id               String          @id @default(cuid())
+  name             String
+  description      String?
+  logoUrl          String?
+  websiteUrl       String?
+  isActive         Boolean         @default(true)
+  order            Int             @default(0)
+  clicks           Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([isActive])
+}
+
+// Admin kullanıcılar
+model Admin {
+  id               String          @id @default(cuid())
+  username         String          @unique
+  passwordHash     String
+  telegramId       String?         @unique
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([username])
+}
