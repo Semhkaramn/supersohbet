@@ -35,7 +35,7 @@ const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(
 )
 AvatarImage.displayName = "AvatarImage"
 
-interface AvatarFallbackProps extends React.HTMLAttributes<HTMLDivElement> {}
+type AvatarFallbackProps = React.HTMLAttributes<HTMLDivElement>
 
 const AvatarFallback = React.forwardRef<HTMLDivElement, AvatarFallbackProps>(
   ({ className, ...props }, ref) => (
