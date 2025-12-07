@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { checkChannelMembership } from '@/lib/telegram'
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,13 +14,25 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Kullanıcı bilgisini getir
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
     // Aktif zorunlu kanalları getir
     const requiredChannels = await prisma.requiredChannel.findMany({
       where: { isActive: true },
       orderBy: { order: 'asc' }
     })
 
-    // Kullanıcının katıldığı kanalları getir
+    // Kullanıcının katıldığı kanalları getir (veritabanından)
     const userChannelJoins = await prisma.userChannelJoin.findMany({
       where: {
         userId,
@@ -29,7 +42,71 @@ export async function GET(request: NextRequest) {
 
     const joinedChannelIds = new Set(userChannelJoins.map((join) => join.channelId))
 
-    // Kanal listesini katılım durumu ile birlikte döndür
+    // GERÇEK ZAMANLI TELEGRAM API KONTROLÜ
+    console.log('🔍 Gerçek zamanlı kanal üyelik kontrolü başlıyor...')
+    const realTimeChecks = await Promise.all(
+      requiredChannels.map(async (channel) => {
+        try {
+          // Telegram API ile gerçek üyelik durumunu kontrol et
+          const isMemberNow = await checkChannelMembership(
+            user.telegramId,
+            channel.channelId
+          )
+
+          console.log(`📊 ${channel.channelName}: ${isMemberNow ? '✅ ÜYE' : '❌ ÜYE DEĞİL'}`)
+
+          // Eğer gerçekte üyeyse VE DB'de kayıt yoksa, kaydet
+          if (isMemberNow && !joinedChannelIds.has(channel.id)) {
+            await prisma.userChannelJoin.upsert({
+              where: {
+                userId_channelId: {
+                  userId: user.id,
+                  channelId: channel.id
+                }
+              },
+              create: {
+                userId: user.id,
+                channelId: channel.id
+              },
+              update: {}
+            })
+            console.log(`✅ ${channel.channelName} üyeliği DB'ye kaydedildi`)
+          }
+
+          // Eğer gerçekte üye DEĞİLse VE DB'de kayıt varsa, kaydı sil
+          if (!isMemberNow && joinedChannelIds.has(channel.id)) {
+            await prisma.userChannelJoin.delete({
+              where: {
+                userId_channelId: {
+                  userId: user.id,
+                  channelId: channel.id
+                }
+              }
+            })
+            console.log(`🗑️ ${channel.channelName} üyeliği DB'den silindi (kullanıcı kanaldan çıkmış)`)
+          }
+
+          return {
+            channelId: channel.id,
+            isMember: isMemberNow
+          }
+        } catch (error) {
+          console.error(`❌ ${channel.channelName} kontrolünde hata:`, error)
+          // Hata durumunda DB kaydına güven
+          return {
+            channelId: channel.id,
+            isMember: joinedChannelIds.has(channel.id)
+          }
+        }
+      })
+    )
+
+    // Gerçek zamanlı kontrol sonuçlarını kullanarak kanal listesini oluştur
+    const realTimeMembershipMap = new Map(
+      realTimeChecks.map(check => [check.channelId, check.isMember])
+    )
+
+    // Kanal listesini GERÇEK üyelik durumu ile birlikte döndür
     const channels = requiredChannels.map((channel) => {
       // channelId'den username çıkar (@ işaretini kaldır)
       let channelUsername = channel.channelId
@@ -43,7 +120,7 @@ export async function GET(request: NextRequest) {
         channelName: channel.channelName,
         channelLink: channel.channelLink,
         channelUsername: channelUsername.startsWith('-') ? undefined : channelUsername,
-        joined: joinedChannelIds.has(channel.id)
+        joined: realTimeMembershipMap.get(channel.id) || false
       }
     })
 
