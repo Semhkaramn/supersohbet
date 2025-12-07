@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import type { Prisma } from '@prisma/client'
 
 const SPIN_COST = 250
 
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Rastgele ödül seç (probability'ye göre ağırlıklı)
-    const totalProbability = prizes.reduce((sum, prize) => sum + prize.probability, 0)
+    const totalProbability = prizes.reduce((sum: number, prize) => sum + prize.probability, 0)
     let random = Math.random() * totalProbability
     let selectedPrize = prizes[0]
 
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Transaction ile işlemleri gerçekleştir
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Puan düş
       await tx.user.update({
         where: { id: userId },
