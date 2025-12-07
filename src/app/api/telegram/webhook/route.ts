@@ -10,7 +10,7 @@ async function getSettings() {
   const now = Date.now()
   if (now - lastCacheUpdate > CACHE_TTL) {
     const settings = await prisma.settings.findMany()
-    settingsCache = settings.reduce((acc, s) => ({ ...acc, [s.key]: s.value }), {})
+    settingsCache = settings.reduce((acc: Record<string, string>, s) => ({ ...acc, [s.key]: s.value }), {})
     lastCacheUpdate = now
   }
   return settingsCache
