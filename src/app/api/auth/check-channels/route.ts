@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { checkChannelMembership } from '@/lib/telegram'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,12 +14,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    console.log('👤 Kullanıcı giriş yapıyor:', {
+      telegramId: telegramUser.id,
+      username: telegramUser.username,
+      firstName: telegramUser.first_name
+    })
+
     // Kullanıcıyı bul veya oluştur
     let user = await prisma.user.findUnique({
       where: { telegramId: String(telegramUser.id) }
     })
 
     if (!user) {
+      console.log('🆕 Yeni kullanıcı oluşturuluyor...')
       // Yeni kullanıcı oluştur
       user = await prisma.user.create({
         data: {
@@ -36,26 +44,60 @@ export async function POST(request: NextRequest) {
       orderBy: { order: 'asc' }
     })
 
+    console.log(`📺 ${requiredChannels.length} zorunlu kanal bulundu`)
+
     if (requiredChannels.length === 0) {
       // Zorunlu kanal yoksa direkt dashboard'a yönlendir
+      console.log('✅ Zorunlu kanal yok, dashboard\'a yönlendiriliyor')
       return NextResponse.json({
         userId: user.id,
         needsChannelJoin: false
       })
     }
 
-    // Kullanıcının katıldığı kanalları kontrol et
-    const userChannelJoins = await prisma.userChannelJoin.findMany({
-      where: {
-        userId: user.id,
-        channelId: { in: requiredChannels.map((ch) => ch.id) }
-      }
-    })
+    // Her kanal için GERÇEK Telegram üyeliğini kontrol et
+    console.log('🔍 Telegram API ile kanal üyelikleri kontrol ediliyor...')
 
-    const joinedChannelIds = userChannelJoins.map((join) => join.channelId)
-    const needsChannelJoin = requiredChannels.some(
-      (channel) => !joinedChannelIds.includes(channel.id)
+    const membershipChecks = await Promise.all(
+      requiredChannels.map(async (channel) => {
+        try {
+          const isMember = await checkChannelMembership(
+            String(telegramUser.id),
+            channel.channelId
+          )
+
+          console.log(`📊 ${channel.channelName}: ${isMember ? '✅ ÜYE' : '❌ ÜYE DEĞİL'}`)
+
+          // Eğer üyeyse ve DB'de kayıt yoksa, kaydet
+          if (isMember) {
+            await prisma.userChannelJoin.upsert({
+              where: {
+                userId_channelId: {
+                  userId: user.id,
+                  channelId: channel.id
+                }
+              },
+              create: {
+                userId: user.id,
+                channelId: channel.id
+              },
+              update: {}
+            })
+          }
+
+          return { channelId: channel.id, isMember }
+        } catch (error) {
+          console.error(`❌ ${channel.channelName} kontrolünde hata:`, error)
+          return { channelId: channel.id, isMember: false }
+        }
+      })
     )
+
+    // Tüm kanallara üye mi kontrol et
+    const allJoined = membershipChecks.every((check) => check.isMember)
+    const needsChannelJoin = !allJoined
+
+    console.log(`🎯 Sonuç: ${allJoined ? 'Tüm kanallara üye ✅' : 'Eksik kanal var ❌'}`)
 
     return NextResponse.json({
       userId: user.id,
