@@ -7,27 +7,54 @@ import { Badge } from '@/components/ui/badge'
 import BottomNav from '@/components/BottomNav'
 import { FileText, CheckCircle2, Clock, Zap } from 'lucide-react'
 
+interface Task {
+  id: string
+  title: string
+  reward: number
+  progress?: string
+  completed: boolean
+}
+
 function TasksContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const userId = searchParams.get('userId')
 
+  const [dailyTasks, setDailyTasks] = useState<Task[]>([])
+  const [weeklyTasks, setWeeklyTasks] = useState<Task[]>([])
+  const [loading, setLoading] = useState(true)
+
   useEffect(() => {
     if (!userId) {
       router.push('/')
+      return
     }
+    loadTasks()
   }, [userId])
 
-  const dailyTasks = [
-    { id: 1, title: 'Günlük Giriş', reward: 50, completed: true },
-    { id: 2, title: '10 Mesaj Gönder', reward: 100, progress: '7/10', completed: false },
-    { id: 3, title: 'Çark Çevir', reward: 250, completed: false },
-  ]
+  async function loadTasks() {
+    try {
+      const response = await fetch(`/api/tasks?userId=${userId}`)
+      const data = await response.json()
+      setDailyTasks(data.dailyTasks || [])
+      setWeeklyTasks(data.weeklyTasks || [])
+    } catch (error) {
+      console.error('Error loading tasks:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const weeklyTasks = [
-    { id: 4, title: 'Haftalık Aktif Katılım', reward: 500, progress: '3/7 gün', completed: false },
-    { id: 5, title: '50 Mesaj Gönder', reward: 300, progress: '32/50', completed: false },
-  ]
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-300">Görevler yükleniyor...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen pb-24">
@@ -50,33 +77,40 @@ function TasksContent() {
             <Zap className="w-5 h-5 text-yellow-400" />
             <h2 className="text-xl font-bold text-white">Günlük Görevler</h2>
           </div>
-          <div className="space-y-3">
-            {dailyTasks.map(task => (
-              <Card key={task.id} className="bg-white/5 border-white/10 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 flex-1">
-                    {task.completed ? (
-                      <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
-                    ) : (
-                      <Clock className="w-6 h-6 text-blue-400 flex-shrink-0" />
-                    )}
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-white">{task.title}</h3>
-                      {task.progress && (
-                        <p className="text-sm text-gray-400">{task.progress}</p>
+          {dailyTasks.length === 0 ? (
+            <Card className="bg-white/5 border-white/10 p-6 text-center">
+              <Clock className="w-12 h-12 text-gray-500 mx-auto mb-3" />
+              <p className="text-gray-400">Henüz günlük görev bulunmuyor</p>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {dailyTasks.map(task => (
+                <Card key={task.id} className="bg-white/5 border-white/10 p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 flex-1">
+                      {task.completed ? (
+                        <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
+                      ) : (
+                        <Clock className="w-6 h-6 text-blue-400 flex-shrink-0" />
                       )}
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-white">{task.title}</h3>
+                        {task.progress && (
+                          <p className="text-sm text-gray-400">{task.progress}</p>
+                        )}
+                      </div>
                     </div>
+                    <Badge
+                      variant={task.completed ? "outline" : "default"}
+                      className={task.completed ? "text-green-400 border-green-400" : "bg-yellow-500/20 text-yellow-300 border-yellow-500/30"}
+                    >
+                      +{task.reward} XP
+                    </Badge>
                   </div>
-                  <Badge
-                    variant={task.completed ? "outline" : "default"}
-                    className={task.completed ? "text-green-400 border-green-400" : "bg-yellow-500/20 text-yellow-300 border-yellow-500/30"}
-                  >
-                    +{task.reward} XP
-                  </Badge>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Weekly Tasks */}
@@ -85,33 +119,40 @@ function TasksContent() {
             <FileText className="w-5 h-5 text-purple-400" />
             <h2 className="text-xl font-bold text-white">Haftalık Görevler</h2>
           </div>
-          <div className="space-y-3">
-            {weeklyTasks.map(task => (
-              <Card key={task.id} className="bg-white/5 border-white/10 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 flex-1">
-                    {task.completed ? (
-                      <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
-                    ) : (
-                      <Clock className="w-6 h-6 text-purple-400 flex-shrink-0" />
-                    )}
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-white">{task.title}</h3>
-                      {task.progress && (
-                        <p className="text-sm text-gray-400">{task.progress}</p>
+          {weeklyTasks.length === 0 ? (
+            <Card className="bg-white/5 border-white/10 p-6 text-center">
+              <Clock className="w-12 h-12 text-gray-500 mx-auto mb-3" />
+              <p className="text-gray-400">Henüz haftalık görev bulunmuyor</p>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {weeklyTasks.map(task => (
+                <Card key={task.id} className="bg-white/5 border-white/10 p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 flex-1">
+                      {task.completed ? (
+                        <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
+                      ) : (
+                        <Clock className="w-6 h-6 text-purple-400 flex-shrink-0" />
                       )}
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-white">{task.title}</h3>
+                        {task.progress && (
+                          <p className="text-sm text-gray-400">{task.progress}</p>
+                        )}
+                      </div>
                     </div>
+                    <Badge
+                      variant={task.completed ? "outline" : "default"}
+                      className={task.completed ? "text-green-400 border-green-400" : "bg-purple-500/20 text-purple-300 border-purple-500/30"}
+                    >
+                      +{task.reward} XP
+                    </Badge>
                   </div>
-                  <Badge
-                    variant={task.completed ? "outline" : "default"}
-                    className={task.completed ? "text-green-400 border-green-400" : "bg-purple-500/20 text-purple-300 border-purple-500/30"}
-                  >
-                    +{task.reward} XP
-                  </Badge>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Info Card */}
