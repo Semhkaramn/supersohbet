@@ -58,7 +58,18 @@ export default function AdminSettingsPage() {
       const data = await response.json()
 
       if (data.success) {
-        toast.success('Ayar kaydedildi!')
+        // Bot token için özel mesaj
+        if (key === 'telegram_bot_token' && data.webhookSet) {
+          toast.success(data.message || `Bot başarıyla bağlandı! @${data.botUsername}`, {
+            duration: 5000
+          })
+        } else if (key === 'telegram_bot_token' && data.webhookSet === false) {
+          toast.warning(data.message || 'Ayar kaydedildi ama webhook kurulamadı', {
+            duration: 5000
+          })
+        } else {
+          toast.success('Ayar kaydedildi!')
+        }
         loadSettings()
       } else {
         toast.error(data.error || 'Ayar kaydedilemedi')
@@ -169,8 +180,9 @@ export default function AdminSettingsPage() {
             <div className="flex-1">
               <h3 className="text-yellow-300 font-semibold mb-1">Önemli Notlar</h3>
               <ul className="text-yellow-200 text-sm space-y-1">
+                <li>• Telegram Bot Token'ı girip kaydettiğinizde bot otomatik olarak başlar</li>
+                <li>• Webhook otomatik olarak kurulur, manuel ayar gerekmez</li>
                 <li>• Ayarlar değiştirildikten sonra maksimum 1 dakika içinde aktif olur</li>
-                <li>• Telegram Bot Token değiştirilirse webhook'u yeniden ayarlamanız gerekir</li>
                 <li>• Bakım modu aktifken kullanıcılar puan kazanamaz</li>
                 <li>• messages_for_xp = 1 her mesajda, 2 her 2 mesajda bir XP verir</li>
               </ul>
