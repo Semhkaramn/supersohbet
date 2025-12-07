@@ -23,14 +23,14 @@ export async function GET(request: NextRequest) {
     const userChannelJoins = await prisma.userChannelJoin.findMany({
       where: {
         userId,
-        channelId: { in: requiredChannels.map(ch => ch.id) }
+        channelId: { in: requiredChannels.map((ch) => ch.id) }
       }
     })
 
-    const joinedChannelIds = new Set(userChannelJoins.map(join => join.channelId))
+    const joinedChannelIds = new Set(userChannelJoins.map((join) => join.channelId))
 
     // Kanal listesini katılım durumu ile birlikte döndür
-    const channels = requiredChannels.map(channel => ({
+    const channels = requiredChannels.map((channel) => ({
       id: channel.id,
       channelId: channel.channelId,
       channelName: channel.channelName,
