@@ -4,8 +4,9 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import BottomNav from '@/components/BottomNav'
-import { Ticket, Gift, TrendingUp } from 'lucide-react'
+import { Ticket, Gift, TrendingUp, Trophy } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface WheelPrize {
@@ -19,6 +20,19 @@ interface UserData {
   dailySpinsLeft: number
 }
 
+interface RecentWinner {
+  id: string
+  user: {
+    firstName?: string
+    username?: string
+  }
+  prize: {
+    name: string
+  }
+  pointsWon: number
+  spunAt: string
+}
+
 function WheelContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -26,6 +40,7 @@ function WheelContent() {
 
   const [prizes, setPrizes] = useState<WheelPrize[]>([])
   const [userData, setUserData] = useState<UserData | null>(null)
+  const [recentWinners, setRecentWinners] = useState<RecentWinner[]>([])
   const [spinning, setSpinning] = useState(false)
   const [rotation, setRotation] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -40,16 +55,19 @@ function WheelContent() {
 
   async function loadData() {
     try {
-      const [prizesRes, userRes] = await Promise.all([
+      const [prizesRes, userRes, winnersRes] = await Promise.all([
         fetch('/api/wheel/prizes'),
-        fetch(`/api/user/${userId}`)
+        fetch(`/api/user/${userId}`),
+        fetch('/api/wheel/recent-winners')
       ])
 
       const prizesData = await prizesRes.json()
       const userData = await userRes.json()
+      const winnersData = await winnersRes.json()
 
       setPrizes(prizesData.prizes || [])
       setUserData(userData)
+      setRecentWinners(winnersData.winners || [])
     } catch (error) {
       console.error('Error loading wheel data:', error)
     } finally {
@@ -109,9 +127,9 @@ function WheelContent() {
   }
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pb-24 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
-      <div className="bg-gradient-to-br from-purple-600 to-pink-600 p-4">
+      <div className="bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 p-4">
         <div className="max-w-2xl mx-auto text-center">
           <h1 className="text-xl font-bold text-white flex items-center justify-center gap-2">
             <Ticket className="w-5 h-5" />
@@ -122,9 +140,9 @@ function WheelContent() {
 
       {/* Wheel Section */}
       <div className="max-w-2xl mx-auto px-4 py-6">
-        {/* Spin Info - Minimal */}
+        {/* Spin Info */}
         <div className="text-center mb-6">
-          <p className="text-green-400 font-semibold text-sm mb-1">✨ Ücretsiz</p>
+          <p className="text-green-400 font-semibold text-sm mb-1">✨ Ücretsiz Çevirme</p>
           {userData && (
             <p className="text-white/60 text-xs">
               Kalan hak: {userData.dailySpinsLeft} çevirme
@@ -132,17 +150,17 @@ function WheelContent() {
           )}
         </div>
 
-        {/* Wheel - Küçültülmüş */}
+        {/* Wheel */}
         <div className="relative mb-6">
-          <div className="relative w-64 h-64 mx-auto">
+          <div className="relative w-72 h-72 mx-auto">
             {/* Arrow */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 z-10">
-              <div className="w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[25px] border-t-white drop-shadow-lg"></div>
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-3 z-10">
+              <div className="w-0 h-0 border-l-[18px] border-l-transparent border-r-[18px] border-r-transparent border-t-[30px] border-t-white drop-shadow-2xl"></div>
             </div>
 
             {/* Wheel Circle */}
             <div
-              className="w-full h-full rounded-full border-6 border-white shadow-2xl relative overflow-hidden"
+              className="w-full h-full rounded-full border-8 border-white shadow-2xl relative overflow-hidden"
               style={{
                 transform: `rotate(${rotation}deg)`,
                 transition: spinning ? 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none'
@@ -150,29 +168,38 @@ function WheelContent() {
             >
               {prizes.map((prize, index) => {
                 const angle = (360 / prizes.length) * index
+                const segmentAngle = 360 / prizes.length
                 return (
                   <div
                     key={prize.id}
-                    className="absolute w-full h-full flex items-center justify-center"
+                    className="absolute w-full h-full"
                     style={{
-                      transform: `rotate(${angle}deg)`,
-                      background: `conic-gradient(from ${angle}deg, ${prize.color} 0deg, ${prize.color} ${360 / prizes.length}deg, transparent ${360 / prizes.length}deg)`
+                      clipPath: `polygon(50% 50%, ${50 + 50 * Math.cos((angle - 90) * Math.PI / 180)}% ${50 + 50 * Math.sin((angle - 90) * Math.PI / 180)}%, ${50 + 50 * Math.cos((angle + segmentAngle - 90) * Math.PI / 180)}% ${50 + 50 * Math.sin((angle + segmentAngle - 90) * Math.PI / 180)}%)`,
+                      background: prize.color
                     }}
                   >
                     <div
-                      className="absolute top-6 text-white font-bold text-center"
-                      style={{ transform: `rotate(${90 - angle}deg)` }}
+                      className="absolute w-full h-full flex items-center justify-center"
+                      style={{
+                        transform: `rotate(${angle + segmentAngle / 2}deg)`
+                      }}
                     >
-                      <div className="text-xs">{prize.name}</div>
-                      <div className="text-sm">{prize.points}</div>
+                      <div className="text-center" style={{ transform: 'translateY(-60px)' }}>
+                        <div className="text-white font-bold text-sm drop-shadow-lg mb-1">
+                          {prize.name}
+                        </div>
+                        <div className="text-white text-lg font-black drop-shadow-lg">
+                          {prize.points}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )
               })}
 
               {/* Center Circle */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full border-4 border-white flex items-center justify-center shadow-lg">
-                <Gift className="w-8 h-8 text-white" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-gradient-to-br from-yellow-400 via-orange-400 to-orange-500 rounded-full border-4 border-white flex items-center justify-center shadow-2xl">
+                <Gift className="w-10 h-10 text-white drop-shadow-lg" />
               </div>
             </div>
           </div>
@@ -182,7 +209,7 @@ function WheelContent() {
         <Button
           onClick={spinWheel}
           disabled={spinning || !userData || userData.dailySpinsLeft <= 0}
-          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-6 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 text-white font-bold py-6 text-lg disabled:opacity-50 disabled:cursor-not-allowed shadow-xl"
         >
           {spinning ? (
             <>
@@ -199,12 +226,46 @@ function WheelContent() {
           )}
         </Button>
 
-        {/* Recent Wins - Gerçek veri gelene kadar boş */}
+        {/* Recent Wins */}
         <div className="mt-8">
-          <h3 className="text-lg font-bold text-white mb-3">Son Kazananlar</h3>
-          <div className="text-center py-8 text-white/40 text-sm">
-            Henüz kazanan yok
-          </div>
+          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-yellow-400" />
+            Son Kazananlar
+          </h3>
+          {recentWinners.length === 0 ? (
+            <Card className="bg-slate-800/50 border-slate-700 p-6 text-center">
+              <p className="text-slate-400 text-sm">Henüz kazanan yok</p>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {recentWinners.map((winner) => (
+                <Card key={winner.id} className="bg-slate-800/80 border-slate-700 p-3 hover:bg-slate-800 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-10 h-10 border-2 border-yellow-400/50">
+                      <AvatarFallback className="bg-gradient-to-br from-yellow-500 to-orange-500 text-white font-bold text-sm">
+                        {winner.user.firstName?.[0] || winner.user.username?.[0] || '?'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <p className="text-white font-semibold text-sm">
+                        {winner.user.firstName || winner.user.username || 'Kullanıcı'}
+                      </p>
+                      <p className="text-slate-400 text-xs">{winner.prize.name}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-yellow-400 font-bold text-lg">+{winner.pointsWon}</p>
+                      <p className="text-slate-500 text-xs">
+                        {new Date(winner.spunAt).toLocaleDateString('tr-TR', {
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
