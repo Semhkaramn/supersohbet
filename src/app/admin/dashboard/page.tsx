@@ -97,6 +97,13 @@ export default function AdminDashboard() {
       href: '/admin/ranks',
       color: 'from-yellow-500 to-yellow-600'
     },
+    {
+      title: 'Sistem Ayarları',
+      description: 'Bot ve sistem parametreleri',
+      icon: Settings,
+      href: '/admin/settings',
+      color: 'from-slate-500 to-slate-600'
+    },
   ]
 
   if (loading) {
