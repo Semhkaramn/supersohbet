@@ -126,6 +126,8 @@ function WheelContent() {
     )
   }
 
+  const segmentAngle = 360 / (prizes.length || 8)
+
   return (
     <div className="min-h-screen pb-24 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
@@ -142,7 +144,7 @@ function WheelContent() {
       <div className="max-w-2xl mx-auto px-4 py-6">
         {/* Spin Info */}
         <div className="text-center mb-6">
-          <p className="text-green-400 font-semibold text-sm mb-1">✨ Ücretsiz Çevirme</p>
+          <p className="text-green-400 font-semibold text-sm mb-1">✨ Tamamen Ücretsiz</p>
           {userData && (
             <p className="text-white/60 text-xs">
               Kalan hak: {userData.dailySpinsLeft} çevirme
@@ -152,50 +154,71 @@ function WheelContent() {
 
         {/* Wheel */}
         <div className="relative mb-6">
-          <div className="relative w-72 h-72 mx-auto">
-            {/* Arrow */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-3 z-10">
-              <div className="w-0 h-0 border-l-[18px] border-l-transparent border-r-[18px] border-r-transparent border-t-[30px] border-t-white drop-shadow-2xl"></div>
+          <div className="relative w-80 h-80 mx-auto">
+            {/* Arrow Pointer */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-4 z-10">
+              <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-t-[35px] border-t-white drop-shadow-2xl"></div>
             </div>
 
-            {/* Wheel Circle */}
-            <div
-              className="w-full h-full rounded-full border-8 border-white shadow-2xl relative overflow-hidden"
-              style={{
-                transform: `rotate(${rotation}deg)`,
-                transition: spinning ? 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none'
-              }}
-            >
-              {prizes.map((prize, index) => {
-                const angle = (360 / prizes.length) * index
-                const segmentAngle = 360 / prizes.length
-                return (
-                  <div
-                    key={prize.id}
-                    className="absolute w-full h-full"
-                    style={{
-                      clipPath: `polygon(50% 50%, ${50 + 50 * Math.cos((angle - 90) * Math.PI / 180)}% ${50 + 50 * Math.sin((angle - 90) * Math.PI / 180)}%, ${50 + 50 * Math.cos((angle + segmentAngle - 90) * Math.PI / 180)}% ${50 + 50 * Math.sin((angle + segmentAngle - 90) * Math.PI / 180)}%)`,
-                      background: prize.color
-                    }}
-                  >
-                    <div
-                      className="absolute w-full h-full flex items-center justify-center"
-                      style={{
-                        transform: `rotate(${angle + segmentAngle / 2}deg)`
-                      }}
-                    >
-                      <div className="text-center" style={{ transform: 'translateY(-60px)' }}>
-                        <div className="text-white font-bold text-sm drop-shadow-lg mb-1">
-                          {prize.name}
-                        </div>
-                        <div className="text-white text-lg font-black drop-shadow-lg">
-                          {prize.points}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
+            {/* Wheel Container with border */}
+            <div className="w-full h-full rounded-full border-8 border-white shadow-2xl relative overflow-hidden bg-slate-900">
+              {/* Spinning wheel */}
+              <svg
+                viewBox="0 0 200 200"
+                className="w-full h-full"
+                style={{
+                  transform: `rotate(${rotation}deg)`,
+                  transition: spinning ? 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none'
+                }}
+              >
+                {prizes.map((prize, index) => {
+                  const startAngle = index * segmentAngle - 90
+                  const endAngle = (index + 1) * segmentAngle - 90
+                  const midAngle = (startAngle + endAngle) / 2
+
+                  // Calculate path for segment
+                  const startX = 100 + 100 * Math.cos((startAngle * Math.PI) / 180)
+                  const startY = 100 + 100 * Math.sin((startAngle * Math.PI) / 180)
+                  const endX = 100 + 100 * Math.cos((endAngle * Math.PI) / 180)
+                  const endY = 100 + 100 * Math.sin((endAngle * Math.PI) / 180)
+
+                  // Calculate text position
+                  const textRadius = 65
+                  const textX = 100 + textRadius * Math.cos((midAngle * Math.PI) / 180)
+                  const textY = 100 + textRadius * Math.sin((midAngle * Math.PI) / 180)
+
+                  return (
+                    <g key={prize.id}>
+                      {/* Segment */}
+                      <path
+                        d={`M 100 100 L ${startX} ${startY} A 100 100 0 0 1 ${endX} ${endY} Z`}
+                        fill={prize.color}
+                        stroke="rgba(255,255,255,0.1)"
+                        strokeWidth="0.5"
+                      />
+
+                      {/* Text */}
+                      <text
+                        x={textX}
+                        y={textY}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fill="white"
+                        fontWeight="bold"
+                        fontSize="10"
+                        style={{
+                          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
+                          transform: `rotate(${midAngle + 90}deg)`,
+                          transformOrigin: `${textX}px ${textY}px`
+                        }}
+                      >
+                        <tspan x={textX} dy="-6">{prize.name}</tspan>
+                        <tspan x={textX} dy="12" fontSize="12" fontWeight="900">{prize.points}</tspan>
+                      </text>
+                    </g>
+                  )
+                })}
+              </svg>
 
               {/* Center Circle */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-gradient-to-br from-yellow-400 via-orange-400 to-orange-500 rounded-full border-4 border-white flex items-center justify-center shadow-2xl">
