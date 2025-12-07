@@ -58,9 +58,20 @@ const SelectValue = ({ placeholder = "" }: { placeholder?: string }) => {
 
   const selectedChild = React.Children.toArray(
     React.useContext(SelectContentContext)?.children || []
-  ).find((child) => React.isValidElement(child) && child.props?.value === context.value);
+  ).find((child) => {
+    if (React.isValidElement(child)) {
+      const props = child.props as any;
+      return props?.value === context.value;
+    }
+    return false;
+  });
 
-  return <span>{React.isValidElement(selectedChild) ? selectedChild.props?.children : placeholder}</span>;
+  if (React.isValidElement(selectedChild)) {
+    const props = selectedChild.props as any;
+    return <span>{props?.children || placeholder}</span>;
+  }
+
+  return <span>{placeholder}</span>;
 };
 
 const SelectContentContext = React.createContext<{ children: React.ReactNode } | undefined>(undefined);
