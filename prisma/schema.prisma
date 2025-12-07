@@ -169,6 +169,38 @@ model Sponsor {
   @@index([isActive])
 }
 
+// Görevler
+model Task {
+  id               String          @id @default(cuid())
+  title            String
+  description      String?
+  type             String          // "daily" veya "weekly"
+  xpReward         Int             @default(0)
+  pointsReward     Int             @default(0)
+  requirement      Int             @default(1) // Gerekli mesaj sayısı, tıklama vs
+  isActive         Boolean         @default(true)
+  order            Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  completions      TaskCompletion[]
+
+  @@index([type, isActive])
+}
+
+// Görev tamamlanma kayıtları
+model TaskCompletion {
+  id               String          @id @default(cuid())
+  userId           String
+  taskId           String
+  task             Task            @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  completedAt      DateTime        @default(now())
+  progress         Int             @default(0)
+
+  @@unique([userId, taskId])
+  @@index([userId])
+}
+
 // Admin kullanıcılar
 model Admin {
   id               String          @id @default(cuid())
