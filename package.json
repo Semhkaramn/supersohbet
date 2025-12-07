@@ -13,7 +13,7 @@
     "db:seed": "bun prisma/seed.ts"
   },
   "dependencies": {
-    "@prisma/client": "^7.1.0",
+    "@prisma/client": "^5.22.0",
     "@radix-ui/react-label": "^2.0.2",
     "@radix-ui/react-progress": "^1.0.3",
     "@telegram-auth/server": "^1.0.4",
@@ -24,7 +24,7 @@
     "next": "^15.3.2",
     "next-themes": "^0.2.1",
     "node-telegram-bot-api": "^0.66.0",
-    "prisma": "^7.1.0",
+    "prisma": "^5.22.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "same-runtime": "^0.0.1",
