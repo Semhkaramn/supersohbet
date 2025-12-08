@@ -63,18 +63,18 @@ export default function AdminDashboard() {
 
   const menuItems = [
     {
+      title: 'İstatistikler',
+      description: 'Detaylı istatistikler ve kullanıcı yönetimi',
+      icon: BarChart3,
+      href: '/admin/statistics',
+      color: 'from-cyan-500 to-cyan-600'
+    },
+    {
       title: 'Kanal Yönetimi',
       description: 'Zorunlu kanalları ekle/düzenle',
       icon: MessageSquare,
       href: '/admin/channels',
       color: 'from-blue-500 to-blue-600'
-    },
-    {
-      title: 'Kullanıcılar',
-      description: 'Tüm kullanıcıları görüntüle',
-      icon: Users,
-      href: '/admin/users',
-      color: 'from-purple-500 to-purple-600'
     },
     {
       title: 'Görevler',
@@ -188,55 +188,6 @@ export default function AdminDashboard() {
               </div>
             </div>
           </Card>
-        </div>
-
-        {/* Mesaj İstatistikleri */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-            <MessageSquare className="w-6 h-6" />
-            Mesaj İstatistikleri
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 border-cyan-500/30 p-6">
-              <div className="flex items-center gap-3">
-                <MessageSquare className="w-10 h-10 text-cyan-400" />
-                <div>
-                  <p className="text-3xl font-bold text-white">{stats?.messages?.daily || 0}</p>
-                  <p className="text-cyan-200 text-sm">Günlük Mesaj</p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-teal-500/20 to-teal-600/20 border-teal-500/30 p-6">
-              <div className="flex items-center gap-3">
-                <MessageSquare className="w-10 h-10 text-teal-400" />
-                <div>
-                  <p className="text-3xl font-bold text-white">{stats?.messages?.weekly || 0}</p>
-                  <p className="text-teal-200 text-sm">Haftalık Mesaj</p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-green-500/20 to-green-600/20 border-green-500/30 p-6">
-              <div className="flex items-center gap-3">
-                <MessageSquare className="w-10 h-10 text-green-400" />
-                <div>
-                  <p className="text-3xl font-bold text-white">{stats?.messages?.monthly || 0}</p>
-                  <p className="text-green-200 text-sm">Aylık Mesaj</p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-lime-500/20 to-lime-600/20 border-lime-500/30 p-6">
-              <div className="flex items-center gap-3">
-                <MessageSquare className="w-10 h-10 text-lime-400" />
-                <div>
-                  <p className="text-3xl font-bold text-white">{stats?.messages?.total || 0}</p>
-                  <p className="text-lime-200 text-sm">Tüm Zamanlar</p>
-                </div>
-              </div>
-            </Card>
-          </div>
         </div>
 
         {/* Menu Grid */}
