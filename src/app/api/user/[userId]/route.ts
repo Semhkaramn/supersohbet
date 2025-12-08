@@ -63,23 +63,28 @@ export async function GET(
     const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
     const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
 
-    const [dailyMessages, weeklyMessages, monthlyMessages] = await Promise.all([
-      prisma.message.count({
+    const [dailyMessages, weeklyMessages, monthlyMessages, totalAllMessages] = await Promise.all([
+      prisma.messageStats.count({
         where: {
           userId: user.id,
           createdAt: { gte: today }
         }
       }),
-      prisma.message.count({
+      prisma.messageStats.count({
         where: {
           userId: user.id,
           createdAt: { gte: weekAgo }
         }
       }),
-      prisma.message.count({
+      prisma.messageStats.count({
         where: {
           userId: user.id,
           createdAt: { gte: monthAgo }
+        }
+      }),
+      prisma.messageStats.count({
+        where: {
+          userId: user.id
         }
       })
     ])
@@ -97,7 +102,7 @@ export async function GET(
         daily: dailyMessages,
         weekly: weeklyMessages,
         monthly: monthlyMessages,
-        total: user.totalMessages
+        total: totalAllMessages
       },
       dailySpinsLeft: user.dailySpinsLeft,
       rank: currentRank || user.rank,
