@@ -64,24 +64,24 @@ export async function GET(request: NextRequest) {
     )
 
     // Kullanıcının güncel istatistiklerine göre görev ilerlemesini hesapla
-    function calculateProgress(task: any) {
+    function calculateProgress(task: any, userData: NonNullable<typeof user>) {
       let currentProgress = 0
 
       switch (task.taskType) {
         case 'invite_users':
-          currentProgress = user.totalReferrals || 0
+          currentProgress = userData.totalReferrals || 0
           break
         case 'send_messages':
-          currentProgress = user.messageCount || 0
+          currentProgress = userData.messageCount || 0
           break
         case 'spin_wheel':
-          currentProgress = user.wheelSpins?.length || 0
+          currentProgress = userData.wheelSpins?.length || 0
           break
         case 'earn_points':
-          currentProgress = user.points || 0
+          currentProgress = userData.points || 0
           break
         case 'reach_level':
-          currentProgress = user.rank?.order || 0
+          currentProgress = userData.rank?.order || 0
           break
         default:
           const completion = completionMap.get(task.id)
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
     // Görevleri kategorilere ayır ve formatla
     const formatTask = (task: any) => {
       const completion = completionMap.get(task.id)
-      const currentProgress = calculateProgress(task)
+      const currentProgress = calculateProgress(task, user)
       const isCompleted = completion?.isCompleted || currentProgress >= task.targetValue
 
       return {
