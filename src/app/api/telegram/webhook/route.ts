@@ -132,6 +132,9 @@ Daha fazla bilgi için Ödül Merkezi'ne git!
       if (messageText === '/start' || messageText.startsWith('/start ')) {
         const webAppUrl = getSetting('telegram_webhook_url', '').replace('/api/telegram/webhook', '') || process.env.NEXT_PUBLIC_APP_URL || 'https://soft-fairy-c52849.netlify.app'
 
+        // Referans kodu kontrolü (örn: /start ABC12345)
+        const referralCode = messageText.split(' ')[1]
+
         const welcomeMessage = `
 🎉 **SüperSohbet Bot'a Hoş Geldin!**
 
@@ -143,6 +146,7 @@ Bu bot ile:
 🎁 Günlük şans çarkını çevir
 🛍️ Puanlarınla ödüller satın al
 💰 Sponsor olarak platformu destekle
+👥 Arkadaşlarını davet et, bonus kazan
 
 Başlamak için yanındaki menü butonuna tıkla! 👆
         `.trim()
@@ -154,20 +158,94 @@ Başlamak için yanındaki menü butonuna tıkla! 👆
         // Kullanıcıyı kaydet
         const allowNewUsers = getSetting('allow_new_users', 'true') === 'true'
         if (allowNewUsers) {
-          await prisma.user.upsert({
-            where: { telegramId: userId },
-            update: {
-              username,
-              firstName,
-              lastName
-            },
-            create: {
-              telegramId: userId,
-              username,
-              firstName,
-              lastName
-            }
+          // Önce kullanıcının var olup olmadığını kontrol et
+          const existingUser = await prisma.user.findUnique({
+            where: { telegramId: userId }
           })
+
+          // Yeni kullanıcı ise ve referans kodu varsa
+          if (!existingUser && referralCode) {
+            // Referans koduna sahip kullanıcıyı bul
+            const referrer = await prisma.user.findUnique({
+              where: { referralCode: referralCode }
+            })
+
+            if (referrer && referrer.telegramId !== userId) {
+              // Bonusları al
+              const referralBonusInviter = parseInt(getSetting('referral_bonus_inviter', '100'))
+              const referralBonusInvited = parseInt(getSetting('referral_bonus_invited', '50'))
+
+              // Yeni kullanıcıyı oluştur
+              const newUser = await prisma.user.create({
+                data: {
+                  telegramId: userId,
+                  username,
+                  firstName,
+                  lastName,
+                  referredById: referrer.id,
+                  points: referralBonusInvited // Davet edilene bonus
+                }
+              })
+
+              // Davet eden kullanıcıya bonus ver
+              await prisma.user.update({
+                where: { id: referrer.id },
+                data: {
+                  totalReferrals: { increment: 1 },
+                  referralPoints: { increment: referralBonusInviter },
+                  points: { increment: referralBonusInviter }
+                }
+              })
+
+              // Bonus mesajını gönder
+              await sendTelegramMessage(chatId, `
+🎁 **Referans Bonusu!**
+
+${referrer.firstName || referrer.username || 'Bir kullanıcı'} seni davet etti!
++${referralBonusInvited} puan kazandın! 🎉
+              `.trim())
+
+              // Davet eden kişiye bildirim gönder
+              if (referrer.telegramId) {
+                await sendTelegramMessage(parseInt(referrer.telegramId), `
+👥 **Yeni Davet!**
+
+${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
++${referralBonusInviter} puan kazandın! 🎉
+                `.trim())
+              }
+            } else {
+              // Referans kodu geçersiz, normal kayıt
+              await prisma.user.create({
+                data: {
+                  telegramId: userId,
+                  username,
+                  firstName,
+                  lastName
+                }
+              })
+            }
+          } else if (!existingUser) {
+            // Referans kodu yok, normal kayıt
+            await prisma.user.create({
+              data: {
+                telegramId: userId,
+                username,
+                firstName,
+                lastName
+              }
+            })
+          } else {
+            // Mevcut kullanıcı, sadece güncelle
+            await prisma.user.update({
+              where: { telegramId: userId },
+              data: {
+                username,
+                firstName,
+                lastName
+              }
+            })
+          }
         }
 
         return NextResponse.json({ ok: true })
