@@ -1,5 +1,6 @@
-[images]
-  remote_images = ["https://source.unsplash.com/.*", "https://images.unsplash.com/.*", "https://ext.same-assets.com/.*", "https://ugc.same-assets.com/.*"]
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--legacy-peer-deps"
 
 [build]
   command = "bunx prisma db push --accept-data-loss && bunx prisma generate && bun run build"
@@ -7,3 +8,10 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+[images]
+  remote_images = ["https://source.unsplash.com/.*", "https://images.unsplash.com/.*", "https://ext.same-assets.com/.*", "https://ugc.same-assets.com/.*"]
+
+[functions]
+  node_bundler = "esbuild"
+  included_files = ["node_modules/@prisma/client/**", "node_modules/.prisma/client/**"]
