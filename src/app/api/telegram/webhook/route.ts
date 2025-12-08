@@ -20,7 +20,7 @@ function getSetting(key: string, defaultValue: string = '0'): string {
   return settingsCache[key] || defaultValue
 }
 
-async function sendTelegramMessage(chatId: number, text: string, keyboard?: any) {
+async function sendTelegramMessage(chatId: number, text: string, keyboard?: Record<string, unknown>) {
   const botToken = getSetting('telegram_bot_token', '')
   if (!botToken) {
     console.error('Bot token not set')
@@ -28,7 +28,12 @@ async function sendTelegramMessage(chatId: number, text: string, keyboard?: any)
   }
 
   const url = `https://api.telegram.org/bot${botToken}/sendMessage`
-  const body: any = {
+  const body: {
+    chat_id: number;
+    text: string;
+    parse_mode: string;
+    reply_markup?: Record<string, unknown>;
+  } = {
     chat_id: chatId,
     text,
     parse_mode: 'Markdown'
