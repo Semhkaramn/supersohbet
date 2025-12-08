@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/card'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import BottomNav from '@/components/BottomNav'
@@ -13,6 +13,7 @@ interface LeaderboardUser {
   id: string
   username?: string
   firstName?: string
+  photoUrl?: string
   points: number
   xp: number
   totalMessages: number
@@ -108,6 +109,7 @@ function LeaderboardContent() {
               <span className="text-lg font-bold text-white">#{currentUser.position}</span>
             </div>
             <Avatar className="w-12 h-12 border-2 border-white/30">
+              {currentUser.photoUrl && <AvatarImage src={currentUser.photoUrl} alt={currentUser.firstName || currentUser.username || 'User'} />}
               <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white font-bold">
                 {currentUser.firstName?.[0] || currentUser.username?.[0] || '?'}
               </AvatarFallback>
@@ -133,6 +135,7 @@ function LeaderboardContent() {
           <div className="flex flex-col items-center order-1">
             <div className="relative mb-2">
               <Avatar className="w-16 h-16 border-2 border-gray-400">
+                {leaderboard[1].photoUrl && <AvatarImage src={leaderboard[1].photoUrl} alt={leaderboard[1].firstName || leaderboard[1].username || 'User'} />}
                 <AvatarFallback className="bg-gradient-to-br from-gray-400 to-gray-600 text-white font-bold text-lg">
                   {leaderboard[1].firstName?.[0] || leaderboard[1].username?.[0] || '?'}
                 </AvatarFallback>
@@ -157,6 +160,7 @@ function LeaderboardContent() {
             <Crown className="w-8 h-8 text-yellow-400 mb-1 animate-pulse" />
             <div className="relative mb-2">
               <Avatar className="w-20 h-20 border-3 border-yellow-400 shadow-lg shadow-yellow-400/50">
+                {leaderboard[0].photoUrl && <AvatarImage src={leaderboard[0].photoUrl} alt={leaderboard[0].firstName || leaderboard[0].username || 'User'} />}
                 <AvatarFallback className="bg-gradient-to-br from-yellow-400 to-orange-500 text-white font-bold text-xl">
                   {leaderboard[0].firstName?.[0] || leaderboard[0].username?.[0] || '?'}
                 </AvatarFallback>
@@ -180,6 +184,7 @@ function LeaderboardContent() {
           <div className="flex flex-col items-center order-3">
             <div className="relative mb-2">
               <Avatar className="w-16 h-16 border-2 border-orange-400">
+                {leaderboard[2].photoUrl && <AvatarImage src={leaderboard[2].photoUrl} alt={leaderboard[2].firstName || leaderboard[2].username || 'User'} />}
                 <AvatarFallback className="bg-gradient-to-br from-orange-400 to-red-500 text-white font-bold text-lg">
                   {leaderboard[2].firstName?.[0] || leaderboard[2].username?.[0] || '?'}
                 </AvatarFallback>
@@ -213,6 +218,7 @@ function LeaderboardContent() {
                 {getPositionIcon(user.position)}
               </div>
               <Avatar className="w-12 h-12 border-2 border-white/20">
+                {user.photoUrl && <AvatarImage src={user.photoUrl} alt={user.firstName || user.username || 'User'} />}
                 <AvatarFallback className="bg-gradient-to-br from-slate-600 to-slate-800 text-white font-bold">
                   {user.firstName?.[0] || user.username?.[0] || '?'}
                 </AvatarFallback>
