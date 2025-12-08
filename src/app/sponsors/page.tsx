@@ -98,12 +98,12 @@ function SponsorsContent() {
               <Card key={sponsor.id} className="bg-white/5 border-white/10 p-5 hover:bg-white/10 transition-colors">
                 <div className="flex items-start gap-4">
                   {sponsor.logoUrl && (
-                    <div className="w-20 h-20 rounded-lg bg-white/10 flex-shrink-0 relative overflow-hidden">
+                    <div className="w-24 h-24 rounded-lg bg-white flex-shrink-0 relative overflow-hidden">
                       <Image
                         src={sponsor.logoUrl}
                         alt={sponsor.name}
                         fill
-                        className="object-contain p-2"
+                        className="object-cover"
                       />
                     </div>
                   )}
