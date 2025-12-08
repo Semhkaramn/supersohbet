@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { checkAndRewardMilestones } from '@/lib/referral'
 
 export async function GET(request: NextRequest) {
   try {
@@ -41,6 +42,32 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Kullanıcı bulunamadı' }, { status: 404 })
     }
 
+    // Tüm milestone'ları al
+    const allMilestones = await prisma.referralMilestone.findMany({
+      where: { isActive: true },
+      orderBy: { order: 'asc' }
+    })
+
+    // Kullanıcının tamamladığı milestone'ları al
+    const completedMilestones = await prisma.userMilestoneCompletion.findMany({
+      where: { userId: user.id },
+      select: { milestoneId: true, completedAt: true, rewardClaimed: true }
+    })
+
+    const completedIds = new Set(completedMilestones.map(m => m.milestoneId))
+
+    // Milestone'ları işle
+    const milestones = allMilestones.map(milestone => ({
+      id: milestone.id,
+      requiredCount: milestone.requiredCount,
+      rewardPoints: milestone.rewardPoints,
+      name: milestone.name,
+      description: milestone.description,
+      completed: completedIds.has(milestone.id),
+      progress: Math.min(user.totalReferrals, milestone.requiredCount),
+      remaining: Math.max(0, milestone.requiredCount - user.totalReferrals)
+    }))
+
     // Eğer kullanıcının referans kodu yoksa oluştur
     if (!user.referralCode) {
       const referralCode = generateReferralCode(user.telegramId)
@@ -72,7 +99,8 @@ export async function GET(request: NextRequest) {
       referrals: user.referrals,
       referredBy: user.referredBy,
       bonusInviter: Number.parseInt(settingsMap.referral_bonus_inviter || '100'),
-      bonusInvited: Number.parseInt(settingsMap.referral_bonus_invited || '50')
+      bonusInvited: Number.parseInt(settingsMap.referral_bonus_invited || '50'),
+      milestones
     })
   } catch (error) {
     console.error('Referral info error:', error)
