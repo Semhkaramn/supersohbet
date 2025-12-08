@@ -36,7 +36,7 @@ const extractSelectItems = (children: React.ReactNode): Map<string, React.ReactN
         }
         // Recursively traverse children
         if (child.props && typeof child.props === 'object' && 'children' in child.props && child.props.children) {
-          traverse(child.props.children);
+          traverse(child.props.children as React.ReactNode);
         }
       }
     });
