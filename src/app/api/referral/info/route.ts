@@ -42,31 +42,38 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Kullanıcı bulunamadı' }, { status: 404 })
     }
 
-    // Tüm milestone'ları al
-    const allMilestones = await prisma.referralMilestone.findMany({
-      where: { isActive: true },
-      orderBy: { order: 'asc' }
-    })
+    // Tüm milestone'ları al (eğer tablo varsa)
+    let milestones = []
+    try {
+      const allMilestones = await prisma.referralMilestone.findMany({
+        where: { isActive: true },
+        orderBy: { order: 'asc' }
+      })
 
-    // Kullanıcının tamamladığı milestone'ları al
-    const completedMilestones = await prisma.userMilestoneCompletion.findMany({
-      where: { userId: user.id },
-      select: { milestoneId: true, completedAt: true, rewardClaimed: true }
-    })
+      // Kullanıcının tamamladığı milestone'ları al
+      const completedMilestones = await prisma.userMilestoneCompletion.findMany({
+        where: { userId: user.id },
+        select: { milestoneId: true, completedAt: true, rewardClaimed: true }
+      })
 
-    const completedIds = new Set(completedMilestones.map(m => m.milestoneId))
+      const completedIds = new Set(completedMilestones.map(m => m.milestoneId))
 
-    // Milestone'ları işle
-    const milestones = allMilestones.map(milestone => ({
-      id: milestone.id,
-      requiredCount: milestone.requiredCount,
-      rewardPoints: milestone.rewardPoints,
-      name: milestone.name,
-      description: milestone.description,
-      completed: completedIds.has(milestone.id),
-      progress: Math.min(user.totalReferrals, milestone.requiredCount),
-      remaining: Math.max(0, milestone.requiredCount - user.totalReferrals)
-    }))
+      // Milestone'ları işle
+      milestones = allMilestones.map(milestone => ({
+        id: milestone.id,
+        requiredCount: milestone.requiredCount,
+        rewardPoints: milestone.rewardPoints,
+        name: milestone.name,
+        description: milestone.description,
+        completed: completedIds.has(milestone.id),
+        progress: Math.min(user.totalReferrals, milestone.requiredCount),
+        remaining: Math.max(0, milestone.requiredCount - user.totalReferrals)
+      }))
+    } catch (milestoneError) {
+      console.error('Milestone loading error (table may not exist yet):', milestoneError)
+      // Database henüz migrate edilmemiş olabilir, boş array döndür
+      milestones = []
+    }
 
     // Eğer kullanıcının referans kodu yoksa oluştur
     if (!user.referralCode) {
