@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import BottomNav from '@/components/BottomNav'
 import { Trophy, Star, MessageSquare, TrendingUp, ShoppingBag, Clock, CheckCircle2, Package, Users, History } from 'lucide-react'
@@ -25,6 +25,7 @@ interface UserData {
   username?: string
   firstName?: string
   lastName?: string
+  photoUrl?: string
   points: number
   xp: number
   totalMessages: number
@@ -161,6 +162,7 @@ function ProfileContent() {
         <Card className="bg-white/5 border-white/10 p-4 mb-4">
           <div className="flex flex-col items-center gap-4">
             <Avatar className="w-20 h-20 border-2 border-white/30">
+              {userData.photoUrl && <AvatarImage src={userData.photoUrl} alt={userData.firstName || userData.username || 'User'} />}
               <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-2xl font-bold">
                 {userData.firstName?.[0] || userData.username?.[0] || '?'}
               </AvatarFallback>
