@@ -86,23 +86,24 @@ export async function checkChannelMembership(
     console.log(`✅ Üyelik sonucu: ${isMember ? 'ÜYE' : 'ÜYE DEĞİL'} (durum: ${member.status})`)
 
     return isMember
-  } catch (error: any) {
-    console.error('❌ Kanal üyelik kontrolü hatası:', error?.message || error)
+  } catch (error: unknown) {
+    const err = error as { message?: string; code?: string; response?: { body?: unknown } };
+    console.error('❌ Kanal üyelik kontrolü hatası:', err?.message || error)
     console.error('Detaylar:', {
       userId,
       channelId,
-      errorCode: error?.code,
-      errorResponse: error?.response?.body
+      errorCode: err?.code,
+      errorResponse: err?.response?.body
     })
 
     // Eğer kanal bulunamazsa veya bot kanalda değilse
-    if (error?.message?.includes('chat not found') || error?.code === 'ETELEGRAM') {
+    if (err?.message?.includes('chat not found') || err?.code === 'ETELEGRAM') {
       console.error('⚠️ Bot bu kanala erişemiyor veya kanal bulunamadı!')
       console.error('⚠️ Çözüm: Bot\'u kanala ADMIN olarak ekleyin veya kanal ID\'sini kontrol edin')
       console.error('📋 Not: Bot admin olmadan kullanıcı üyeliklerini kontrol edemez!')
     }
 
-    if (error?.message?.includes('not enough rights') || error?.message?.includes('Forbidden')) {
+    if (err?.message?.includes('not enough rights') || err?.message?.includes('Forbidden')) {
       console.error('❌ Bot\'un yetkileri yetersiz veya bot kanala eklenmemiş!')
       console.error('⚠️ Çözüm: Bot\'u kanalda ADMIN yapın ve "Add Members" yetkisi verin!')
     }
