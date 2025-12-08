@@ -11,7 +11,15 @@ export async function PUT(
     const body = await request.json()
     const { name, symbol, points, chance, color, order, isActive } = body
 
-    const updateData: any = {}
+    const updateData: {
+      name?: string;
+      symbol?: string;
+      points?: number;
+      chance?: number;
+      color?: string;
+      order?: number;
+      isActive?: boolean;
+    } = {}
 
     if (name !== undefined) updateData.name = name
     if (symbol !== undefined) updateData.symbol = symbol
