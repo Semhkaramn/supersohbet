@@ -232,6 +232,17 @@ Başlamak için yanındaki menü butonuna tıkla! 👆
         }
       })
 
+      // Mesajı istatistikler için kaydet
+      await prisma.message.create({
+        data: {
+          userId: user.id,
+          content: messageText.substring(0, 500), // İlk 500 karakter
+          messageLength: messageText.length,
+          pointsEarned: pointsPerMessage,
+          xpEarned: shouldGiveXp ? xpPerMessage : 0
+        }
+      })
+
       // Rütbe kontrolü ve güncelleme (sadece XP verildiğinde)
       if (shouldGiveXp) {
         const currentRank = await prisma.rank.findFirst({
