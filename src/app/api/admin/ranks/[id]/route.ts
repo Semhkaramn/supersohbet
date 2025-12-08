@@ -10,7 +10,13 @@ export async function PUT(
     const body = await request.json()
     const { name, minXp, icon, color, order } = body
 
-    const updateData: any = {}
+    const updateData: {
+      name?: string;
+      minXp?: number;
+      icon?: string;
+      color?: string;
+      order?: number;
+    } = {}
     if (name) updateData.name = name
     if (typeof minXp === 'number') updateData.minXp = minXp
     if (icon) updateData.icon = icon
