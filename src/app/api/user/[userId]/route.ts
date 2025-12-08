@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getUserProfilePhoto } from '@/lib/telegram'
 
 export async function GET(
   request: NextRequest,
@@ -24,6 +25,24 @@ export async function GET(
         { error: 'User not found' },
         { status: 404 }
       )
+    }
+
+    // Telegram profil fotoğrafını güncelle
+    try {
+      const numericUserId = Number.parseInt(user.telegramId, 10)
+      if (!Number.isNaN(numericUserId)) {
+        const photoUrl = await getUserProfilePhoto(numericUserId)
+        if (photoUrl && photoUrl !== user.photoUrl) {
+          await prisma.user.update({
+            where: { id: userId },
+            data: { photoUrl }
+          })
+          user.photoUrl = photoUrl
+        }
+      }
+    } catch (photoError) {
+      console.error('Error updating user photo:', photoError)
+      // Profil fotoğrafı güncellenemese bile devam et
     }
 
     // Kullanıcının XP'sine göre rütbesini güncelle
