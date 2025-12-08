@@ -27,7 +27,7 @@ const extractSelectItems = (children: React.ReactNode): Map<string, React.ReactN
     React.Children.forEach(node, (child) => {
       if (React.isValidElement(child)) {
         // Check if this element has a 'value' prop (likely a SelectItem)
-        if (child.props && 'value' in child.props && typeof child.props.value === 'string') {
+        if (child.props && typeof child.props === 'object' && 'value' in child.props && typeof child.props.value === 'string') {
           const value = child.props.value;
           const label = child.props.children;
           if (value) {
@@ -35,7 +35,7 @@ const extractSelectItems = (children: React.ReactNode): Map<string, React.ReactN
           }
         }
         // Recursively traverse children
-        if (child.props && child.props.children) {
+        if (child.props && typeof child.props === 'object' && child.props.children) {
           traverse(child.props.children);
         }
       }
