@@ -48,6 +48,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Satın alma limiti kontrolü
+    if (item.purchaseLimit !== null) {
+      const purchaseCount = await prisma.userPurchase.count({
+        where: {
+          userId,
+          itemId
+        }
+      })
+
+      if (purchaseCount >= item.purchaseLimit) {
+        return NextResponse.json(
+          { error: `Bu ürünü en fazla ${item.purchaseLimit} kez satın alabilirsiniz` },
+          { status: 400 }
+        )
+      }
+    }
+
     // Transaction ile satın alma işlemi
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Kullanıcı puanını düş
