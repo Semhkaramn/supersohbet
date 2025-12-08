@@ -105,7 +105,7 @@ export default function AdminSettingsPage() {
     { key: 'telegram', label: 'Telegram', icon: '📱' },
     { key: 'points', label: 'Puan & XP', icon: '⭐' },
     { key: 'limits', label: 'Kısıtlamalar', icon: '🚫' },
-    { key: 'wheel', label: 'Şans Çarkı', icon: '🎡' },
+    { key: 'games', label: 'Oyunlar', icon: '🎮' },
   ]
 
   return (
