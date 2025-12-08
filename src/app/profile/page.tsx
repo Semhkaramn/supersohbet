@@ -19,6 +19,12 @@ interface UserData {
   points: number
   xp: number
   totalMessages: number
+  messageStats?: {
+    daily: number
+    weekly: number
+    monthly: number
+    total: number
+  }
   rank?: {
     name: string
     icon: string
@@ -209,6 +215,34 @@ function ProfileContent() {
           </div>
           <Progress value={xpProgress} className="h-2 bg-slate-700" />
         </Card>
+
+        {/* Mesaj İstatistikleri */}
+        {userData.messageStats && (
+          <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 p-4 mb-4">
+            <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+              <MessageSquare className="w-5 h-5" />
+              Mesaj İstatistiklerim
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-cyan-400">{userData.messageStats.daily}</p>
+                <p className="text-slate-400 text-xs">Bugün</p>
+              </div>
+              <div className="bg-teal-500/10 border border-teal-500/30 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-teal-400">{userData.messageStats.weekly}</p>
+                <p className="text-slate-400 text-xs">Bu Hafta</p>
+              </div>
+              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-green-400">{userData.messageStats.monthly}</p>
+                <p className="text-slate-400 text-xs">Bu Ay</p>
+              </div>
+              <div className="bg-lime-500/10 border border-lime-500/30 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-lime-400">{userData.messageStats.total}</p>
+                <p className="text-slate-400 text-xs">Toplam</p>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Tabs */}
         <Tabs defaultValue="purchases" className="w-full">
