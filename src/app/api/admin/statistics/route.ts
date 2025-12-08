@@ -54,6 +54,8 @@ export async function GET(request: NextRequest) {
         bannedAt: true,
         bannedBy: true,
         createdAt: true,
+        totalReferrals: true,
+        referralPoints: true,
         rank: {
           select: {
             name: true,
