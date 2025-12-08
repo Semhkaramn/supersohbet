@@ -10,7 +10,14 @@ export async function PUT(
     const body = await request.json()
     const { name, points, probability, color, isActive, order } = body
 
-    const updateData: any = {}
+    const updateData: {
+      name?: string;
+      points?: number;
+      probability?: number;
+      color?: string;
+      isActive?: boolean;
+      order?: number;
+    } = {}
     if (name) updateData.name = name
     if (typeof points === 'number') updateData.points = points
     if (typeof probability === 'number') updateData.probability = probability
