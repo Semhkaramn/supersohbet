@@ -137,47 +137,55 @@ function ProfileContent() {
   }
 
   return (
-    <div className="min-h-screen pb-24 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen pb-24">
       {/* Header */}
-      <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-6 pb-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex flex-col items-center gap-4 mb-6">
-            <Avatar className="w-24 h-24 border-4 border-white/30 shadow-xl">
-              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-3xl font-bold">
-                {userData.firstName?.[0] || userData.username?.[0] || '?'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="text-center">
-              <h1 className="text-3xl font-bold text-white mb-1">
-                {userData.firstName || userData.username || 'Kullanıcı'}
-              </h1>
-              <p className="text-white/70">@{userData.username || 'kullanici'}</p>
-              <p className="text-white/50 text-xs mt-1">
-                Üyelik: {new Date(userData.createdAt).toLocaleDateString('tr-TR')}
-              </p>
-            </div>
-          </div>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-3 gap-3">
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-3 text-center">
-              <div className="text-2xl font-bold text-yellow-300">{userData.points}</div>
-              <p className="text-white/70 text-xs">Puan</p>
-            </Card>
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-3 text-center">
-              <div className="text-2xl font-bold text-green-300">{userData.xp}</div>
-              <p className="text-white/70 text-xs">XP</p>
-            </Card>
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-3 text-center">
-              <div className="text-2xl font-bold text-blue-300">{userData.totalMessages}</div>
-              <p className="text-white/70 text-xs">Mesaj</p>
-            </Card>
-          </div>
+      <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-4">
+        <div className="max-w-2xl mx-auto text-center">
+          <h1 className="text-xl font-bold text-white flex items-center justify-center gap-2">
+            <Trophy className="w-5 h-5" />
+            Profilim
+          </h1>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-2xl mx-auto px-4 -mt-4">
+      <div className="max-w-2xl mx-auto px-4 py-6">
+        {/* Profile Card */}
+        <Card className="bg-white/5 border-white/10 p-4 mb-4">
+          <div className="flex flex-col items-center gap-4">
+            <Avatar className="w-20 h-20 border-2 border-white/30">
+              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-2xl font-bold">
+                {userData.firstName?.[0] || userData.username?.[0] || '?'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-white mb-1">
+                {userData.firstName || userData.username || 'Kullanıcı'}
+              </h2>
+              <p className="text-white/60">@{userData.username || 'kullanici'}</p>
+              <p className="text-white/40 text-xs mt-1">
+                Üyelik: {new Date(userData.createdAt).toLocaleDateString('tr-TR')}
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          <Card className="bg-white/5 border-white/10 p-3 text-center">
+            <div className="text-xl font-bold text-yellow-300">{userData.points}</div>
+            <p className="text-white/60 text-xs">Puan</p>
+          </Card>
+          <Card className="bg-white/5 border-white/10 p-3 text-center">
+            <div className="text-xl font-bold text-green-300">{userData.xp}</div>
+            <p className="text-white/60 text-xs">XP</p>
+          </Card>
+          <Card className="bg-white/5 border-white/10 p-3 text-center">
+            <div className="text-xl font-bold text-blue-300">{userData.totalMessages}</div>
+            <p className="text-white/60 text-xs">Mesaj</p>
+          </Card>
+        </div>
+
         {/* Rank Card */}
         <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 p-5 mb-4 shadow-lg">
           <div className="flex items-center justify-between mb-3">
