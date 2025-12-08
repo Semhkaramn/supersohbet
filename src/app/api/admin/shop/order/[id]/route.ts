@@ -10,6 +10,20 @@ export async function PUT(
     const body = await request.json()
     const { status, deliveryInfo, processedBy } = body
 
+    // Önce mevcut siparişi al
+    const existingOrder = await prisma.userPurchase.findUnique({
+      where: { id },
+      select: {
+        status: true,
+        pointsSpent: true,
+        userId: true
+      }
+    })
+
+    if (!existingOrder) {
+      return NextResponse.json({ error: 'Sipariş bulunamadı' }, { status: 404 })
+    }
+
     const updateData: any = {}
 
     if (status) {
@@ -25,30 +39,60 @@ export async function PUT(
       updateData.processedBy = processedBy
     }
 
-    const order = await prisma.userPurchase.update({
-      where: { id },
-      data: updateData,
-      include: {
-        user: {
-          select: {
-            id: true,
-            telegramId: true,
-            username: true,
-            firstName: true,
-            lastName: true
-          }
-        },
-        item: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            price: true,
-            imageUrl: true,
-            category: true
+    // Transaction ile güncelleme ve puan iadesi
+    const order = await prisma.$transaction(async (tx) => {
+      // Sipariş güncelle
+      const updatedOrder = await tx.userPurchase.update({
+        where: { id },
+        data: updateData,
+        include: {
+          user: {
+            select: {
+              id: true,
+              telegramId: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+              points: true
+            }
+          },
+          item: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              price: true,
+              imageUrl: true,
+              category: true
+            }
           }
         }
+      })
+
+      // Eğer sipariş iptal edildiyse ve önceden iptal edilmemişse puan iadesi yap
+      if (status === 'cancelled' && existingOrder.status !== 'cancelled') {
+        await tx.user.update({
+          where: { id: existingOrder.userId },
+          data: {
+            points: {
+              increment: existingOrder.pointsSpent
+            }
+          }
+        })
+
+        // Puan geçmişi kaydı oluştur
+        await tx.pointHistory.create({
+          data: {
+            userId: existingOrder.userId,
+            amount: existingOrder.pointsSpent,
+            type: 'refund',
+            description: `Sipariş iptali - ${updatedOrder.item.name}`,
+            relatedId: id
+          }
+        })
       }
+
+      return updatedOrder
     })
 
     return NextResponse.json({ order })
@@ -64,8 +108,55 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    await prisma.userPurchase.delete({
-      where: { id }
+
+    // Önce siparişi al
+    const order = await prisma.userPurchase.findUnique({
+      where: { id },
+      select: {
+        userId: true,
+        pointsSpent: true,
+        status: true,
+        item: {
+          select: {
+            name: true
+          }
+        }
+      }
+    })
+
+    if (!order) {
+      return NextResponse.json({ error: 'Sipariş bulunamadı' }, { status: 404 })
+    }
+
+    // Transaction ile silme ve puan iadesi
+    await prisma.$transaction(async (tx) => {
+      // Siparişi sil
+      await tx.userPurchase.delete({
+        where: { id }
+      })
+
+      // Eğer sipariş daha önce iptal edilmemişse puan iadesi yap
+      if (order.status !== 'cancelled') {
+        await tx.user.update({
+          where: { id: order.userId },
+          data: {
+            points: {
+              increment: order.pointsSpent
+            }
+          }
+        })
+
+        // Puan geçmişi kaydı oluştur
+        await tx.pointHistory.create({
+          data: {
+            userId: order.userId,
+            amount: order.pointsSpent,
+            type: 'refund',
+            description: `Sipariş silindi - ${order.item.name}`,
+            relatedId: id
+          }
+        })
+      }
     })
 
     return NextResponse.json({ success: true })
