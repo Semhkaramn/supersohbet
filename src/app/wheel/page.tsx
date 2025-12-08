@@ -117,7 +117,13 @@ function WheelContent() {
         const segmentAngle = 360 / prizes.length
         const midAngle = -90 + (prizeIndex * segmentAngle) + (segmentAngle / 2)
         const targetAngle = -90  // Ok pozisyonu
-        const offset = targetAngle - midAngle  // Fark kadar dönmeli
+
+        // Offset hesabını düzelt - çarkı her zaman saat yönünde döndür
+        let offset = (targetAngle - midAngle) % 360
+        // Offset pozitif ise, ters yöne (saat yönü tersine) gitmemek için 360 çıkar
+        // Böylece çark hep saat yönünde dönmüş olur
+        if (offset > 0) offset -= 360
+
         const finalRotation = rotation + (randomSpins * 360) + offset
 
         console.log('Segment angle:', segmentAngle)
