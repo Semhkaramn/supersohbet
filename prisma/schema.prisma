@@ -42,20 +42,19 @@ model User {
   channelJoins     UserChannelJoin[]
   purchases        UserPurchase[]
   wheelSpins       WheelSpin[]
-  messages         Message[]
+  messages         MessageStats[]
 
   @@index([telegramId])
 }
 
-// Mesaj geçmişi - istatistikler için
-model Message {
+// Tüm mesajlar - istatistikler için (KURALLARDAN BAĞIMSIZ)
+model MessageStats {
   id               String          @id @default(cuid())
   userId           String
   user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   content          String?
   messageLength    Int             @default(0)
-  pointsEarned     Int             @default(0)
-  xpEarned         Int             @default(0)
+  earnedReward     Boolean         @default(false) // Bu mesaj ödül kazandırdı mı?
   createdAt        DateTime        @default(now())
 
   @@index([userId])
