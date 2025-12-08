@@ -1,5 +1,29 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getUserProfilePhoto } from '@/lib/telegram'
+
+// Profil fotoğrafını güncelle
+async function updateUserPhoto(userId: string, telegramId: string): Promise<string | null> {
+  try {
+    const numericUserId = Number.parseInt(telegramId, 10)
+    if (Number.isNaN(numericUserId)) return null
+
+    const photoUrl = await getUserProfilePhoto(numericUserId)
+
+    if (photoUrl) {
+      // Veritabanındaki photoUrl'i güncelle
+      await prisma.user.update({
+        where: { id: userId },
+        data: { photoUrl }
+      })
+    }
+
+    return photoUrl
+  } catch (error) {
+    console.error('Error updating user photo:', error)
+    return null
+  }
+}
 
 export async function GET(request: Request) {
   try {
@@ -16,6 +40,34 @@ export async function GET(request: Request) {
     const users = await prisma.user.findMany({
       select: {
         id: true,
+        telegramId: true,
+        username: true,
+        firstName: true,
+        photoUrl: true,
+        points: true,
+        xp: true,
+        totalMessages: true,
+        rank: {
+          select: {
+            name: true,
+            icon: true,
+          }
+        }
+      },
+      orderBy,
+      take: 100
+    })
+
+    // Tüm kullanıcıların profil fotoğraflarını güncelle (paralel olarak)
+    await Promise.all(
+      users.map(user => updateUserPhoto(user.id, user.telegramId))
+    )
+
+    // Güncellenmiş kullanıcıları tekrar çek
+    const updatedUsers = await prisma.user.findMany({
+      select: {
+        id: true,
+        telegramId: true,
         username: true,
         firstName: true,
         photoUrl: true,
@@ -34,7 +86,7 @@ export async function GET(request: Request) {
     })
 
     // Pozisyon numaralarını ekle
-    const leaderboard = users.map((user, index) => ({
+    const leaderboard = updatedUsers.map((user, index) => ({
       ...user,
       position: index + 1
     }))
@@ -51,6 +103,7 @@ export async function GET(request: Request) {
           where: { id: userId },
           select: {
             id: true,
+            telegramId: true,
             username: true,
             firstName: true,
             photoUrl: true,
@@ -67,6 +120,12 @@ export async function GET(request: Request) {
         })
 
         if (user) {
+          // Kullanıcının profil fotoğrafını güncelle
+          const updatedPhotoUrl = await updateUserPhoto(user.id, user.telegramId)
+          if (updatedPhotoUrl) {
+            user.photoUrl = updatedPhotoUrl
+          }
+
           // Kullanıcının gerçek pozisyonunu hesapla (sortBy'a göre)
           const higherRankedCount = sortBy === 'xp'
             ? await prisma.user.count({
