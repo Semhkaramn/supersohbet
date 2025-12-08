@@ -62,6 +62,7 @@ async function main() {
   const settings = [
     // Telegram Bot Ayarları
     { key: 'telegram_bot_token', value: '', description: 'Telegram Bot Token', category: 'telegram' },
+    { key: 'telegram_bot_username', value: '', description: 'Telegram Bot Kullanıcı Adı (@username)', category: 'telegram' },
     { key: 'telegram_webhook_url', value: 'https://soft-fairy-c52849.netlify.app/api/telegram/webhook', description: 'Telegram Webhook URL', category: 'telegram' },
 
     // Puan ve XP Ayarları
