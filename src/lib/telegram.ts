@@ -111,6 +111,47 @@ export async function checkChannelMembership(
   }
 }
 
+// Kullanıcının profil fotoğrafını al
+export async function getUserProfilePhoto(userId: number): Promise<string | null> {
+  try {
+    const tokenSetting = await prisma.settings.findUnique({
+      where: { key: 'telegram_bot_token' }
+    })
+    const token = tokenSetting?.value || process.env.TELEGRAM_BOT_TOKEN
+    if (!token) return null
+
+    // Kullanıcının profil fotoğraflarını al
+    const url = `https://api.telegram.org/bot${token}/getUserProfilePhotos`
+    const response = await fetch(`${url}?user_id=${userId}&limit=1`)
+    const data = await response.json()
+
+    if (!data.ok || !data.result || !data.result.photos || data.result.photos.length === 0) {
+      return null
+    }
+
+    // İlk fotoğrafın en büyük boyutunu al
+    const photo = data.result.photos[0]
+    const largestPhoto = photo[photo.length - 1]
+    const fileId = largestPhoto.file_id
+
+    // Dosya yolunu al
+    const fileUrl = `https://api.telegram.org/bot${token}/getFile?file_id=${fileId}`
+    const fileResponse = await fetch(fileUrl)
+    const fileData = await fileResponse.json()
+
+    if (!fileData.ok || !fileData.result || !fileData.result.file_path) {
+      return null
+    }
+
+    // Tam URL'yi oluştur
+    const photoUrl = `https://api.telegram.org/file/bot${token}/${fileData.result.file_path}`
+    return photoUrl
+  } catch (error) {
+    console.error('Error getting user profile photo:', error)
+    return null
+  }
+}
+
 // Telegram Login Widget doğrulama
 export async function verifyTelegramAuth(data: Record<string, string>): Promise<boolean> {
   try {
