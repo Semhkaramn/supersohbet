@@ -103,46 +103,49 @@ function ShopContent() {
   }
 
   return (
-    <div className="min-h-screen pb-24 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen pb-24">
       {/* Header */}
-      <div className="bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 p-4 sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h1 className="text-xl font-bold text-white flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5" />
-                Mağaza
-              </h1>
-            </div>
-            <div className="text-right bg-white/20 backdrop-blur-sm rounded-lg px-3 py-1">
-              <div className="flex items-center gap-1">
-                <Coins className="w-4 h-4 text-yellow-300" />
-                <span className="text-lg font-bold text-white">{userData?.points || 0}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Categories */}
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {categories.map(category => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-colors ${
-                  selectedCategory === category
-                    ? 'bg-white text-emerald-600'
-                    : 'bg-white/20 text-white hover:bg-white/30'
-                }`}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
+      <div className="bg-gradient-to-br from-emerald-600 to-teal-600 p-4">
+        <div className="max-w-2xl mx-auto text-center">
+          <h1 className="text-xl font-bold text-white flex items-center justify-center gap-2">
+            <ShoppingBag className="w-5 h-5" />
+            Mağaza
+          </h1>
         </div>
       </div>
 
-      {/* Products Grid */}
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      {/* Points Display */}
+      <div className="max-w-2xl mx-auto px-4 py-4">
+        <Card className="bg-white/5 border-white/10 p-3">
+          <div className="flex items-center justify-center gap-2">
+            <Coins className="w-5 h-5 text-yellow-300" />
+            <span className="text-xl font-bold text-white">{userData?.points || 0}</span>
+            <span className="text-white/60 text-sm">Puan</span>
+          </div>
+        </Card>
+      </div>
+
+      {/* Category Filter */}
+      <div className="max-w-2xl mx-auto px-4 mb-4">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {categories.map(category => (
+            <button
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-colors ${
+                selectedCategory === category
+                  ? 'bg-white text-emerald-600'
+                  : 'bg-white/20 text-white hover:bg-white/30'
+              }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Items Grid */}
+      <div className="max-w-2xl mx-auto px-4">
         {filteredItems.length === 0 ? (
           <div className="text-center py-12">
             <ShoppingBag className="w-16 h-16 text-gray-500 mx-auto mb-4" />
