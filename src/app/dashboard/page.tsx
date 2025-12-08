@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import BottomNav from '@/components/BottomNav'
+import { BannedScreen } from '@/components/BannedScreen'
 import { Trophy, Star, ShoppingBag, TrendingUp } from 'lucide-react'
 
 interface UserData {
@@ -37,6 +38,10 @@ interface UserData {
   }
   dailySpinsLeft: number
   leaderboardRank?: number
+  banned?: boolean
+  banReason?: string
+  bannedAt?: Date | string
+  bannedBy?: string
 }
 
 function DashboardContent() {
@@ -82,6 +87,17 @@ function DashboardContent() {
           <p className="text-red-400">Kullanıcı bulunamadı</p>
         </div>
       </div>
+    )
+  }
+
+  // Ban kontrolü - Banlı kullanıcılar özel ekran görür
+  if (userData.banned) {
+    return (
+      <BannedScreen
+        banReason={userData.banReason}
+        bannedAt={userData.bannedAt}
+        bannedBy={userData.bannedBy}
+      />
     )
   }
 
