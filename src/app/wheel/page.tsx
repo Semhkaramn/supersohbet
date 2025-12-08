@@ -96,14 +96,36 @@ function WheelContent() {
       if (data.success) {
         const prizeIndex = data.prizeIndex
 
-        // Basit hesaplama
+        // Profesyonel çark hesaplaması
+        // Her segment kaç derece?
         const segmentAngle = 360 / prizes.length
-        const targetAngle = prizeIndex * segmentAngle + (segmentAngle / 2)
-        const randomSpins = 5 + Math.floor(Math.random() * 3)
-        const finalRotation = (randomSpins * 360) + targetAngle
 
-        setRotation(finalRotation)
+        // Kazanan segment'in başlangıç açısı (SVG -90°'den başlıyor)
+        const prizeStartAngle = -90 + (prizeIndex * segmentAngle)
 
+        // Segment'in ortasını bul
+        const prizeMidAngle = prizeStartAngle + (segmentAngle / 2)
+
+        // Ok üstte (-90°) sabit, kazanan dilimi ok altına getir
+        // Çarkı saat yönünde döndüreceğiz
+        let targetAngle = -90 - prizeMidAngle
+
+        // Açıyı normalize et (pozitif yap)
+        while (targetAngle < 0) {
+          targetAngle += 360
+        }
+        targetAngle = targetAngle % 360
+
+        // 5-10 tam tur random
+        const randomSpins = 5 + Math.floor(Math.random() * 5)
+
+        // Toplam rotasyon
+        const totalRotation = (randomSpins * 360) + targetAngle
+
+        // Animasyonu başlat
+        setRotation(totalRotation)
+
+        // 4 saniye sonra sonuç göster
         setTimeout(() => {
           toast.success(`🎉 Tebrikler! ${data.pointsWon} puan kazandınız!`)
           setSpinning(false)
@@ -170,7 +192,7 @@ function WheelContent() {
                 className="w-full h-full"
                 style={{
                   transform: `rotate(${rotation}deg)`,
-                  transition: spinning ? 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none'
+                  transition: spinning ? 'transform 4s cubic-bezier(0.25, 0.1, 0.25, 1)' : 'none'
                 }}
               >
                 {prizes.map((prize, index) => {
