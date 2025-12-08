@@ -75,11 +75,16 @@ function GamesContent() {
   const [slotPrizes, setSlotPrizes] = useState<SlotPrize[]>([])
   const [slotWinners, setSlotWinners] = useState<SlotWinner[]>([])
   const [slotSpinning, setSlotSpinning] = useState(false)
-  const [reels, setReels] = useState<string[]>(['?', '?', '?'])
-  const [reelColors, setReelColors] = useState<string[]>(['#FFD700', '#FFD700', '#FFD700'])
+  const [reels, setReels] = useState<string[]>(['🍒', '🍋', '🍇'])
+  const [leverPulled, setLeverPulled] = useState(false)
+  const [reelPositions, setReelPositions] = useState([0, 0, 0])
+  const [hoursUntilReset, setHoursUntilReset] = useState(0)
 
   const [userData, setUserData] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
+
+  // Available symbols - only 4
+  const symbols = ['7️⃣', '🍒', '🍇', '🍋']
 
   useEffect(() => {
     if (!userId) {
@@ -174,18 +179,13 @@ function GamesContent() {
     }
 
     setSlotSpinning(true)
+    setLeverPulled(true)
 
-    // Animasyon için rastgele sembolleri hızlıca değiştir
-    const animationInterval = setInterval(() => {
-      if (slotPrizes.length > 0) {
-        const randomSymbols = [
-          slotPrizes[Math.floor(Math.random() * slotPrizes.length)].symbol,
-          slotPrizes[Math.floor(Math.random() * slotPrizes.length)].symbol,
-          slotPrizes[Math.floor(Math.random() * slotPrizes.length)].symbol
-        ]
-        setReels(randomSymbols)
-      }
-    }, 100)
+    // Lever animation - pull down
+    setTimeout(() => setLeverPulled(false), 500)
+
+    // Start reel spinning animation
+    const spinDurations = [2000, 2500, 3000] // Each reel stops at different times
 
     try {
       const response = await fetch('/api/slot-machine/spin', {
@@ -197,33 +197,75 @@ function GamesContent() {
       const data = await response.json()
 
       if (data.success) {
-        // Animasyonu durdur ve sonucu göster
+        // Spin each reel with realistic animation
+        spinDurations.forEach((duration, index) => {
+          let elapsed = 0
+          const interval = 50
+
+          const spinInterval = setInterval(() => {
+            elapsed += interval
+            const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)]
+            setReels(prev => {
+              const newReels = [...prev]
+              newReels[index] = randomSymbol
+              return newReels
+            })
+            setReelPositions(prev => {
+              const newPos = [...prev]
+              newPos[index] = (newPos[index] + 1) % 20
+              return newPos
+            })
+
+            if (elapsed >= duration) {
+              clearInterval(spinInterval)
+              // Set final symbol for this reel
+              setReels(prev => {
+                const newReels = [...prev]
+                newReels[index] = data.symbols[index]
+                return newReels
+              })
+              setReelPositions(prev => {
+                const newPos = [...prev]
+                newPos[index] = 0
+                return newPos
+              })
+            }
+          }, interval)
+        })
+
+        // Wait for all reels to stop
         setTimeout(() => {
-          clearInterval(animationInterval)
-          setReels(data.symbols)
-          setReelColors(data.colors)
           setSlotSpinning(false)
 
           if (data.isWin) {
-            toast.success(`🎰 JACKPOT! ${data.prizeName} - ${data.pointsWon} puan kazandınız!`, {
+            toast.success(`🎰 KAZANDINIZ! ${data.prizeName} - ${data.pointsWon} puan!`, {
               duration: 5000
+            })
+          } else if (data.isMatch) {
+            toast.warning('🎰 3 aynı geldi ama bu sembol için ödül tanımlanmamış!', {
+              duration: 4000
             })
           } else {
             toast.info('Tekrar deneyin! 🎲')
           }
 
+          // Günlük reset süresini güncelle
+          if (data.hoursUntilReset !== undefined) {
+            setHoursUntilReset(data.hoursUntilReset)
+          }
+
           loadData()
-        }, 2000)
+        }, spinDurations[2] + 500)
       } else {
-        clearInterval(animationInterval)
         toast.error(data.error || 'Çevirme başarısız')
         setSlotSpinning(false)
+        setLeverPulled(false)
       }
     } catch (error) {
-      clearInterval(animationInterval)
       console.error('Slot spin error:', error)
       toast.error('Bir hata oluştu')
       setSlotSpinning(false)
+      setLeverPulled(false)
     }
   }
 
@@ -249,8 +291,7 @@ function GamesContent() {
         </div>
       </div>
 
-      {/* Games Tabs */}
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="max-w-2xl mx-auto p-4">
         <Tabs defaultValue="wheel" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="wheel" className="flex items-center gap-2">
@@ -414,51 +455,99 @@ function GamesContent() {
           <TabsContent value="slot" className="space-y-6">
             {/* Slot Info */}
             <div className="text-center mb-6">
-              <p className="text-green-400 font-semibold text-sm mb-1">🎰 3 Adet Sembolleri Eşleştir</p>
-              {userData && (
-                <p className="text-white/60 text-xs">
-                  Kalan hak: {userData.dailySlotSpinsLeft} çevirme
+              <div className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-xl p-3 mb-3">
+                <p className="text-white font-semibold text-sm mb-1">🎰 Tamamen Rastgele!</p>
+                <p className="text-white/70 text-xs">
+                  Her makarada farklı semboller gelebilir
                 </p>
+                <p className="text-green-400 text-xs font-semibold mt-1">
+                  3 aynı gelirse ve ödül varsa kazanırsınız!
+                </p>
+              </div>
+              {userData && (
+                <>
+                  <p className="text-white/60 text-xs">
+                    Kalan hak: {userData.dailySlotSpinsLeft} çevirme
+                  </p>
+                  {userData.dailySlotSpinsLeft === 0 && hoursUntilReset > 0 && (
+                    <p className="text-yellow-400 text-xs mt-1 font-semibold">
+                      ⏰ {hoursUntilReset} saat sonra yenilenecek
+                    </p>
+                  )}
+                </>
               )}
             </div>
 
-            {/* Slot Machine */}
-            <div className="relative mb-6">
-              <div className="bg-gradient-to-br from-yellow-500 via-yellow-600 to-orange-600 rounded-3xl p-6 shadow-2xl border-8 border-yellow-300 max-w-md mx-auto">
-                {/* Jackpot Text */}
-                <div className="text-center mb-4">
-                  <h2 className="text-3xl font-black text-white drop-shadow-lg tracking-wider">
-                    🎰 SLOT 777
-                  </h2>
+            {/* Slot Machine Container */}
+            <div className="relative max-w-md mx-auto">
+              {/* Machine Body */}
+              <div className="relative bg-gradient-to-b from-red-600 via-red-500 to-red-700 rounded-3xl p-6 shadow-2xl border-8 border-yellow-400">
+                {/* Top decoration */}
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-24 h-8 bg-yellow-400 rounded-t-xl border-4 border-yellow-500"></div>
+
+                {/* Jackpot Display */}
+                <div className="bg-black/30 rounded-xl p-3 mb-4 text-center border-4 border-yellow-300">
+                  <div className="text-yellow-300 font-black text-2xl tracking-wider animate-pulse">
+                    🎰 SLOT MACHINE 🎰
+                  </div>
                 </div>
 
-                {/* Reels Container */}
-                <div className="bg-slate-900 rounded-2xl p-6 border-4 border-yellow-400 shadow-inner mb-6">
-                  <div className="grid grid-cols-3 gap-4">
+                {/* Screen/Reels Container */}
+                <div className="bg-gradient-to-b from-slate-800 to-slate-900 rounded-2xl p-6 border-8 border-yellow-500 shadow-inner relative overflow-hidden">
+                  {/* Reflection effect */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none"></div>
+
+                  {/* Reels */}
+                  <div className="grid grid-cols-3 gap-3 relative z-10">
                     {reels.map((symbol, index) => (
-                      <div
-                        key={index}
-                        className="aspect-square bg-white rounded-xl flex items-center justify-center border-4 border-slate-700 shadow-lg relative overflow-hidden"
-                        style={{
-                          animation: slotSpinning ? 'spin 0.1s linear infinite' : 'none'
-                        }}
-                      >
-                        <div
-                          className="text-5xl font-black"
-                          style={{ color: reelColors[index] }}
-                        >
-                          {symbol}
+                      <div key={index} className="relative">
+                        {/* Reel container */}
+                        <div className="aspect-square bg-white rounded-xl flex items-center justify-center border-4 border-slate-700 shadow-lg overflow-hidden relative">
+                          {/* Spinning effect */}
+                          <div
+                            className={`absolute inset-0 flex flex-col items-center justify-center transition-transform ${
+                              slotSpinning ? 'animate-spin-reel' : ''
+                            }`}
+                            style={{
+                              transform: slotSpinning ? `translateY(-${reelPositions[index] * 20}px)` : 'translateY(0)',
+                              transition: slotSpinning ? 'none' : 'transform 0.3s ease-out'
+                            }}
+                          >
+                            <div className="text-6xl">
+                              {symbol}
+                            </div>
+                          </div>
                         </div>
+
+                        {/* Win line indicator */}
+                        {index === 1 && (
+                          <>
+                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-yellow-400/50 pointer-events-none"></div>
+                            <div className="absolute left-1/2 top-0 -translate-x-1/2 w-1 h-full bg-yellow-400/50 pointer-events-none"></div>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>
+                </div>
+
+                {/* Bottom panel with lights */}
+                <div className="mt-4 flex justify-center gap-2">
+                  {[1,2,3,4,5].map((i) => (
+                    <div
+                      key={i}
+                      className={`w-3 h-3 rounded-full ${
+                        slotSpinning ? 'bg-yellow-400 animate-pulse' : 'bg-yellow-600/50'
+                      }`}
+                    ></div>
+                  ))}
                 </div>
 
                 {/* Spin Button */}
                 <Button
                   onClick={spinSlot}
                   disabled={slotSpinning || !userData || userData.dailySlotSpinsLeft <= 0}
-                  className="w-full bg-gradient-to-r from-red-600 via-red-500 to-orange-500 hover:from-red-700 hover:via-red-600 hover:to-orange-600 text-white font-bold py-6 text-xl disabled:opacity-50 disabled:cursor-not-allowed shadow-xl border-4 border-white rounded-xl"
+                  className="w-full mt-4 bg-gradient-to-r from-green-600 via-green-500 to-green-600 hover:from-green-700 hover:via-green-600 hover:to-green-700 text-white font-black py-6 text-xl disabled:opacity-50 disabled:cursor-not-allowed shadow-xl border-4 border-yellow-300 rounded-xl transform active:scale-95 transition-transform"
                 >
                   {slotSpinning ? (
                     <>
@@ -468,30 +557,67 @@ function GamesContent() {
                   ) : userData && userData.dailySlotSpinsLeft > 0 ? (
                     <>
                       <Dices className="w-7 h-7 mr-2" />
-                      ÇEVİR
+                      ÇEVİR!
                     </>
                   ) : (
                     'GÜNLÜK HAKKINIZ KALMADI'
                   )}
                 </Button>
               </div>
+
+              {/* Lever on the side */}
+              <div className="absolute -right-6 top-1/4 flex flex-col items-center">
+                <div
+                  className={`w-4 h-32 bg-gradient-to-b from-red-700 to-red-900 rounded-full border-4 border-yellow-500 shadow-lg transform transition-transform duration-300 ${
+                    leverPulled ? 'translate-y-8' : ''
+                  }`}
+                >
+                  {/* Lever handle */}
+                  <div className="absolute -top-2 -left-3 w-10 h-10 bg-gradient-to-br from-red-600 to-red-800 rounded-full border-4 border-yellow-400 shadow-xl"></div>
+                </div>
+              </div>
             </div>
 
             {/* Prize Info */}
-            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
-              <h3 className="text-white font-bold text-sm mb-3 text-center">Ödül Tablosu</h3>
-              <div className="grid grid-cols-2 gap-3">
-                {slotPrizes.map((prize) => (
-                  <div key={prize.id} className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
-                    <div className="text-center">
-                      <div className="text-2xl font-black mb-1" style={{ color: prize.color }}>
-                        {prize.symbol}
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mt-6">
+              <h3 className="text-white font-bold text-sm mb-3 text-center flex items-center justify-center gap-2">
+                <span>💰</span> Ödül Tablosu <span>💰</span>
+              </h3>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                {symbols.map((symbol) => {
+                  const prize = slotPrizes.find(p => p.symbol === symbol && p.isActive)
+                  return (
+                    <div key={symbol} className={`rounded-lg p-3 border text-center transition-all ${
+                      prize
+                        ? 'bg-gradient-to-br from-green-900/50 to-green-800/30 border-green-500/50 shadow-lg shadow-green-500/20'
+                        : 'bg-slate-900/50 border-slate-700 opacity-60'
+                    }`}>
+                      <div className="text-4xl mb-2">{symbol}</div>
+                      <div className="text-xs text-slate-300 mb-1 font-semibold">
+                        {symbol === '7️⃣' ? 'Yedi' : symbol === '🍒' ? 'Kiraz' : symbol === '🍇' ? 'Üzüm' : 'Limon'}
                       </div>
-                      <div className="text-xs text-slate-400">{prize.name}</div>
-                      <div className="text-yellow-400 font-bold text-sm">{prize.points} Puan</div>
+                      <div className="text-xs font-mono mb-1 text-slate-500">
+                        {symbol} {symbol} {symbol}
+                      </div>
+                      {prize ? (
+                        <>
+                          <div className="text-yellow-400 font-black text-sm">+{prize.points}</div>
+                          <div className="text-green-400 text-xs">Puan</div>
+                        </>
+                      ) : (
+                        <div className="text-red-400 text-xs font-semibold">Ödül Yok</div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
+              </div>
+              <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-2 text-center">
+                <p className="text-blue-300 text-xs font-semibold">
+                  ℹ️ Semboller tamamen rastgele gelir
+                </p>
+                <p className="text-slate-400 text-xs mt-1">
+                  Örnek: 7️⃣ 🍒 🍋 veya 🍇 🍇 🍋 gelebilir - Kazanmak için 3 aynı gelmeli!
+                </p>
               </div>
             </div>
 
@@ -519,7 +645,7 @@ function GamesContent() {
                           <p className="text-white font-semibold text-sm">
                             {winner.user.firstName || winner.user.username || 'Kullanıcı'}
                           </p>
-                          <p className="text-slate-400 text-xs font-mono">{winner.symbols}</p>
+                          <p className="text-slate-400 text-xs">{winner.symbols}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-yellow-400 font-bold text-lg">+{winner.pointsWon}</p>
@@ -540,10 +666,10 @@ function GamesContent() {
         </Tabs>
       </div>
 
-      <BottomNav userId={userId!} />
+      <BottomNav userId={userId || ''} />
 
       <style jsx>{`
-        @keyframes spin {
+        @keyframes spin-reel {
           from { transform: translateY(0); }
           to { transform: translateY(-100%); }
         }
