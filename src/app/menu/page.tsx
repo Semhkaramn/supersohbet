@@ -106,42 +106,6 @@ function MenuContent() {
       borderColor: 'border-purple-500/30'
     },
     {
-      title: 'Ana Sayfa',
-      description: 'Dashboard ve istatistiklerim',
-      icon: Home,
-      href: `/dashboard?userId=${userId}`,
-      gradient: 'from-cyan-500/20 to-blue-500/20',
-      iconColor: 'text-cyan-400',
-      borderColor: 'border-cyan-500/30'
-    },
-    {
-      title: 'Şans Çarkı',
-      description: 'Günlük ücretsiz çevirme',
-      icon: Ticket,
-      href: `/wheel?userId=${userId}`,
-      gradient: 'from-orange-500/20 to-red-500/20',
-      iconColor: 'text-orange-400',
-      borderColor: 'border-orange-500/30'
-    },
-    {
-      title: 'Liderlik Sıralaması',
-      description: 'En iyi kullanıcılar',
-      icon: Trophy,
-      href: `/leaderboard?userId=${userId}`,
-      gradient: 'from-yellow-500/20 to-orange-500/20',
-      iconColor: 'text-yellow-400',
-      borderColor: 'border-yellow-500/30'
-    },
-    {
-      title: 'Sponsorlarımız',
-      description: 'Destekçilerimiz',
-      icon: Heart,
-      href: `/sponsors?userId=${userId}`,
-      gradient: 'from-red-500/20 to-pink-500/20',
-      iconColor: 'text-red-400',
-      borderColor: 'border-red-500/30'
-    },
-    {
       title: 'Kanallar',
       description: 'Zorunlu kanallar',
       icon: MessageSquare,
