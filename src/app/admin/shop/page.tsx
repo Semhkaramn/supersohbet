@@ -22,6 +22,7 @@ interface ShopItem {
   imageUrl?: string
   category: string
   stock?: number
+  purchaseLimit?: number
   isActive: boolean
   order: number
   _count?: {
@@ -76,6 +77,7 @@ export default function AdminShopPage() {
     imageUrl: '',
     category: 'Genel',
     stock: null as number | null,
+    purchaseLimit: null as number | null,
     order: 0
   })
 
@@ -134,6 +136,7 @@ export default function AdminShopPage() {
         imageUrl: item.imageUrl || '',
         category: item.category,
         stock: item.stock ?? null,
+        purchaseLimit: item.purchaseLimit ?? null,
         order: item.order
       })
     } else {
@@ -145,6 +148,7 @@ export default function AdminShopPage() {
         imageUrl: '',
         category: 'Genel',
         stock: null,
+        purchaseLimit: null,
         order: items.length
       })
     }
@@ -412,6 +416,9 @@ export default function AdminShopPage() {
                               <span className="text-gray-400 text-sm">{item.category}</span>
                               {item.stock !== null && (
                                 <span className="text-blue-400 text-sm">Stok: {item.stock}</span>
+                              )}
+                              {item.purchaseLimit !== null && (
+                                <span className="text-pink-400 text-sm">Limit: {item.purchaseLimit}x/kişi</span>
                               )}
                               {item._count && (
                                 <span className="text-green-400 text-sm">{item._count.purchases} satış</span>
@@ -682,6 +689,19 @@ export default function AdminShopPage() {
                 type="number"
                 value={formData.stock || ''}
                 onChange={(e) => setFormData({ ...formData, stock: e.target.value ? parseInt(e.target.value) : null })}
+                className="bg-white/5 border-white/10 text-white mt-1"
+                min="0"
+                placeholder="Sınırsız"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="purchaseLimit" className="text-white">Alım Sınırlaması (Boş = Sınırsız)</Label>
+              <Input
+                id="purchaseLimit"
+                type="number"
+                value={formData.purchaseLimit || ''}
+                onChange={(e) => setFormData({ ...formData, purchaseLimit: e.target.value ? parseInt(e.target.value) : null })}
                 className="bg-white/5 border-white/10 text-white mt-1"
                 min="0"
                 placeholder="Sınırsız"
