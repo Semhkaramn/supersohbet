@@ -197,7 +197,7 @@ export default function AdminShopPage() {
     if (!selectedOrder) return
 
     try {
-      const response = await fetch(`/api/admin/shop/orders/${selectedOrder.id}`, {
+      const response = await fetch(`/api/admin/shop/order/${selectedOrder.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -247,7 +247,7 @@ export default function AdminShopPage() {
     if (!confirm('Bu siparişi silmek istediğinizden emin misiniz?')) return
 
     try {
-      const response = await fetch(`/api/admin/shop/orders/${id}`, {
+      const response = await fetch(`/api/admin/shop/order/${id}`, {
         method: 'DELETE'
       })
 
