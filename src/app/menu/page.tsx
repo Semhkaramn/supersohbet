@@ -16,7 +16,7 @@ import {
   Home,
   Crown,
   Gift,
-  MessageSquare
+  Users
 } from 'lucide-react'
 
 interface UserData {
@@ -88,6 +88,15 @@ function MenuContent() {
       borderColor: 'border-blue-500/30'
     },
     {
+      title: 'Referans',
+      description: 'Arkadaşlarını davet et, ödül kazan',
+      icon: Users,
+      href: `/referral?userId=${userId}`,
+      gradient: 'from-orange-500/20 to-red-500/20',
+      iconColor: 'text-orange-400',
+      borderColor: 'border-orange-500/30'
+    },
+    {
       title: 'Mağaza',
       description: 'Ödüllere göz at ve satın al',
       icon: ShoppingBag,
@@ -104,15 +113,6 @@ function MenuContent() {
       gradient: 'from-purple-500/20 to-pink-500/20',
       iconColor: 'text-purple-400',
       borderColor: 'border-purple-500/30'
-    },
-    {
-      title: 'Kanallar',
-      description: 'Zorunlu kanallar',
-      icon: MessageSquare,
-      href: `/channels?userId=${userId}`,
-      gradient: 'from-slate-500/20 to-slate-700/20',
-      iconColor: 'text-slate-400',
-      borderColor: 'border-slate-500/30'
     }
   ]
 
