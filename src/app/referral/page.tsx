@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import BottomNav from '@/components/BottomNav'
 import {
   Users,
@@ -39,6 +39,7 @@ interface ReferralData {
     id: string
     firstName?: string
     username?: string
+    photoUrl?: string
     points: number
     xp: number
     createdAt: string
@@ -47,6 +48,7 @@ interface ReferralData {
     id: string
     firstName?: string
     username?: string
+    photoUrl?: string
   }
 }
 
@@ -365,6 +367,7 @@ function ReferralContent() {
             <p className="text-slate-400 text-xs mb-2">Seni davet eden</p>
             <div className="flex items-center gap-3">
               <Avatar className="w-10 h-10 border-2 border-purple-500/30">
+                {referralData.referredBy.photoUrl && <AvatarImage src={referralData.referredBy.photoUrl} alt={referralData.referredBy.firstName || referralData.referredBy.username || 'User'} />}
                 <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white text-sm">
                   {referralData.referredBy.firstName?.[0] || referralData.referredBy.username?.[0] || '?'}
                 </AvatarFallback>
@@ -394,6 +397,7 @@ function ReferralContent() {
                   className="flex items-center gap-3 p-3 rounded-lg bg-slate-900/50 border border-slate-700"
                 >
                   <Avatar className="w-10 h-10 border-2 border-blue-500/30">
+                    {referral.photoUrl && <AvatarImage src={referral.photoUrl} alt={referral.firstName || referral.username || 'User'} />}
                     <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-sm">
                       {referral.firstName?.[0] || referral.username?.[0] || '?'}
                     </AvatarFallback>
