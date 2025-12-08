@@ -13,7 +13,8 @@ import {
   Settings,
   BarChart3,
   LogOut,
-  FileText
+  FileText,
+  Dices
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -96,6 +97,13 @@ export default function AdminDashboard() {
       icon: Ticket,
       href: '/admin/wheel',
       color: 'from-orange-500 to-orange-600'
+    },
+    {
+      title: 'Slot Makinesi',
+      description: 'Slot makinesi ödüllerini yönet',
+      icon: Dices,
+      href: '/admin/slot-machine',
+      color: 'from-red-500 to-red-600'
     },
     {
       title: 'Sponsorlar',
