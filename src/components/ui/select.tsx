@@ -60,14 +60,14 @@ const SelectValue = ({ placeholder = "" }: { placeholder?: string }) => {
     React.useContext(SelectContentContext)?.children || []
   ).find((child) => {
     if (React.isValidElement(child)) {
-      const props = child.props as any;
+      const props = child.props as { value?: string };
       return props?.value === context.value;
     }
     return false;
   });
 
   if (React.isValidElement(selectedChild)) {
-    const props = selectedChild.props as any;
+    const props = selectedChild.props as { children?: React.ReactNode };
     return <span>{props?.children || placeholder}</span>;
   }
 
