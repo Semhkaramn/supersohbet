@@ -25,6 +25,7 @@ interface SlotPrize {
   points: number
   color: string
   chance: number
+  isActive: boolean
 }
 
 interface UserData {
