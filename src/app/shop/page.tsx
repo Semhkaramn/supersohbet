@@ -121,12 +121,24 @@ function ShopContent() {
     }
   }
 
+  const getStatusText = (status: string) => {
+    const statusMap: { [key: string]: string } = {
+      'pending': 'Bekliyor',
+      'processing': 'Hazırlanıyor',
+      'completed': 'Teslim Edildi',
+      'cancelled': 'İptal Edildi'
+    }
+    return statusMap[status] || status
+  }
+
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Teslim Edildi':
+      case 'completed':
         return <CheckCircle2 className="w-4 h-4 text-green-400" />
-      case 'Hazırlanıyor':
+      case 'processing':
         return <Package className="w-4 h-4 text-orange-400" />
+      case 'cancelled':
+        return <Clock className="w-4 h-4 text-red-400" />
       default:
         return <Clock className="w-4 h-4 text-yellow-400" />
     }
@@ -134,10 +146,12 @@ function ShopContent() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Teslim Edildi':
+      case 'completed':
         return 'bg-green-500/20 text-green-400 border-green-500/30'
-      case 'Hazırlanıyor':
+      case 'processing':
         return 'bg-orange-500/20 text-orange-400 border-orange-500/30'
+      case 'cancelled':
+        return 'bg-red-500/20 text-red-400 border-red-500/30'
       default:
         return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
     }
@@ -181,13 +195,17 @@ function ShopContent() {
 
       {/* Tabs */}
       <div className="max-w-2xl mx-auto px-4">
-        <Tabs defaultValue="products" className="w-full">
+        <Tabs defaultValue="products" className="w-full" onValueChange={(value) => {
+          if (value === 'orders') {
+            loadPurchases()
+          }
+        }}>
           <TabsList className="grid w-full grid-cols-2 bg-white/5 border-white/10 mb-4">
             <TabsTrigger value="products" className="data-[state=active]:bg-emerald-600">
               <ShoppingBag className="w-4 h-4 mr-2" />
               Ürünler
             </TabsTrigger>
-            <TabsTrigger value="orders" onClick={loadPurchases} className="data-[state=active]:bg-emerald-600">
+            <TabsTrigger value="orders" className="data-[state=active]:bg-emerald-600">
               <Package className="w-4 h-4 mr-2" />
               Siparişlerim
             </TabsTrigger>
@@ -306,7 +324,7 @@ function ShopContent() {
                           </div>
                           <Badge className={`text-xs flex items-center gap-1 ${getStatusColor(purchase.status)}`}>
                             {getStatusIcon(purchase.status)}
-                            {purchase.status}
+                            {getStatusText(purchase.status)}
                           </Badge>
                         </div>
                         <p className="text-xs text-gray-500 mt-2">
