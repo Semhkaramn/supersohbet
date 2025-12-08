@@ -77,6 +77,29 @@ export async function GET(
       take: 50
     })
 
+    // Get task completion history
+    const taskHistory = await prisma.taskCompletion.findMany({
+      where: {
+        userId,
+        isCompleted: true,
+        rewardClaimed: true
+      },
+      include: {
+        task: {
+          select: {
+            title: true,
+            description: true,
+            category: true,
+            taskType: true,
+            xpReward: true,
+            pointsReward: true
+          }
+        }
+      },
+      orderBy: { claimedAt: 'desc' },
+      take: 100
+    })
+
     // Get message statistics by period
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -117,6 +140,7 @@ export async function GET(
       pointHistory,
       xpHistory,
       purchases,
+      taskHistory,
       messageStats: {
         daily: dailyMessages,
         weekly: weeklyMessages,
