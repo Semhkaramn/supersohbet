@@ -3,11 +3,11 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { action, reason, adminUsername } = await request.json()
-    const userId = params.id
+    const { id: userId } = await params
 
     if (action === 'ban') {
       const user = await prisma.user.update({
