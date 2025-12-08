@@ -29,7 +29,7 @@ const extractSelectItems = (children: React.ReactNode): Map<string, React.ReactN
         // Check if this element has a 'value' prop (likely a SelectItem)
         if (child.props && typeof child.props === 'object' && 'value' in child.props && typeof child.props.value === 'string') {
           const value = child.props.value;
-          const label = 'children' in child.props ? child.props.children : value;
+          const label: React.ReactNode = 'children' in child.props ? child.props.children as React.ReactNode : value;
           if (value) {
             items.set(value, label);
           }
