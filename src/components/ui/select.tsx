@@ -81,24 +81,24 @@ const SelectContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTML
     const context = React.useContext(SelectContext);
     if (!context) throw new Error("SelectContent must be used within Select");
 
-    if (!context.open) return null;
-
     return (
-      <>
-        <div className="fixed inset-0 z-40" onClick={() => context.setOpen(false)} />
-        <SelectContentContext.Provider value={{ children }}>
-          <div
-            ref={ref}
-            className={cn(
-              "absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-slate-600 bg-slate-700 py-1 shadow-lg",
-              className
-            )}
-            {...props}
-          >
-            {children}
-          </div>
-        </SelectContentContext.Provider>
-      </>
+      <SelectContentContext.Provider value={{ children }}>
+        {context.open && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => context.setOpen(false)} />
+            <div
+              ref={ref}
+              className={cn(
+                "absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-slate-600 bg-slate-700 py-1 shadow-lg",
+                className
+              )}
+              {...props}
+            >
+              {children}
+            </div>
+          </>
+        )}
+      </SelectContentContext.Provider>
     );
   }
 );
