@@ -57,14 +57,12 @@ async function main() {
   }
   console.log('✅ Wheel prizes created:', wheelPrizes.length)
 
-  // Slot Makinesi Ödülleri
+  // Slot Makinesi Ödülleri - Sadece 4 sembol
   const slotPrizes = [
-    { name: 'Triple Seven', symbol: '777', points: 10000, chance: 5, color: '#FFD700', order: 0 },
-    { name: 'Jackpot', symbol: 'JACKPOT', points: 5000, chance: 10, color: '#FF1744', order: 1 },
-    { name: 'Diamond', symbol: '💎', points: 2500, chance: 15, color: '#00E5FF', order: 2 },
-    { name: 'Star', symbol: '⭐', points: 1000, chance: 20, color: '#FFC400', order: 3 },
-    { name: 'Cherry', symbol: '🍒', points: 500, chance: 25, color: '#FF5252', order: 4 },
-    { name: 'Lemon', symbol: '🍋', points: 250, chance: 25, color: '#FFEB3B', order: 5 },
+    { name: 'Yedi', symbol: '7️⃣', points: 1000, chance: 25, color: '#FFD700', order: 0 },
+    { name: 'Kiraz', symbol: '🍒', points: 500, chance: 25, color: '#FF5252', order: 1 },
+    { name: 'Üzüm', symbol: '🍇', points: 300, chance: 25, color: '#9C27B0', order: 2 },
+    { name: 'Limon', symbol: '🍋', points: 200, chance: 25, color: '#FFEB3B', order: 3 },
   ]
 
   for (const prize of slotPrizes) {
@@ -136,12 +134,9 @@ async function main() {
     { key: 'min_message_length', value: '3', description: 'Minimum mesaj karakter uzunluğu', category: 'limits' },
     { key: 'message_cooldown_seconds', value: '5', description: 'Mesajlar arası minimum bekleme süresi (saniye)', category: 'limits' },
 
-    // Çark Ayarları
-    { key: 'wheel_spin_cost', value: '250', description: 'Çark çevirme maliyeti (puan)', category: 'wheel' },
-    { key: 'daily_wheel_spins', value: '3', description: 'Günlük ücretsiz çark hakkı', category: 'wheel' },
-
-    // Slot Makinesi Ayarları
-    { key: 'daily_slot_spins', value: '3', description: 'Günlük slot makinesi hakkı', category: 'slot' },
+    // Oyun Ayarları
+    { key: 'games_daily_wheel_spins', value: '3', description: 'Günlük ücretsiz çark hakkı', category: 'games' },
+    { key: 'games_daily_slot_spins', value: '3', description: 'Günlük slot makinesi hakkı', category: 'games' },
 
     // Genel Ayarlar
     { key: 'maintenance_mode', value: 'false', description: 'Bakım modu aktif mi?', category: 'general' },
