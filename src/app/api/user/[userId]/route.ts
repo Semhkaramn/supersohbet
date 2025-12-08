@@ -27,6 +27,16 @@ export async function GET(
       )
     }
 
+    // Ban kontrolü - Banlı kullanıcılar uygulamayı kullanamaz
+    if (user.isBanned) {
+      return NextResponse.json({
+        banned: true,
+        banReason: user.banReason || 'Sistem kurallarını ihlal ettiniz.',
+        bannedAt: user.bannedAt,
+        bannedBy: user.bannedBy
+      })
+    }
+
     // Telegram profil fotoğrafını güncelle
     try {
       const numericUserId = Number.parseInt(user.telegramId, 10)
