@@ -116,6 +116,18 @@ export default function AdminStatisticsPage() {
     loadStatistics()
   }, [])
 
+  // Anlık arama için yeni useEffect - searchTerm, period veya bannedFilter değiştiğinde otomatik arama yap
+  useEffect(() => {
+    const token = localStorage.getItem('admin_token')
+    if (!token) return
+
+    const delayDebounceFn = setTimeout(() => {
+      loadStatistics()
+    }, 300) // 300ms debounce - kullanıcı yazmayı bitirdiğinde arama yapar
+
+    return () => clearTimeout(delayDebounceFn)
+  }, [searchTerm, period, bannedFilter])
+
   async function loadStatistics() {
     try {
       const bannedParam = bannedFilter === 'all' ? '' : `&banned=${bannedFilter}`
@@ -335,7 +347,6 @@ export default function AdminStatisticsPage() {
             <Input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && loadStatistics()}
               className="pl-10 bg-white/5 border-white/10 text-white"
               placeholder="Kullanıcı ara (isim, username, telegram ID)..."
             />
@@ -343,7 +354,12 @@ export default function AdminStatisticsPage() {
 
           <Select value={period} onValueChange={setPeriod}>
             <SelectTrigger className="w-full md:w-[200px] bg-white/5 border-white/10 text-white">
-              <SelectValue placeholder="Periyot seç" />
+              <SelectValue>
+                {period === 'all' && 'Tüm Zamanlar'}
+                {period === 'daily' && 'Günlük'}
+                {period === 'weekly' && 'Haftalık'}
+                {period === 'monthly' && 'Aylık'}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-slate-900 border-white/20">
               <SelectItem value="all">Tüm Zamanlar</SelectItem>
@@ -355,7 +371,11 @@ export default function AdminStatisticsPage() {
 
           <Select value={bannedFilter} onValueChange={setBannedFilter}>
             <SelectTrigger className="w-full md:w-[200px] bg-white/5 border-white/10 text-white">
-              <SelectValue placeholder="Durum" />
+              <SelectValue>
+                {bannedFilter === 'all' && 'Tümü'}
+                {bannedFilter === 'false' && 'Aktif'}
+                {bannedFilter === 'true' && 'Banlı'}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-slate-900 border-white/20">
               <SelectItem value="all">Tümü</SelectItem>
@@ -363,14 +383,6 @@ export default function AdminStatisticsPage() {
               <SelectItem value="true">Banlı</SelectItem>
             </SelectContent>
           </Select>
-
-          <Button
-            onClick={loadStatistics}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            <Search className="w-4 h-4 mr-2" />
-            Ara
-          </Button>
         </div>
 
         {/* Users List */}
