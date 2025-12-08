@@ -68,10 +68,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const selectedIndex = prizes.findIndex(p => p.id === selectedPrize.id)
+
     console.log(`=== SELECTED PRIZE ===`)
-    console.log(`Prize: ${selectedPrize.name} - ${selectedPrize.points} puan`)
+    console.log(`Prize: ${selectedPrize.name}`)
+    console.log(`Points: ${selectedPrize.points} puan`)
     console.log(`Prize ID: ${selectedPrize.id}`)
-    console.log(`Index in array: ${prizes.findIndex(p => p.id === selectedPrize.id)}`)
+    console.log(`Index in prizes array: ${selectedIndex}`)
+    console.log(`Order value: ${selectedPrize.order}`)
+    console.log(`Probability: ${selectedPrize.probability}`)
 
     // Transaction ile işlemleri gerçekleştir
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
