@@ -42,8 +42,25 @@ model User {
   channelJoins     UserChannelJoin[]
   purchases        UserPurchase[]
   wheelSpins       WheelSpin[]
+  messages         Message[]
 
   @@index([telegramId])
+}
+
+// Mesaj geçmişi - istatistikler için
+model Message {
+  id               String          @id @default(cuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content          String?
+  messageLength    Int             @default(0)
+  pointsEarned     Int             @default(0)
+  xpEarned         Int             @default(0)
+  createdAt        DateTime        @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
 }
 
 // Zorunlu kanallar
