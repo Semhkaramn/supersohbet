@@ -38,6 +38,12 @@ model User {
   messageCount     Int             @default(0)
   totalMessages    Int             @default(0)
 
+  // Ban sistemi
+  isBanned         Boolean         @default(false)
+  banReason        String?
+  bannedAt         DateTime?
+  bannedBy         String?         // Admin kullanıcı adı
+
   // Referans sistemi
   referralCode     String?         @unique // Kullanıcının kendi referans kodu
   referredById     String?         // Bu kullanıcıyı davet eden kişinin ID'si
@@ -58,6 +64,7 @@ model User {
   @@index([telegramId])
   @@index([referralCode])
   @@index([referredById])
+  @@index([isBanned])
 }
 
 // Tüm mesajlar - istatistikler için (KURALLARDAN BAĞIMSIZ)
