@@ -374,11 +374,7 @@ export default function AdminGamesPage() {
   }
 
   function getGameSettings() {
-    return settings.filter(s =>
-      s.category === 'wheel' ||
-      s.category === 'slot' ||
-      s.category === 'games'
-    )
+    return settings.filter(s => s.category === 'games')
   }
 
   if (loading) {
@@ -660,8 +656,8 @@ export default function AdminGamesPage() {
                     Veritabanına şu ayarları ekleyin:
                   </p>
                   <ul className="text-sm text-gray-500 mt-2 space-y-1">
-                    <li>• daily_wheel_spins (kategori: wheel)</li>
-                    <li>• daily_slot_spins (kategori: slot)</li>
+                    <li>• games_daily_wheel_spins (kategori: games)</li>
+                    <li>• games_daily_slot_spins (kategori: games)</li>
                   </ul>
                 </div>
               )}
