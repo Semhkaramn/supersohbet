@@ -36,6 +36,15 @@ model User {
   lastMessageAt    DateTime?
   messageCount     Int             @default(0)
   totalMessages    Int             @default(0)
+
+  // Referans sistemi
+  referralCode     String?         @unique // Kullanıcının kendi referans kodu
+  referredById     String?         // Bu kullanıcıyı davet eden kişinin ID'si
+  referredBy       User?           @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals        User[]          @relation("UserReferrals") // Bu kullanıcının davet ettikleri
+  totalReferrals   Int             @default(0) // Toplam davet sayısı
+  referralPoints   Int             @default(0) // Referanslardan kazanılan puanlar
+
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
@@ -45,6 +54,8 @@ model User {
   messages         MessageStats[]
 
   @@index([telegramId])
+  @@index([referralCode])
+  @@index([referredById])
 }
 
 // Tüm mesajlar - istatistikler için (KURALLARDAN BAĞIMSIZ)
