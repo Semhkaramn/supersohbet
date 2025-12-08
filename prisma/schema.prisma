@@ -154,9 +154,15 @@ model UserPurchase {
   itemId           String
   item             ShopItem        @relation(fields: [itemId], references: [id], onDelete: Cascade)
   pointsSpent      Int
+  status           String          @default("pending") // pending, processing, completed, cancelled
+  deliveryInfo     String?         // Teslimat bilgileri, notlar
+  processedBy      String?         // İşlemi yapan admin
+  processedAt      DateTime?       // İşlenme tarihi
   purchasedAt      DateTime        @default(now())
 
   @@index([userId])
+  @@index([status])
+  @@index([purchasedAt])
 }
 
 // Çark ödülleri
