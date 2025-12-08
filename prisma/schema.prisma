@@ -32,6 +32,8 @@ model User {
   rankId           String?
   rank             Rank?           @relation(fields: [rankId], references: [id])
   dailySpinsLeft   Int             @default(1)
+  dailySlotSpinsLeft Int           @default(3)
+  lastSlotSpinReset DateTime       @default(now())
   lastSpinReset    DateTime        @default(now())
   lastMessageAt    DateTime?
   messageCount     Int             @default(0)
@@ -42,6 +44,7 @@ model User {
   channelJoins     UserChannelJoin[]
   purchases        UserPurchase[]
   wheelSpins       WheelSpin[]
+  slotSpins        SlotMachineSpin[]
   messages         MessageStats[]
 
   @@index([telegramId])
@@ -227,4 +230,38 @@ model Admin {
   updatedAt        DateTime        @updatedAt
 
   @@index([username])
+}
+
+// Slot Makinesi Ödülleri
+model SlotMachinePrize {
+  id               String          @id @default(cuid())
+  name             String          @unique
+  symbol           String          // "777", "BAR", "CHERRY", "LEMON", vb.
+  points           Int
+  chance           Float           @default(0) // 0-100 arası şans (0 = hiç gelmez)
+  color            String          @default("#FFD700")
+  isActive         Boolean         @default(true)
+  order            Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  slotSpins        SlotMachineSpin[]
+
+  @@index([isActive])
+}
+
+// Slot Makinesi Çevirme Geçmişi
+model SlotMachineSpin {
+  id               String          @id @default(cuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prizeId          String?
+  prize            SlotMachinePrize? @relation(fields: [prizeId], references: [id], onDelete: Cascade)
+  symbols          String          // Örn: "777", "BAR-CHERRY-BAR"
+  pointsWon        Int
+  isWin            Boolean         @default(false)
+  spunAt           DateTime        @default(now())
+
+  @@index([userId])
+  @@index([spunAt])
 }
