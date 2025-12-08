@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     const tasks = await prisma.task.findMany({
       orderBy: [
-        { type: 'asc' },
+        { category: 'asc' },
         { order: 'asc' }
       ],
       include: {
@@ -33,10 +33,13 @@ export async function POST(request: NextRequest) {
     const {
       title,
       description,
-      type,
+      category,
+      taskType,
+      targetValue,
       xpReward,
       pointsReward,
-      requirement,
+      duration,
+      expiresAt,
       isActive,
       order
     } = body
@@ -45,10 +48,13 @@ export async function POST(request: NextRequest) {
       data: {
         title,
         description,
-        type,
+        category,
+        taskType,
+        targetValue: parseInt(targetValue) || 1,
         xpReward: parseInt(xpReward) || 0,
         pointsReward: parseInt(pointsReward) || 0,
-        requirement: parseInt(requirement) || 1,
+        duration: duration ? parseInt(duration) : null,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
         isActive: isActive !== false,
         order: parseInt(order) || 0
       }
