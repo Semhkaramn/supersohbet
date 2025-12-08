@@ -181,11 +181,6 @@ Başlamak için yanındaki menü butonuna tıkla! 👆
       const messagesForXp = parseInt(getSetting('messages_for_xp', '1'))
       const allowNewUsers = getSetting('allow_new_users', 'true') === 'true'
 
-      // Mesaj uzunluğu kontrolü
-      if (messageText.length < minMessageLength) {
-        return NextResponse.json({ ok: true, message: 'Message too short' })
-      }
-
       // Kullanıcıyı bul veya oluştur
       let user = await prisma.user.findUnique({
         where: { telegramId: userId }
@@ -206,7 +201,22 @@ Başlamak için yanındaki menü butonuna tıkla! 👆
         })
       }
 
-      // Spam kontrolü - Son mesajdan beri yeterli süre geçmiş mi?
+      // TÜM MESAJLARI İSTATİSTİK İÇİN KAYDET (KURALLARDAN BAĞIMSIZ)
+      await prisma.messageStats.create({
+        data: {
+          userId: user.id,
+          content: messageText.substring(0, 500),
+          messageLength: messageText.length,
+          earnedReward: false // Varsayılan olarak false, ödül verilirse güncellenecek
+        }
+      })
+
+      // Mesaj uzunluğu kontrolü (ÖDÜL İÇİN)
+      if (messageText.length < minMessageLength) {
+        return NextResponse.json({ ok: true, message: 'Message too short' })
+      }
+
+      // Spam kontrolü - Son mesajdan beri yeterli süre geçmiş mi? (ÖDÜL İÇİN)
       if (user.lastMessageAt) {
         const timeSinceLastMessage = (Date.now() - user.lastMessageAt.getTime()) / 1000
         if (timeSinceLastMessage < messageCooldown) {
@@ -220,26 +230,26 @@ Başlamak için yanındaki menü butonuna tıkla! 👆
       // XP verilecek mi kontrol et
       const shouldGiveXp = newMessageCount % messagesForXp === 0
 
-      // Kullanıcıyı güncelle
+      // Kullanıcıyı güncelle (ÖDÜL VER)
       const updatedUser = await prisma.user.update({
         where: { id: user.id },
         data: {
           points: { increment: pointsPerMessage },
           xp: shouldGiveXp ? { increment: xpPerMessage } : undefined,
           messageCount: newMessageCount,
-          totalMessages: { increment: 1 },
+          totalMessages: { increment: 1 }, // Sadece ödül kazanan mesajlar
           lastMessageAt: new Date()
         }
       })
 
-      // Mesajı istatistikler için kaydet
-      await prisma.message.create({
-        data: {
+      // Bu mesajın ödül kazandığını işaretle
+      await prisma.messageStats.updateMany({
+        where: {
           userId: user.id,
-          content: messageText.substring(0, 500), // İlk 500 karakter
-          messageLength: messageText.length,
-          pointsEarned: pointsPerMessage,
-          xpEarned: shouldGiveXp ? xpPerMessage : 0
+          createdAt: { gte: new Date(Date.now() - 2000) } // Son 2 saniyedeki mesaj
+        },
+        data: {
+          earnedReward: true
         }
       })
 
