@@ -8,6 +8,8 @@ interface SelectContextType {
   onValueChange: (value: string) => void;
   open: boolean;
   setOpen: (open: boolean) => void;
+  selectItems: Map<string, React.ReactNode>;
+  registerItem: (value: string, label: React.ReactNode) => void;
 }
 
 const SelectContext = React.createContext<SelectContextType | undefined>(undefined);
@@ -20,9 +22,18 @@ interface SelectProps {
 
 const Select = ({ value, onValueChange, children }: SelectProps) => {
   const [open, setOpen] = React.useState(false);
+  const [selectItems, setSelectItems] = React.useState<Map<string, React.ReactNode>>(new Map());
+
+  const registerItem = React.useCallback((itemValue: string, label: React.ReactNode) => {
+    setSelectItems((prev) => {
+      const newMap = new Map(prev);
+      newMap.set(itemValue, label);
+      return newMap;
+    });
+  }, []);
 
   return (
-    <SelectContext.Provider value={{ value, onValueChange, open, setOpen }}>
+    <SelectContext.Provider value={{ value, onValueChange, open, setOpen, selectItems, registerItem }}>
       <div className="relative">{children}</div>
     </SelectContext.Provider>
   );
@@ -56,49 +67,32 @@ const SelectValue = ({ placeholder = "" }: { placeholder?: string }) => {
   const context = React.useContext(SelectContext);
   if (!context) throw new Error("SelectValue must be used within Select");
 
-  const selectedChild = React.Children.toArray(
-    React.useContext(SelectContentContext)?.children || []
-  ).find((child) => {
-    if (React.isValidElement(child)) {
-      const props = child.props as any;
-      return props?.value === context.value;
-    }
-    return false;
-  });
+  const selectedLabel = context.selectItems.get(context.value);
 
-  if (React.isValidElement(selectedChild)) {
-    const props = selectedChild.props as any;
-    return <span>{props?.children || placeholder}</span>;
-  }
-
-  return <span>{placeholder}</span>;
+  return <span>{selectedLabel || placeholder}</span>;
 };
-
-const SelectContentContext = React.createContext<{ children: React.ReactNode } | undefined>(undefined);
 
 const SelectContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className = "", children, ...props }, ref) => {
     const context = React.useContext(SelectContext);
     if (!context) throw new Error("SelectContent must be used within Select");
 
+    if (!context.open) return null;
+
     return (
-      <SelectContentContext.Provider value={{ children }}>
-        {context.open && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => context.setOpen(false)} />
-            <div
-              ref={ref}
-              className={cn(
-                "absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-slate-600 bg-slate-700 py-1 shadow-lg",
-                className
-              )}
-              {...props}
-            >
-              {children}
-            </div>
-          </>
-        )}
-      </SelectContentContext.Provider>
+      <>
+        <div className="fixed inset-0 z-40" onClick={() => context.setOpen(false)} />
+        <div
+          ref={ref}
+          className={cn(
+            "absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-slate-600 bg-slate-700 py-1 shadow-lg",
+            className
+          )}
+          {...props}
+        >
+          {children}
+        </div>
+      </>
     );
   }
 );
@@ -113,11 +107,16 @@ const SelectItem = React.forwardRef<HTMLDivElement, SelectItemProps>(
     const context = React.useContext(SelectContext);
     if (!context) throw new Error("SelectItem must be used within Select");
 
+    // Register this item with the context
+    React.useEffect(() => {
+      context.registerItem(value, children);
+    }, [value, children, context]);
+
     return (
       <div
         ref={ref}
         className={cn(
-          "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-slate-600",
+          "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm text-white outline-none hover:bg-slate-600 transition-colors",
           context.value === value ? "bg-slate-600" : "",
           className
         )}
