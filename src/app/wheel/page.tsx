@@ -117,17 +117,27 @@ function WheelContent() {
         // Doğru açı hesaplaması:
         // SVG segmentleri -90 dereceden başlıyor (saat 12 pozisyonu)
         // Ok üstte sabit (-90°), kazanan dilimin ortası ok altına gelmeli
+
+        // Mevcut rotation'ı normalize et (0-360 arasına getir)
+        const currentRotationNormalized = ((rotation % 360) + 360) % 360
+
         const segmentAngle = 360 / prizes.length
-        const midAngle = -90 + (prizeIndex * segmentAngle) + (segmentAngle / 2)
+        // Hedef açı: Kazanan segment'in ortası ok altında (-90°) olmalı
+        const targetAngle = -90 + (prizeIndex * segmentAngle) + (segmentAngle / 2)
+        // Normalize et
+        const targetAngleNormalized = ((targetAngle % 360) + 360) % 360
 
-        // Offset hesabı: Kazanan segmentin ortası ok pozisyonuna (-90°) gelmeli
-        // Çarkı saat yönünde döndüreceğiz
-        let offset = -90 - midAngle
+        // Mevcut pozisyondan hedefe gitmek için gereken offset
+        let offset = targetAngleNormalized - currentRotationNormalized
 
-        // Offset'i 0-360 arasına normalize et (pozitif saat yönünde dönüş)
-        offset = ((offset % 360) + 360) % 360
+        // Eğer offset negatifse, bir tam tur ekle (saat yönünde dönmek için)
+        if (offset < 0) {
+          offset += 360
+        }
 
         const finalRotation = rotation + (randomSpins * 360) + offset
+
+        console.log(`📐 Açı Hesaplama: Mevcut=${currentRotationNormalized.toFixed(1)}°, Hedef=${targetAngleNormalized.toFixed(1)}°, Offset=${offset.toFixed(1)}°, Final=${finalRotation.toFixed(1)}°`)
 
         setRotation(finalRotation)
 
