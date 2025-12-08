@@ -12,10 +12,13 @@ export async function PUT(
     const {
       title,
       description,
-      type,
+      category,
+      taskType,
+      targetValue,
       xpReward,
       pointsReward,
-      requirement,
+      duration,
+      expiresAt,
       isActive,
       order
     } = body
@@ -25,10 +28,13 @@ export async function PUT(
       data: {
         title,
         description,
-        type,
+        category,
+        taskType,
+        targetValue: parseInt(targetValue) || 1,
         xpReward: parseInt(xpReward) || 0,
         pointsReward: parseInt(pointsReward) || 0,
-        requirement: parseInt(requirement) || 1,
+        duration: duration ? parseInt(duration) : null,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
         isActive,
         order: parseInt(order) || 0
       }
