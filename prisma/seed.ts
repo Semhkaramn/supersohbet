@@ -77,6 +77,10 @@ async function main() {
     { key: 'wheel_spin_cost', value: '250', description: 'Çark çevirme maliyeti (puan)', category: 'wheel' },
     { key: 'daily_wheel_spins', value: '3', description: 'Günlük ücretsiz çark hakkı', category: 'wheel' },
 
+    // Referans Sistemi
+    { key: 'referral_bonus_inviter', value: '100', description: 'Davet eden kişinin kazandığı puan', category: 'referral' },
+    { key: 'referral_bonus_invited', value: '50', description: 'Davet edilen kişinin kazandığı puan', category: 'referral' },
+
     // Genel Ayarlar
     { key: 'maintenance_mode', value: 'false', description: 'Bakım modu aktif mi?', category: 'general' },
     { key: 'allow_new_users', value: 'true', description: 'Yeni kullanıcı kayıtları açık mı?', category: 'general' },
@@ -90,6 +94,24 @@ async function main() {
     })
   }
   console.log('✅ Settings created:', settings.length)
+
+  // Referans milestone'ları oluştur
+  const referralMilestones = [
+    { requiredCount: 5, rewardPoints: 100, name: '5 Üye', description: '5 kişi davet et', order: 0 },
+    { requiredCount: 10, rewardPoints: 200, name: '10 Üye', description: '10 kişi davet et', order: 1 },
+    { requiredCount: 25, rewardPoints: 500, name: '25 Üye', description: '25 kişi davet et', order: 2 },
+    { requiredCount: 50, rewardPoints: 1000, name: '50 Üye', description: '50 kişi davet et', order: 3 },
+    { requiredCount: 100, rewardPoints: 2500, name: '100 Üye', description: '100 kişi davet et', order: 4 },
+  ]
+
+  for (const milestone of referralMilestones) {
+    await prisma.referralMilestone.upsert({
+      where: { requiredCount: milestone.requiredCount },
+      update: milestone,
+      create: milestone
+    })
+  }
+  console.log('✅ Referral milestones created:', referralMilestones.length)
 
   console.log('🎉 Seeding completed!')
 }
