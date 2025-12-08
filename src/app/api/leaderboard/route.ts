@@ -5,8 +5,14 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
+    const sortBy = searchParams.get('sortBy') || 'points' // 'points' veya 'xp'
 
-    // En yüksek puanlı kullanıcıları getir
+    // Sıralamayı belirle
+    const orderBy = sortBy === 'xp'
+      ? [{ xp: 'desc' as const }, { points: 'desc' as const }]
+      : [{ points: 'desc' as const }, { xp: 'desc' as const }]
+
+    // En yüksek puanlı veya XP'li kullanıcıları getir
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -22,10 +28,7 @@ export async function GET(request: Request) {
           }
         }
       },
-      orderBy: [
-        { points: 'desc' },
-        { xp: 'desc' }
-      ],
+      orderBy,
       take: 100
     })
 
@@ -62,20 +65,34 @@ export async function GET(request: Request) {
         })
 
         if (user) {
-          // Kullanıcının gerçek pozisyonunu hesapla
-          const higherRankedCount = await prisma.user.count({
-            where: {
-              OR: [
-                { points: { gt: user.points } },
-                {
-                  AND: [
-                    { points: user.points },
-                    { xp: { gt: user.xp } }
+          // Kullanıcının gerçek pozisyonunu hesapla (sortBy'a göre)
+          const higherRankedCount = sortBy === 'xp'
+            ? await prisma.user.count({
+                where: {
+                  OR: [
+                    { xp: { gt: user.xp } },
+                    {
+                      AND: [
+                        { xp: user.xp },
+                        { points: { gt: user.points } }
+                      ]
+                    }
                   ]
                 }
-              ]
-            }
-          })
+              })
+            : await prisma.user.count({
+                where: {
+                  OR: [
+                    { points: { gt: user.points } },
+                    {
+                      AND: [
+                        { points: user.points },
+                        { xp: { gt: user.xp } }
+                      ]
+                    }
+                  ]
+                }
+              })
 
           currentUser = {
             ...user,
