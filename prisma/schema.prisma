@@ -228,6 +228,36 @@ model TaskCompletion {
   @@index([userId])
 }
 
+// Referans milestone'ları
+model ReferralMilestone {
+  id               String          @id @default(cuid())
+  requiredCount    Int             @unique // Gerekli referans sayısı
+  rewardPoints     Int             // Ödül puanı
+  name             String          // Örn: "5 Üye"
+  description      String?         // Açıklama
+  order            Int             @default(0)
+  isActive         Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  completions      UserMilestoneCompletion[]
+
+  @@index([isActive, order])
+}
+
+// Kullanıcıların tamamladığı milestone'lar
+model UserMilestoneCompletion {
+  id               String          @id @default(cuid())
+  userId           String
+  milestoneId      String
+  milestone        ReferralMilestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  completedAt      DateTime        @default(now())
+  rewardClaimed    Boolean         @default(false)
+
+  @@unique([userId, milestoneId])
+  @@index([userId])
+}
+
 // Admin kullanıcılar
 model Admin {
   id               String          @id @default(cuid())
