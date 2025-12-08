@@ -24,14 +24,14 @@ export async function GET(request: NextRequest) {
       prisma.user.aggregate({
         _sum: { points: true }
       }),
-      prisma.message.count(),
-      prisma.message.count({
+      prisma.messageStats.count(),
+      prisma.messageStats.count({
         where: { createdAt: { gte: today } }
       }),
-      prisma.message.count({
+      prisma.messageStats.count({
         where: { createdAt: { gte: weekAgo } }
       }),
-      prisma.message.count({
+      prisma.messageStats.count({
         where: { createdAt: { gte: monthAgo } }
       })
     ])
