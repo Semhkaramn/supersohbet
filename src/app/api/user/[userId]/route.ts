@@ -99,6 +99,7 @@ export async function GET(
       username: user.username,
       firstName: user.firstName,
       lastName: user.lastName,
+      photoUrl: user.photoUrl,
       points: user.points,
       xp: user.xp,
       totalMessages: user.totalMessages,
