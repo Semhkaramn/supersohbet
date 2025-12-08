@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// Sadece 4 sabit sembol
+const AVAILABLE_SYMBOLS = ['7️⃣', '🍒', '🍇', '🍋']
+
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await request.json()
@@ -18,7 +21,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Kullanıcı bulunamadı' }, { status: 404 })
     }
 
-    // Günlük hak kontrolü
+    // Günlük hak kontrolü ve reset
     const now = new Date()
     const lastReset = new Date(user.lastSlotSpinReset)
     const hoursSinceReset = (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60)
@@ -38,48 +41,58 @@ export async function POST(request: NextRequest) {
     }
 
     if (spinsLeft <= 0) {
+      // Sonraki reset zamanını hesapla
+      const nextReset = new Date(lastReset.getTime() + 24 * 60 * 60 * 1000)
+      const hoursUntilReset = Math.ceil((nextReset.getTime() - now.getTime()) / (1000 * 60 * 60))
+
       return NextResponse.json({
-        error: 'Günlük slot makinesi hakkınız kalmadı!',
-        spinsLeft: 0
+        error: `Günlük hakkınız kalmadı! ${hoursUntilReset} saat sonra yenilenecek.`,
+        spinsLeft: 0,
+        hoursUntilReset
       }, { status: 400 })
     }
 
-    // Aktif ödülleri getir
-    const prizes = await prisma.slotMachinePrize.findMany({
-      where: {
-        isActive: true,
-        chance: { gt: 0 } // Şansı 0'dan büyük olanlar
-      }
-    })
+    // 3 makara için rastgele sembol seç - herhangi bir sembol gelebilir
+    const reel1Symbol = AVAILABLE_SYMBOLS[Math.floor(Math.random() * AVAILABLE_SYMBOLS.length)]
+    const reel2Symbol = AVAILABLE_SYMBOLS[Math.floor(Math.random() * AVAILABLE_SYMBOLS.length)]
+    const reel3Symbol = AVAILABLE_SYMBOLS[Math.floor(Math.random() * AVAILABLE_SYMBOLS.length)]
 
-    if (prizes.length === 0) {
-      return NextResponse.json({ error: 'Aktif ödül bulunamadı' }, { status: 400 })
+    // 3'ü de aynı mı kontrol et
+    const isMatch = reel1Symbol === reel2Symbol && reel2Symbol === reel3Symbol
+
+    // Eğer 3'ü aynı ise, bu sembol için ödül var mı kontrol et
+    let wonPrize = null
+    let pointsWon = 0
+    let prizeName = ''
+
+    if (isMatch) {
+      wonPrize = await prisma.slotMachinePrize.findFirst({
+        where: {
+          symbol: reel1Symbol,
+          isActive: true
+        }
+      })
+
+      if (wonPrize) {
+        pointsWon = wonPrize.points
+        prizeName = wonPrize.name
+      }
     }
 
-    // 3 makara için rastgele seçim yap (ağırlıklı)
-    const reel1 = selectWeightedRandom(prizes)
-    const reel2 = selectWeightedRandom(prizes)
-    const reel3 = selectWeightedRandom(prizes)
-
-    // Kazanma kontrolü - 3'ü de aynı mı?
-    const isWin = reel1.symbol === reel2.symbol && reel2.symbol === reel3.symbol
-    const wonPrize = isWin ? reel1 : null
-    const pointsWon = isWin ? wonPrize!.points : 0
-
     // Slot çevirme kaydı oluştur
-    const symbols = `${reel1.symbol}-${reel2.symbol}-${reel3.symbol}`
+    const symbols = `${reel1Symbol} ${reel2Symbol} ${reel3Symbol}`
     await prisma.slotMachineSpin.create({
       data: {
         userId,
         prizeId: wonPrize?.id,
         symbols,
         pointsWon,
-        isWin
+        isWin: isMatch && wonPrize !== null
       }
     })
 
-    // Kullanıcı puanını güncelle
-    if (isWin && pointsWon > 0) {
+    // Kullanıcı puanını güncelle ve spin hakkını azalt
+    if (wonPrize && pointsWon > 0) {
       await prisma.user.update({
         where: { id: userId },
         data: {
@@ -96,35 +109,25 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // Sonraki reset zamanını hesapla
+    const nextReset = new Date(lastReset.getTime() + 24 * 60 * 60 * 1000)
+    const hoursUntilReset = Math.max(0, Math.ceil((nextReset.getTime() - now.getTime()) / (1000 * 60 * 60)))
+
     return NextResponse.json({
       success: true,
-      isWin,
-      symbols: [reel1.symbol, reel2.symbol, reel3.symbol],
-      colors: [reel1.color, reel2.color, reel3.color],
+      isWin: wonPrize !== null && isMatch,
+      symbols: [reel1Symbol, reel2Symbol, reel3Symbol],
       pointsWon,
-      prizeName: wonPrize?.name,
-      spinsLeft: spinsLeft - 1
+      prizeName: prizeName || 'Tekrar Deneyin',
+      spinsLeft: spinsLeft - 1,
+      hoursUntilReset,
+      isMatch // 3'ü aynı mı (ödül olmasa bile)
     })
 
   } catch (error) {
     console.error('Error spinning slot machine:', error)
     return NextResponse.json({ error: 'Çevirme işlemi başarısız' }, { status: 500 })
   }
-}
-
-// Ağırlıklı rastgele seçim fonksiyonu
-function selectWeightedRandom(prizes: any[]) {
-  const totalChance = prizes.reduce((sum, p) => sum + p.chance, 0)
-  let random = Math.random() * totalChance
-
-  for (const prize of prizes) {
-    random -= prize.chance
-    if (random <= 0) {
-      return prize
-    }
-  }
-
-  return prizes[prizes.length - 1]
 }
 
 // Son kazananları getir
