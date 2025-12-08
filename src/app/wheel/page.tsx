@@ -114,32 +114,28 @@ function WheelContent() {
           console.error(`❌ HATA: Geçersiz prize index! Index: ${prizeIndex}, Prize sayısı: ${prizes.length}`)
         }
 
-        // Doğru açı hesaplaması:
+        // Günlük 1 hak olduğu için her spin başlangıçtan (0°) başlasın
+        setRotation(0)
+
+        // Doğru açı hesaplaması (prizes.length kadar ödül için)
+        const segmentAngle = 360 / prizes.length // 6 ödül varsa 60° her segment
+
         // SVG segmentleri -90 dereceden başlıyor (saat 12 pozisyonu)
         // Ok üstte sabit (-90°), kazanan dilimin ortası ok altına gelmeli
-
-        // Mevcut rotation'ı normalize et (0-360 arasına getir)
-        const currentRotationNormalized = ((rotation % 360) + 360) % 360
-
-        const segmentAngle = 360 / prizes.length
-        // Hedef açı: Kazanan segment'in ortası ok altında (-90°) olmalı
         const targetAngle = -90 + (prizeIndex * segmentAngle) + (segmentAngle / 2)
-        // Normalize et
-        const targetAngleNormalized = ((targetAngle % 360) + 360) % 360
 
-        // Mevcut pozisyondan hedefe gitmek için gereken offset
-        let offset = targetAngleNormalized - currentRotationNormalized
+        // Normalize et (0-360 arasına)
+        let targetAngleNormalized = ((targetAngle % 360) + 360) % 360
 
-        // Eğer offset negatifse, bir tam tur ekle (saat yönünde dönmek için)
-        if (offset < 0) {
-          offset += 360
-        }
+        // Çark saat yönünde dönecek, hedef açıya ulaşacak
+        const finalRotation = (randomSpins * 360) + targetAngleNormalized
 
-        const finalRotation = rotation + (randomSpins * 360) + offset
+        console.log(`📐 Çark Hesaplama: ÖdülSayısı=${prizes.length}, Segment=${segmentAngle}°, PrizeIndex=${prizeIndex}, Hedef=${targetAngleNormalized.toFixed(1)}°, Final=${finalRotation.toFixed(1)}°`)
 
-        console.log(`📐 Açı Hesaplama: Mevcut=${currentRotationNormalized.toFixed(1)}°, Hedef=${targetAngleNormalized.toFixed(1)}°, Offset=${offset.toFixed(1)}°, Final=${finalRotation.toFixed(1)}°`)
-
-        setRotation(finalRotation)
+        // Animasyon için rotation'ı güncelle
+        setTimeout(() => {
+          setRotation(finalRotation)
+        }, 10)
 
         // Animasyon bitince sonucu göster
         setTimeout(() => {
@@ -147,6 +143,10 @@ function WheelContent() {
           toast.success(`🎉 Tebrikler! ${data.prizeName} - ${data.pointsWon} puan kazandınız!`)
           setSpinning(false)
           loadData() // Verileri yenile
+          // Günlük hak bittiği için çarkı sıfırla (bir sonraki gün için hazır olsun)
+          setTimeout(() => {
+            setRotation(0)
+          }, 2000)
         }, 4000)
       } else {
         toast.error(data.error || 'Çark çevrilemedi')
