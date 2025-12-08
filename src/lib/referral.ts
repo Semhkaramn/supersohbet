@@ -48,6 +48,16 @@ export async function checkAndRewardMilestones(userId: string, telegramId: strin
               points: { increment: milestone.rewardPoints },
               referralPoints: { increment: milestone.rewardPoints }
             }
+          }),
+          // Puan geçmişi kaydı oluştur
+          prisma.pointHistory.create({
+            data: {
+              userId: user.id,
+              amount: milestone.rewardPoints,
+              type: 'referral_reward',
+              description: `${milestone.name} başarısı tamamlandı`,
+              relatedId: milestone.id
+            }
           })
         ])
 
