@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getUserProfilePhoto } from '@/lib/telegram'
 
 // Ayarları cache'e al (performans için)
 let settingsCache: Record<string, string> = {}
@@ -62,6 +63,18 @@ async function answerCallbackQuery(callbackQueryId: string, text?: string) {
     })
   } catch (error) {
     console.error('Error answering callback:', error)
+  }
+}
+
+// Profil fotoğrafını al (helper)
+async function getPhotoUrl(userId: string): Promise<string | null> {
+  try {
+    const numericUserId = Number.parseInt(userId, 10)
+    if (Number.isNaN(numericUserId)) return null
+    return await getUserProfilePhoto(numericUserId)
+  } catch (error) {
+    console.error('Error fetching photo:', error)
+    return null
   }
 }
 
@@ -171,6 +184,9 @@ Başlamak için yanındaki menü butonuna tıkla! 👆
             where: { telegramId: userId }
           })
 
+          // Profil fotoğrafını çek
+          const photoUrl = await getPhotoUrl(userId)
+
           // Yeni kullanıcı ise ve referans kodu varsa
           if (!existingUser && (referrerTelegramId || legacyReferralCode)) {
             // Referans koduna sahip kullanıcıyı bul
@@ -201,6 +217,7 @@ Başlamak için yanındaki menü butonuna tıkla! 👆
                   username,
                   firstName,
                   lastName,
+                  photoUrl,
                   referredById: referrer.id,
                   points: referralBonusInvited // Davet edilene bonus
                 }
@@ -260,7 +277,8 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
                   telegramId: userId,
                   username,
                   firstName,
-                  lastName
+                  lastName,
+                  photoUrl
                 }
               })
             }
@@ -271,7 +289,8 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
                 telegramId: userId,
                 username,
                 firstName,
-                lastName
+                lastName,
+                photoUrl
               }
             })
           } else {
@@ -281,7 +300,8 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
               data: {
                 username,
                 firstName,
-                lastName
+                lastName,
+                photoUrl
               }
             })
           }
@@ -308,12 +328,14 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
           return NextResponse.json({ ok: true, message: 'New users not allowed' })
         }
 
+        const photoUrl = await getPhotoUrl(userId)
         user = await prisma.user.create({
           data: {
             telegramId: userId,
             username,
             firstName,
-            lastName
+            lastName,
+            photoUrl
           }
         })
       }
