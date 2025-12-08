@@ -65,6 +65,11 @@ function WheelContent() {
       const userData = await userRes.json()
       const winnersData = await winnersRes.json()
 
+      console.log('=== FRONTEND PRIZES ORDER ===')
+      prizesData.prizes?.forEach((p: WheelPrize, i: number) => {
+        console.log(`Index ${i}: ${p.name} - ${p.points} puan`)
+      })
+
       setPrizes(prizesData.prizes || [])
       setUserData(userData)
       setRecentWinners(winnersData.winners || [])
@@ -93,9 +98,18 @@ function WheelContent() {
       const data = await response.json()
 
       if (data.success) {
+        console.log('=== SPIN RESULT ===')
+        console.log('Backend returned prizeId:', data.prizeId)
+        console.log('Backend returned pointsWon:', data.pointsWon)
+
         // Çarkı döndür
         const randomSpins = 5 + Math.random() * 3 // 5-8 tam tur
         const prizeIndex = prizes.findIndex(p => p.id === data.prizeId)
+
+        console.log('Prize index in frontend array:', prizeIndex)
+        if (prizeIndex >= 0) {
+          console.log('Prize at that index:', prizes[prizeIndex].name, '-', prizes[prizeIndex].points, 'puan')
+        }
 
         // Doğru açı hesaplaması:
         // SVG segmentleri -90 dereceden başlıyor (saat 12 pozisyonu)
@@ -103,6 +117,10 @@ function WheelContent() {
         const segmentAngle = 360 / prizes.length
         const midAngle = -90 + (prizeIndex * segmentAngle) + (segmentAngle / 2)
         const finalRotation = rotation + (randomSpins * 360) - midAngle
+
+        console.log('Segment angle:', segmentAngle)
+        console.log('Mid angle:', midAngle)
+        console.log('Final rotation:', finalRotation)
 
         setRotation(finalRotation)
 
