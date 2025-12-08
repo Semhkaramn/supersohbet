@@ -67,6 +67,19 @@ export async function PUT(request: NextRequest) {
 
           if (botInfoData.ok) {
             console.log('✅ Bot bağlantısı başarılı:', botInfoData.result.username)
+
+            // Bot username'i otomatik olarak kaydet
+            await prisma.settings.upsert({
+              where: { key: 'telegram_bot_username' },
+              update: { value: botInfoData.result.username },
+              create: {
+                key: 'telegram_bot_username',
+                value: botInfoData.result.username,
+                description: 'Telegram Bot Kullanıcı Adı (@username)',
+                category: 'telegram'
+              }
+            })
+
             return NextResponse.json({
               success: true,
               setting,
