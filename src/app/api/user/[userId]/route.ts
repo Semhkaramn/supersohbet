@@ -57,6 +57,33 @@ export async function GET(
     })
     const leaderboardRank = higherRankedCount + 1
 
+    // Mesaj istatistiklerini hesapla
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+
+    const [dailyMessages, weeklyMessages, monthlyMessages] = await Promise.all([
+      prisma.message.count({
+        where: {
+          userId: user.id,
+          createdAt: { gte: today }
+        }
+      }),
+      prisma.message.count({
+        where: {
+          userId: user.id,
+          createdAt: { gte: weekAgo }
+        }
+      }),
+      prisma.message.count({
+        where: {
+          userId: user.id,
+          createdAt: { gte: monthAgo }
+        }
+      })
+    ])
+
     return NextResponse.json({
       id: user.id,
       telegramId: user.telegramId,
@@ -66,6 +93,12 @@ export async function GET(
       points: user.points,
       xp: user.xp,
       totalMessages: user.totalMessages,
+      messageStats: {
+        daily: dailyMessages,
+        weekly: weeklyMessages,
+        monthly: monthlyMessages,
+        total: user.totalMessages
+      },
       dailySpinsLeft: user.dailySpinsLeft,
       rank: currentRank || user.rank,
       nextRank,
