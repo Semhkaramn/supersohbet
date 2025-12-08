@@ -36,9 +36,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Aktif ödülleri getir
+    // Aktif ödülleri getir (Frontend ile aynı sırada olmalı!)
     const prizes = await prisma.wheelPrize.findMany({
-      where: { isActive: true }
+      where: { isActive: true },
+      orderBy: { order: 'asc' }
     })
 
     if (prizes.length === 0) {
