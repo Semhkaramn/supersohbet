@@ -65,11 +65,22 @@ export async function POST(request: NextRequest) {
       }
 
       // Satın alma kaydı oluştur
-      await tx.userPurchase.create({
+      const purchase = await tx.userPurchase.create({
         data: {
           userId,
           itemId,
           pointsSpent: item.price
+        }
+      })
+
+      // Puan geçmişi kaydı oluştur
+      await tx.pointHistory.create({
+        data: {
+          userId,
+          amount: -item.price,
+          type: 'shop_purchase',
+          description: `${item.name} satın alındı`,
+          relatedId: purchase.id
         }
       })
     })
