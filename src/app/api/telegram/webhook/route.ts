@@ -132,8 +132,16 @@ Daha fazla bilgi için Ödül Merkezi'ne git!
       if (messageText === '/start' || messageText.startsWith('/start ')) {
         const webAppUrl = getSetting('telegram_webhook_url', '').replace('/api/telegram/webhook', '') || process.env.NEXT_PUBLIC_APP_URL || 'https://soft-fairy-c52849.netlify.app'
 
-        // Referans kodu kontrolü (örn: /start ABC12345)
-        const referralCode = messageText.split(' ')[1]
+        // Referans kodu kontrolü (örn: /start ref_123456789)
+        const startParam = messageText.split(' ')[1]
+        let referrerTelegramId: string | null = null
+
+        // Yeni format: ref_TELEGRAM_ID
+        if (startParam && startParam.startsWith('ref_')) {
+          referrerTelegramId = startParam.replace('ref_', '')
+        }
+        // Eski format için geriye dönük uyumluluk (referralCode)
+        const legacyReferralCode = startParam && !startParam.startsWith('ref_') ? startParam : null
 
         const welcomeMessage = `
 🎉 **SüperSohbet Bot'a Hoş Geldin!**
@@ -164,11 +172,22 @@ Başlamak için yanındaki menü butonuna tıkla! 👆
           })
 
           // Yeni kullanıcı ise ve referans kodu varsa
-          if (!existingUser && referralCode) {
+          if (!existingUser && (referrerTelegramId || legacyReferralCode)) {
             // Referans koduna sahip kullanıcıyı bul
-            const referrer = await prisma.user.findUnique({
-              where: { referralCode: referralCode }
-            })
+            let referrer = null
+
+            // Yeni format: Telegram ID ile ara
+            if (referrerTelegramId) {
+              referrer = await prisma.user.findUnique({
+                where: { telegramId: referrerTelegramId }
+              })
+            }
+            // Eski format: Referral code ile ara (geriye dönük uyumluluk)
+            else if (legacyReferralCode) {
+              referrer = await prisma.user.findUnique({
+                where: { referralCode: legacyReferralCode }
+              })
+            }
 
             if (referrer && referrer.telegramId !== userId) {
               // Bonusları al
