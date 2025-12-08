@@ -14,6 +14,7 @@ interface WheelPrize {
   name: string
   points: number
   color: string
+  order: number
 }
 
 interface UserData {
@@ -66,6 +67,10 @@ function WheelContent() {
       const winnersData = await winnersRes.json()
 
       // Prize listesi yüklendi
+      console.log('📋 FRONTEND - Çarkta gösterilen prize sırası:')
+      prizesData.prizes?.forEach((p: WheelPrize, i: number) => {
+        console.log(`  Index ${i}: ${p.name} = ${p.points} puan (order: ${p.order})`)
+      })
 
       setPrizes(prizesData.prizes || [])
       setUserData(userData)
@@ -100,7 +105,9 @@ function WheelContent() {
         const prizeIndex = prizes.findIndex(p => p.id === data.prizeId)
 
         if (prizeIndex >= 0) {
-          console.log(`🎯 Çark Sonucu: ${prizes[prizeIndex].name} - ${prizes[prizeIndex].points} puan kazandınız!`)
+          console.log(`🎯 FRONTEND - Kazanan prize frontend dizisinde Index ${prizeIndex}: ${prizes[prizeIndex].name} = ${prizes[prizeIndex].points} puan`)
+        } else {
+          console.error(`❌ HATA: Backend'den gelen prize ID bulunamadı! Prize ID: ${data.prizeId}`)
         }
 
         // Doğru açı hesaplaması:
