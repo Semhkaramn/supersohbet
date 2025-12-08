@@ -51,7 +51,19 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const { points, xp, dailySpinsLeft } = body
+    const { points, xp, dailySpinsLeft, adminUsername } = body
+
+    // Önce mevcut kullanıcı bilgisini al
+    const currentUser = await prisma.user.findUnique({
+      where: { id }
+    })
+
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
 
     const updateData: any = {}
     if (typeof points === 'number') updateData.points = points
@@ -63,6 +75,22 @@ export async function PUT(
       data: updateData,
       include: { rank: true }
     })
+
+    // Puan değişikliği varsa geçmişe kaydet
+    if (typeof points === 'number' && points !== currentUser.points) {
+      const pointDiff = points - currentUser.points
+      await prisma.pointHistory.create({
+        data: {
+          userId: id,
+          amount: pointDiff,
+          type: pointDiff > 0 ? 'admin_add' : 'admin_remove',
+          description: pointDiff > 0
+            ? `Admin tarafından ${pointDiff} puan eklendi`
+            : `Admin tarafından ${Math.abs(pointDiff)} puan silindi`,
+          adminUsername: adminUsername || 'Admin'
+        }
+      })
+    }
 
     return NextResponse.json({ user })
   } catch (error) {
