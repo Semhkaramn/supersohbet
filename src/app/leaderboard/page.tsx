@@ -88,19 +88,18 @@ function LeaderboardContent() {
   }
 
   return (
-    <div className="min-h-screen pb-24 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen pb-24">
       {/* Header */}
-      <div className="bg-gradient-to-br from-amber-600 via-orange-600 to-red-600 p-6 pb-8">
+      <div className="bg-gradient-to-br from-amber-600 to-orange-600 p-4">
         <div className="max-w-2xl mx-auto text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm mb-4 border-2 border-white/30">
-            <Trophy className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Liderlik Sıralaması</h1>
-          <p className="text-white/80">En aktif kullanıcılar</p>
+          <h1 className="text-xl font-bold text-white flex items-center justify-center gap-2">
+            <Trophy className="w-5 h-5" />
+            Liderlik Sıralaması
+          </h1>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 -mt-4">
+      <div className="max-w-2xl mx-auto px-4 py-6">
         {/* Current User Position */}
         {currentUser && (
           <Card className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 border-blue-500/40 p-4 mb-4 backdrop-blur-sm">
