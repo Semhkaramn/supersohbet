@@ -136,6 +136,7 @@ model ShopItem {
   imageUrl         String?
   category         String          @default("Genel")
   stock            Int?            // null = sınırsız
+  purchaseLimit    Int?            // Her kullanıcı kaç kez satın alabilir (null = sınırsız)
   isActive         Boolean         @default(true)
   order            Int             @default(0)
   createdAt        DateTime        @default(now())
@@ -249,6 +250,9 @@ model Task {
   // Süre ayarları (opsiyonel)
   duration         Int?            // Süre (saat cinsinden, null = süresiz)
   expiresAt        DateTime?       // Son geçerlilik tarihi
+
+  // Limit
+  completionLimit  Int?            // Her kullanıcı bu görevi kaç kez tamamlayabilir (null = sınırsız)
 
   // Durum
   isActive         Boolean         @default(true)
