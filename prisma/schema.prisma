@@ -232,18 +232,35 @@ model Task {
   id               String          @id @default(cuid())
   title            String
   description      String?
-  type             String          // "daily" veya "weekly"
+
+  // Görev kategorisi
+  category         String          // "daily" (günlük), "weekly" (haftalık), "permanent" (kalıcı)
+
+  // Görev tipi
+  taskType         String          // "invite_users" (üye davet), "send_messages" (mesaj gönder), "spin_wheel" (çark çevir), "earn_points" (puan kazan), "reach_level" (seviye ulaş)
+
+  // Hedef ve gereksinimler
+  targetValue      Int             @default(1) // Hedef değer (örn: 5 mesaj, 3 davet)
+
+  // Ödüller
   xpReward         Int             @default(0)
   pointsReward     Int             @default(0)
-  requirement      Int             @default(1) // Gerekli mesaj sayısı, tıklama vs
+
+  // Süre ayarları (opsiyonel)
+  duration         Int?            // Süre (saat cinsinden, null = süresiz)
+  expiresAt        DateTime?       // Son geçerlilik tarihi
+
+  // Durum
   isActive         Boolean         @default(true)
   order            Int             @default(0)
+
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
   completions      TaskCompletion[]
 
-  @@index([type, isActive])
+  @@index([category, isActive])
+  @@index([taskType])
 }
 
 // Görev tamamlanma kayıtları
@@ -252,11 +269,24 @@ model TaskCompletion {
   userId           String
   taskId           String
   task             Task            @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  completedAt      DateTime        @default(now())
-  progress         Int             @default(0)
+
+  // İlerleme takibi
+  currentProgress  Int             @default(0) // Mevcut ilerleme
+  targetProgress   Int             @default(1) // Hedef ilerleme
+  isCompleted      Boolean         @default(false)
+
+  // Ödül bilgisi
+  rewardClaimed    Boolean         @default(false)
+  claimedAt        DateTime?
+
+  // Tarihler
+  startedAt        DateTime        @default(now())
+  completedAt      DateTime?
+  expiresAt        DateTime?       // Bu görevin kullanıcı için son geçerlilik tarihi
 
   @@unique([userId, taskId])
   @@index([userId])
+  @@index([userId, isCompleted])
 }
 
 // Referans milestone'ları
