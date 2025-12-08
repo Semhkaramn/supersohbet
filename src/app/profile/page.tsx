@@ -8,7 +8,25 @@ import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import BottomNav from '@/components/BottomNav'
-import { Trophy, Star, MessageSquare, TrendingUp, ShoppingBag, Clock, CheckCircle2, Package, Users } from 'lucide-react'
+import { Trophy, Star, MessageSquare, TrendingUp, ShoppingBag, Clock, CheckCircle2, Package, Users, History } from 'lucide-react'
+
+interface WheelSpin {
+  id: string
+  prize: {
+    name: string
+  }
+  pointsWon: number
+  spunAt: string
+}
+
+interface PointHistory {
+  id: string
+  amount: number
+  type: string
+  description: string
+  adminUsername?: string
+  createdAt: string
+}
 
 interface UserData {
   id: string
@@ -21,6 +39,7 @@ interface UserData {
   totalMessages: number
   totalReferrals: number
   referralPoints: number
+  pointHistory?: PointHistory[]
   messageStats?: {
     daily: number
     weekly: number
@@ -51,15 +70,6 @@ interface Purchase {
   pointsSpent: number
   status: string
   purchasedAt: string
-}
-
-interface WheelSpin {
-  id: string
-  prize: {
-    name: string
-  }
-  pointsWon: number
-  spunAt: string
 }
 
 function ProfileContent() {
@@ -208,7 +218,7 @@ function ProfileContent() {
                 <p className="text-slate-400 text-xs">
                   {userData.nextRank
                     ? `${userData.nextRank.minXp - userData.xp} XP kaldı`
-                    : 'Maksimum seviye!'}
+                    : 'Maksimum seviye!' }
                 </p>
               </div>
             </div>
@@ -270,14 +280,18 @@ function ProfileContent() {
 
         {/* Tabs */}
         <Tabs defaultValue="purchases" className="w-full">
-          <TabsList className="w-full grid grid-cols-2 bg-slate-800 border border-slate-700">
+          <TabsList className="w-full grid grid-cols-3 bg-slate-800 border border-slate-700">
             <TabsTrigger value="purchases" className="data-[state=active]:bg-slate-700">
-              <ShoppingBag className="w-4 h-4 mr-2" />
-              Satın Alımlar
+              <ShoppingBag className="w-4 h-4 mr-1" />
+              Alımlar
             </TabsTrigger>
             <TabsTrigger value="wheel" className="data-[state=active]:bg-slate-700">
-              <Star className="w-4 h-4 mr-2" />
-              Çark Geçmişi
+              <Star className="w-4 h-4 mr-1" />
+              Çark
+            </TabsTrigger>
+            <TabsTrigger value="history" className="data-[state=active]:bg-slate-700">
+              <History className="w-4 h-4 mr-1" />
+              Geçmiş
             </TabsTrigger>
           </TabsList>
 
@@ -341,6 +355,96 @@ function ProfileContent() {
                   </div>
                 </Card>
               ))
+            )}
+          </TabsContent>
+
+          <TabsContent value="history" className="mt-4 space-y-3">
+            {!userData.pointHistory || userData.pointHistory.length === 0 ? (
+              <Card className="bg-slate-800/50 border-slate-700 p-8 text-center">
+                <History className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+                <p className="text-slate-400">Henüz puan geçmişi yok</p>
+              </Card>
+            ) : (
+              userData.pointHistory.map(history => {
+                const isPositive = history.amount > 0
+
+                // Her tip için önceden tanımlanmış stil
+                let iconBg = 'bg-slate-500/20'
+                let iconBorder = 'border-slate-500/30'
+                let Icon = History
+                let iconColor = 'text-slate-400'
+
+                switch(history.type) {
+                  case 'wheel_win':
+                    Icon = Star
+                    iconBg = 'bg-purple-500/20'
+                    iconBorder = 'border-purple-500/30'
+                    iconColor = 'text-purple-400'
+                    break
+                  case 'shop_purchase':
+                    Icon = ShoppingBag
+                    iconBg = 'bg-red-500/20'
+                    iconBorder = 'border-red-500/30'
+                    iconColor = 'text-red-400'
+                    break
+                  case 'admin_add':
+                    Icon = TrendingUp
+                    iconBg = 'bg-green-500/20'
+                    iconBorder = 'border-green-500/30'
+                    iconColor = 'text-green-400'
+                    break
+                  case 'admin_remove':
+                    Icon = TrendingUp
+                    iconBg = 'bg-orange-500/20'
+                    iconBorder = 'border-orange-500/30'
+                    iconColor = 'text-orange-400'
+                    break
+                  case 'referral_reward':
+                    Icon = Users
+                    iconBg = 'bg-blue-500/20'
+                    iconBorder = 'border-blue-500/30'
+                    iconColor = 'text-blue-400'
+                    break
+                  case 'message_reward':
+                    Icon = MessageSquare
+                    iconBg = 'bg-teal-500/20'
+                    iconBorder = 'border-teal-500/30'
+                    iconColor = 'text-teal-400'
+                    break
+                }
+
+                return (
+                  <Card key={history.id} className="bg-slate-800/80 border-slate-700 p-4 hover:bg-slate-800 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-lg ${iconBg} flex items-center justify-center border ${iconBorder}`}>
+                        <Icon className={`w-6 h-6 ${iconColor}`} />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-white mb-1">{history.description}</h3>
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="text-slate-400">
+                            {new Date(history.createdAt).toLocaleDateString('tr-TR', {
+                              day: 'numeric',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                          {history.adminUsername && (
+                            <span className="text-blue-400">• {history.adminUsername}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-2xl font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
+                          {isPositive ? '+' : ''}{history.amount}
+                        </p>
+                        <p className="text-xs text-slate-400">puan</p>
+                      </div>
+                    </div>
+                  </Card>
+                )
+              })
             )}
           </TabsContent>
         </Tabs>
