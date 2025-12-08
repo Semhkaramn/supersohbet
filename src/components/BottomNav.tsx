@@ -54,6 +54,7 @@ export default function BottomNav({ userId }: BottomNavProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
                   item.active
                     ? 'text-blue-400 bg-blue-500/10'
