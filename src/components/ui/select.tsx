@@ -29,13 +29,13 @@ const extractSelectItems = (children: React.ReactNode): Map<string, React.ReactN
         // Check if this element has a 'value' prop (likely a SelectItem)
         if (child.props && typeof child.props === 'object' && 'value' in child.props && typeof child.props.value === 'string') {
           const value = child.props.value;
-          const label = child.props.children;
+          const label = 'children' in child.props ? child.props.children : value;
           if (value) {
             items.set(value, label);
           }
         }
         // Recursively traverse children
-        if (child.props && typeof child.props === 'object' && child.props.children) {
+        if (child.props && typeof child.props === 'object' && 'children' in child.props && child.props.children) {
           traverse(child.props.children);
         }
       }
