@@ -43,7 +43,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Tüm milestone'ları al (eğer tablo varsa)
-    let milestones = []
+    let milestones: Array<{
+      id: string
+      requiredCount: number
+      rewardPoints: number
+      name: string
+      description: string | null
+      completed: boolean
+      progress: number
+      remaining: number
+    }> = []
     try {
       const allMilestones = await prisma.referralMilestone.findMany({
         where: { isActive: true },
