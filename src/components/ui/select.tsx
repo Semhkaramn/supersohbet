@@ -9,7 +9,6 @@ interface SelectContextType {
   open: boolean;
   setOpen: (open: boolean) => void;
   selectItems: Map<string, React.ReactNode>;
-  registerItem: (value: string, label: React.ReactNode) => void;
 }
 
 const SelectContext = React.createContext<SelectContextType | undefined>(undefined);
@@ -20,20 +19,46 @@ interface SelectProps {
   children: React.ReactNode;
 }
 
+// Helper function to extract SelectItems from children
+const extractSelectItems = (children: React.ReactNode): Map<string, React.ReactNode> => {
+  const items = new Map<string, React.ReactNode>();
+
+  const traverse = (node: React.ReactNode) => {
+    React.Children.forEach(node, (child) => {
+      if (React.isValidElement(child)) {
+        // Check if this element has a 'value' prop (likely a SelectItem)
+        if (child.props && 'value' in child.props && typeof child.props.value === 'string') {
+          const value = child.props.value;
+          const label = child.props.children;
+          if (value) {
+            items.set(value, label);
+          }
+        }
+        // Recursively traverse children
+        if (child.props && child.props.children) {
+          traverse(child.props.children);
+        }
+      }
+    });
+  };
+
+  traverse(children);
+  return items;
+};
+
 const Select = ({ value, onValueChange, children }: SelectProps) => {
   const [open, setOpen] = React.useState(false);
-  const [selectItems, setSelectItems] = React.useState<Map<string, React.ReactNode>>(new Map());
+  const [selectItems, setSelectItems] = React.useState<Map<string, React.ReactNode>>(() =>
+    extractSelectItems(children)
+  );
 
-  const registerItem = React.useCallback((itemValue: string, label: React.ReactNode) => {
-    setSelectItems((prev) => {
-      const newMap = new Map(prev);
-      newMap.set(itemValue, label);
-      return newMap;
-    });
-  }, []);
+  // Update items when children change
+  React.useEffect(() => {
+    setSelectItems(extractSelectItems(children));
+  }, [children]);
 
   return (
-    <SelectContext.Provider value={{ value, onValueChange, open, setOpen, selectItems, registerItem }}>
+    <SelectContext.Provider value={{ value, onValueChange, open, setOpen, selectItems }}>
       <div className="relative">{children}</div>
     </SelectContext.Provider>
   );
@@ -106,11 +131,6 @@ const SelectItem = React.forwardRef<HTMLDivElement, SelectItemProps>(
   ({ className = "", value, children, ...props }, ref) => {
     const context = React.useContext(SelectContext);
     if (!context) throw new Error("SelectItem must be used within Select");
-
-    // Register this item with the context
-    React.useEffect(() => {
-      context.registerItem(value, children);
-    }, [value, children, context]);
 
     return (
       <div
