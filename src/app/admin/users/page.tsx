@@ -51,6 +51,17 @@ export default function AdminUsersPage() {
     loadUsers()
   }, [])
 
+  useEffect(() => {
+    const token = localStorage.getItem('admin_token')
+    if (!token) return
+
+    const delayDebounceFn = setTimeout(() => {
+      loadUsers()
+    }, 300)
+
+    return () => clearTimeout(delayDebounceFn)
+  }, [searchTerm])
+
   async function loadUsers() {
     try {
       const response = await fetch(`/api/admin/users?search=${searchTerm}`)
@@ -157,7 +168,6 @@ export default function AdminUsersPage() {
             <Input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && loadUsers()}
               className="pl-10 bg-white/5 border-white/10 text-white"
               placeholder="Kullanıcı ara..."
             />
