@@ -104,6 +104,7 @@ export default function AdminSettingsPage() {
     { key: 'general', label: 'Genel', icon: '⚙️' },
     { key: 'telegram', label: 'Telegram', icon: '📱' },
     { key: 'points', label: 'Puan & XP', icon: '⭐' },
+    { key: 'referral', label: 'Referans', icon: '👥' },
     { key: 'limits', label: 'Kısıtlamalar', icon: '🚫' },
     { key: 'wheel', label: 'Şans Çarkı', icon: '🎡' },
   ]
@@ -127,7 +128,7 @@ export default function AdminSettingsPage() {
         </div>
 
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 bg-white/10">
+          <TabsList className="grid w-full grid-cols-6 bg-white/10">
             {categories.map(cat => (
               <TabsTrigger key={cat.key} value={cat.key} className="text-white">
                 {cat.icon} {cat.label}
