@@ -53,7 +53,11 @@ export async function PUT(
     const body = await request.json()
     const { points, xp, dailySpinsLeft } = body
 
-    const updateData: any = {}
+    const updateData: {
+      points?: number;
+      xp?: number;
+      dailySpinsLeft?: number;
+    } = {}
     if (typeof points === 'number') updateData.points = points
     if (typeof xp === 'number') updateData.xp = xp
     if (typeof dailySpinsLeft === 'number') updateData.dailySpinsLeft = dailySpinsLeft
