@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import type { Prisma } from '@prisma/client'
 
-const SPIN_COST = 250
+// Çark artık tamamen ücretsiz
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,14 +36,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Puan kontrolü
-    if (user.points < SPIN_COST) {
-      return NextResponse.json(
-        { error: 'Insufficient points' },
-        { status: 400 }
-      )
-    }
-
     // Aktif ödülleri getir
     const prizes = await prisma.wheelPrize.findMany({
       where: { isActive: true }
@@ -71,19 +63,13 @@ export async function POST(request: NextRequest) {
 
     // Transaction ile işlemleri gerçekleştir
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // Puan düş
+      // Çark hakkını azalt ve kazanılan puanı ekle
       await tx.user.update({
         where: { id: userId },
         data: {
-          points: { decrement: SPIN_COST },
-          dailySpinsLeft: { decrement: 1 }
+          dailySpinsLeft: { decrement: 1 },
+          points: { increment: selectedPrize.points }
         }
-      })
-
-      // Kazanılan puanı ekle
-      await tx.user.update({
-        where: { id: userId },
-        data: { points: { increment: selectedPrize.points } }
       })
 
       // Çark çevirme kaydı oluştur
