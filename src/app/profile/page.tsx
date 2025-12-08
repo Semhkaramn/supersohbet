@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import BottomNav from '@/components/BottomNav'
-import { Trophy, Star, MessageSquare, TrendingUp, ShoppingBag, Clock, CheckCircle2, Package } from 'lucide-react'
+import { Trophy, Star, MessageSquare, TrendingUp, ShoppingBag, Clock, CheckCircle2, Package, Users } from 'lucide-react'
 
 interface UserData {
   id: string
@@ -19,6 +19,8 @@ interface UserData {
   points: number
   xp: number
   totalMessages: number
+  totalReferrals: number
+  referralPoints: number
   messageStats?: {
     daily: number
     weekly: number
@@ -177,7 +179,7 @@ function ProfileContent() {
         </Card>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-2 gap-3 mb-4">
           <Card className="bg-white/5 border-white/10 p-3 text-center">
             <div className="text-xl font-bold text-yellow-300">{userData.points}</div>
             <p className="text-white/60 text-xs">Puan</p>
@@ -189,6 +191,10 @@ function ProfileContent() {
           <Card className="bg-white/5 border-white/10 p-3 text-center">
             <div className="text-xl font-bold text-blue-300">{userData.totalMessages}</div>
             <p className="text-white/60 text-xs">Mesaj</p>
+          </Card>
+          <Card className="bg-white/5 border-white/10 p-3 text-center">
+            <div className="text-xl font-bold text-orange-300">{userData.totalReferrals || 0}</div>
+            <p className="text-white/60 text-xs">Davet</p>
           </Card>
         </div>
 
@@ -214,6 +220,24 @@ function ProfileContent() {
             )}
           </div>
           <Progress value={xpProgress} className="h-2 bg-slate-700" />
+        </Card>
+
+        {/* Referans İstatistikleri */}
+        <Card className="bg-gradient-to-br from-orange-600/20 to-red-600/20 border-orange-500/30 p-4 mb-4">
+          <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+            <Users className="w-5 h-5 text-orange-400" />
+            Referans İstatistiklerim
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-orange-400">{userData.totalReferrals || 0}</p>
+              <p className="text-slate-400 text-xs">Toplam Davet</p>
+            </div>
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-red-400">{userData.referralPoints || 0}</p>
+              <p className="text-slate-400 text-xs">Kazanılan Puan</p>
+            </div>
+          </div>
         </Card>
 
         {/* Mesaj İstatistikleri */}
