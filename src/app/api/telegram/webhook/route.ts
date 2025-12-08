@@ -197,6 +197,26 @@ Başlamak için yanındaki menü butonuna tıkla! 👆
                 }
               })
 
+              // Milestone kontrolü yap
+              try {
+                const { checkAndRewardMilestones } = await import('@/lib/referral')
+                const completedMilestones = await checkAndRewardMilestones(referrer.id, referrer.telegramId)
+
+                // Eğer milestone tamamlandıysa davet edene bildir
+                if (completedMilestones && completedMilestones.length > 0) {
+                  for (const milestone of completedMilestones) {
+                    await sendTelegramMessage(parseInt(referrer.telegramId), `
+🎉 **Milestone Tamamlandı!**
+
+${milestone.name} hedefini başardın!
++${milestone.rewardPoints} puan kazandın! 🏆
+                    `.trim())
+                  }
+                }
+              } catch (err) {
+                console.error('Milestone check error:', err)
+              }
+
               // Bonus mesajını gönder
               await sendTelegramMessage(chatId, `
 🎁 **Referans Bonusu!**
