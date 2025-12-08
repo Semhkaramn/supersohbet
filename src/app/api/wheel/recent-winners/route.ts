@@ -18,7 +18,7 @@ export async function GET() {
         }
       },
       orderBy: { spunAt: 'desc' },
-      take: 10
+      take: 5
     })
 
     return NextResponse.json({ winners })
