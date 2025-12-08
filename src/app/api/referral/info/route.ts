@@ -84,31 +84,23 @@ export async function GET(request: NextRequest) {
       milestones = []
     }
 
-    // Eğer kullanıcının referans kodu yoksa oluştur
-    if (!user.referralCode) {
-      const referralCode = generateReferralCode(user.telegramId)
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { referralCode }
-      })
-      user.referralCode = referralCode
-    }
-
     // Referans ayarlarını al
     const settings = await prisma.settings.findMany({
       where: {
         key: {
-          in: ['referral_bonus_inviter', 'referral_bonus_invited']
+          in: ['referral_bonus_inviter', 'referral_bonus_invited', 'telegram_bot_username']
         }
       }
     })
 
     const settingsMap = settings.reduce((acc, s) => ({ ...acc, [s.key]: s.value }), {} as Record<string, string>)
 
-    const referralLink = `https://t.me/${process.env.TELEGRAM_BOT_USERNAME || 'your_bot'}?start=${user.referralCode}`
+    const botUsername = process.env.TELEGRAM_BOT_USERNAME || settingsMap.telegram_bot_username || 'supersohbet_bot'
+    // Telegram ID'yi direk kullan - daha basit ve güvenli
+    const referralLink = `https://t.me/${botUsername}?start=ref_${user.telegramId}`
 
     return NextResponse.json({
-      referralCode: user.referralCode,
+      referralCode: user.telegramId, // Telegram ID kullanıyoruz artık
       referralLink,
       totalReferrals: user.totalReferrals,
       referralPoints: user.referralPoints,
@@ -122,12 +114,4 @@ export async function GET(request: NextRequest) {
     console.error('Referral info error:', error)
     return NextResponse.json({ error: 'Sunucu hatası' }, { status: 500 })
   }
-}
-
-function generateReferralCode(telegramId: string): string {
-  // Telegram ID'den benzersiz 8 karakterlik kod oluştur
-  const hash = telegramId.split('').reduce((acc, char) => {
-    return ((acc << 5) - acc) + char.charCodeAt(0)
-  }, 0)
-  return Math.abs(hash).toString(36).substring(0, 8).toUpperCase()
 }
