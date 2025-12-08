@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import BottomNav from '@/components/BottomNav'
 import { Trophy, Star, ShoppingBag, TrendingUp } from 'lucide-react'
 
@@ -15,6 +15,7 @@ interface UserData {
   username?: string
   firstName?: string
   lastName?: string
+  photoUrl?: string
   points: number
   xp: number
   totalMessages: number
@@ -109,6 +110,7 @@ function DashboardContent() {
               className="w-16 h-16 border-2 border-white/20 cursor-pointer"
               onClick={() => router.push(`/profile?userId=${userId}`)}
             >
+              {userData.photoUrl && <AvatarImage src={userData.photoUrl} alt={userData.firstName || userData.username || 'User'} />}
               <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-xl font-bold">
                 {userData.firstName?.[0] || userData.username?.[0] || '?'}
               </AvatarFallback>
