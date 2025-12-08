@@ -92,18 +92,11 @@ export default function AdminDashboard() {
       color: 'from-emerald-500 to-emerald-600'
     },
     {
-      title: 'Çark Ödülleri',
-      description: 'Çark ödüllerini yönet',
-      icon: Ticket,
-      href: '/admin/wheel',
-      color: 'from-orange-500 to-orange-600'
-    },
-    {
-      title: 'Slot Makinesi',
-      description: 'Slot makinesi ödüllerini yönet',
+      title: 'Oyun Sistemleri',
+      description: 'Çark ve Slot Makinesi yönetimi',
       icon: Dices,
-      href: '/admin/slot-machine',
-      color: 'from-red-500 to-red-600'
+      href: '/admin/games',
+      color: 'from-orange-500 to-red-600'
     },
     {
       title: 'Sponsorlar',
