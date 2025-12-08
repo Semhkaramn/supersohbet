@@ -78,6 +78,24 @@ async function getPhotoUrl(userId: string): Promise<string | null> {
   }
 }
 
+// Ban kontrolü
+async function checkUserBan(userId: string): Promise<{ isBanned: boolean; banReason?: string }> {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { telegramId: userId },
+      select: { isBanned: true, banReason: true }
+    })
+
+    return {
+      isBanned: user?.isBanned || false,
+      banReason: user?.banReason || undefined
+    }
+  } catch (error) {
+    console.error('Error checking ban status:', error)
+    return { isBanned: false }
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const update = await request.json()
@@ -95,6 +113,23 @@ export async function POST(request: NextRequest) {
       const query = update.callback_query
       const chatId = query.message?.chat.id
       const userId = String(query.from.id)
+
+      // Ban kontrolü
+      const banStatus = await checkUserBan(userId)
+      if (banStatus.isBanned) {
+        await answerCallbackQuery(query.id)
+        if (chatId) {
+          const banMessage = `
+🚫 **Hesabınız Yasaklandı**
+
+${banStatus.banReason ? `Neden: ${banStatus.banReason}` : 'Sistem kurallarını ihlal ettiniz.'}
+
+Bot özelliklerini kullanmanız engellenmiştir.
+          `.trim()
+          await sendTelegramMessage(chatId, banMessage)
+        }
+        return NextResponse.json({ ok: true })
+      }
 
       if (query.data === 'my_stats') {
         const user = await prisma.user.findUnique({
@@ -140,6 +175,22 @@ Daha fazla bilgi için Ödül Merkezi'ne git!
       const firstName = message.from.first_name
       const lastName = message.from.last_name
       const messageText = message.text
+
+      // /start komutu hariç her şey için ban kontrolü
+      if (messageText !== '/start' && !messageText.startsWith('/start ')) {
+        const banStatus = await checkUserBan(userId)
+        if (banStatus.isBanned) {
+          const banMessage = `
+🚫 **Hesabınız Yasaklandı**
+
+${banStatus.banReason ? `Neden: ${banStatus.banReason}` : 'Sistem kurallarını ihlal ettiniz.'}
+
+Bot özelliklerini kullanmanız engellenmiştir.
+          `.trim()
+          await sendTelegramMessage(chatId, banMessage)
+          return NextResponse.json({ ok: true })
+        }
+      }
 
       // /start komutu kontrolü
       if (messageText === '/start' || messageText.startsWith('/start ')) {
@@ -411,6 +462,6 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error('Webhook error:', error)
-    return NextResponse.json({ ok: false }, { status: 500 })
+    return NextResponse.json({ ok: true })
   }
 }
