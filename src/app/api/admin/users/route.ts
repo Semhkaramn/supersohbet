@@ -60,7 +60,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const updateData: any = {}
+    const updateData: {
+      points?: number;
+      xp?: number;
+    } = {}
     if (typeof points === 'number') updateData.points = points
     if (typeof xp === 'number') updateData.xp = xp
 
