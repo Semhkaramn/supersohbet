@@ -96,8 +96,13 @@ function WheelContent() {
         // Çarkı döndür
         const randomSpins = 5 + Math.random() * 3 // 5-8 tam tur
         const prizeIndex = prizes.findIndex(p => p.id === data.prizeId)
-        const prizeAngle = (360 / prizes.length) * prizeIndex
-        const finalRotation = rotation + (randomSpins * 360) + prizeAngle
+
+        // Doğru açı hesaplaması:
+        // SVG segmentleri -90 dereceden başlıyor (saat 12 pozisyonu)
+        // Ok üstte sabit, kazanan dilimin ortası ok altına gelmeli
+        const segmentAngle = 360 / prizes.length
+        const midAngle = -90 + (prizeIndex * segmentAngle) + (segmentAngle / 2)
+        const finalRotation = rotation + (randomSpins * 360) - midAngle
 
         setRotation(finalRotation)
 
