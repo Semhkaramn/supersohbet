@@ -76,6 +76,7 @@ interface UserDetail {
   pointHistory: any[]
   xpHistory: any[]
   purchases: any[]
+  taskHistory: any[]
   messageStats: {
     daily: number
     weekly: number
@@ -548,9 +549,10 @@ export default function AdminStatisticsPage() {
 
               {/* Tabs for different statistics */}
               <Tabs defaultValue="messages" className="w-full">
-                <TabsList className="bg-white/5 border-white/10 w-full">
+                <TabsList className="bg-white/5 border-white/10 w-full grid grid-cols-5">
                   <TabsTrigger value="messages">Mesajlar</TabsTrigger>
-                  <TabsTrigger value="points">Puan Geçmişi</TabsTrigger>
+                  <TabsTrigger value="points">Puan</TabsTrigger>
+                  <TabsTrigger value="tasks">Görevler</TabsTrigger>
                   <TabsTrigger value="wheel">Çark</TabsTrigger>
                   <TabsTrigger value="purchases">Market</TabsTrigger>
                 </TabsList>
@@ -616,6 +618,51 @@ export default function AdminStatisticsPage() {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="tasks" className="space-y-2">
+                  <Card className="bg-white/5 border-white/10 p-6">
+                    <h4 className="text-lg font-bold text-white mb-4">Görev Geçmişi</h4>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {userDetail.taskHistory && userDetail.taskHistory.length > 0 ? (
+                        userDetail.taskHistory.map((completion: any) => (
+                          <div key={completion.id} className="bg-white/5 p-3 rounded flex justify-between items-center">
+                            <div className="flex-1">
+                              <p className="text-white font-semibold">{completion.task.title}</p>
+                              {completion.task.description && (
+                                <p className="text-gray-400 text-sm">{completion.task.description}</p>
+                              )}
+                              <p className="text-gray-400 text-xs mt-1">
+                                {new Date(completion.claimedAt).toLocaleString('tr-TR')}
+                              </p>
+                              <div className="flex gap-2 mt-1">
+                                <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">
+                                  {completion.task.category}
+                                </span>
+                                <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded">
+                                  {completion.task.taskType}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right ml-4">
+                              {completion.task.pointsReward > 0 && (
+                                <div className="text-lg font-bold text-green-400">
+                                  +{completion.task.pointsReward} Puan
+                                </div>
+                              )}
+                              {completion.task.xpReward > 0 && (
+                                <div className="text-sm text-yellow-400">
+                                  +{completion.task.xpReward} XP
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-400 text-center py-8">Henüz tamamlanmış görev yok</p>
+                      )}
                     </div>
                   </Card>
                 </TabsContent>
