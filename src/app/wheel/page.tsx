@@ -102,12 +102,16 @@ function WheelContent() {
       if (data.success) {
         // Çarkı döndür
         const randomSpins = 5 + Math.random() * 3 // 5-8 tam tur
-        const prizeIndex = prizes.findIndex(p => p.id === data.prizeId)
 
-        if (prizeIndex >= 0) {
-          console.log(`🎯 FRONTEND - Kazanan prize frontend dizisinde Index ${prizeIndex}: ${prizes[prizeIndex].name} = ${prizes[prizeIndex].points} puan`)
+        // Backend'den gelen prizeIndex'i kullan (daha güvenilir)
+        const prizeIndex = data.prizeIndex !== undefined ? data.prizeIndex : prizes.findIndex(p => p.id === data.prizeId)
+
+        console.log(`🎯 FRONTEND - Backend'den gelen: Index ${data.prizeIndex}, Prize: ${data.prizeName}, Puan: ${data.pointsWon}`)
+
+        if (prizeIndex >= 0 && prizeIndex < prizes.length) {
+          console.log(`✅ FRONTEND - Çarkta gösterilecek: Index ${prizeIndex}: ${prizes[prizeIndex].name} = ${prizes[prizeIndex].points} puan`)
         } else {
-          console.error(`❌ HATA: Backend'den gelen prize ID bulunamadı! Prize ID: ${data.prizeId}`)
+          console.error(`❌ HATA: Geçersiz prize index! Index: ${prizeIndex}, Prize sayısı: ${prizes.length}`)
         }
 
         // Doğru açı hesaplaması:
@@ -129,7 +133,8 @@ function WheelContent() {
 
         // Animasyon bitince sonucu göster
         setTimeout(() => {
-          toast.success(`🎉 Tebrikler! ${data.pointsWon} puan kazandınız!`)
+          // Backend'den gelen prizeName ve pointsWon'u kullan
+          toast.success(`🎉 Tebrikler! ${data.prizeName} - ${data.pointsWon} puan kazandınız!`)
           setSpinning(false)
           loadData() // Verileri yenile
         }, 4000)
