@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import BottomNav from '@/components/BottomNav'
-import { FileText, CheckCircle2, Clock, Zap } from 'lucide-react'
+import { FileText, CheckCircle2, Clock, Zap, Users, Gift } from 'lucide-react'
 
 interface Task {
   id: string
@@ -22,6 +22,7 @@ function TasksContent() {
 
   const [dailyTasks, setDailyTasks] = useState<Task[]>([])
   const [weeklyTasks, setWeeklyTasks] = useState<Task[]>([])
+  const [referralCount, setReferralCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -34,10 +35,16 @@ function TasksContent() {
 
   async function loadTasks() {
     try {
-      const response = await fetch(`/api/task?userId=${userId}`)
-      const data = await response.json()
-      setDailyTasks(data.dailyTasks || [])
-      setWeeklyTasks(data.weeklyTasks || [])
+      const [tasksRes, referralRes] = await Promise.all([
+        fetch(`/api/task?userId=${userId}`),
+        fetch(`/api/referral/info?userId=${userId}`)
+      ])
+      const tasksData = await tasksRes.json()
+      const referralData = await referralRes.json()
+
+      setDailyTasks(tasksData.dailyTasks || [])
+      setWeeklyTasks(tasksData.weeklyTasks || [])
+      setReferralCount(referralData.totalReferrals || 0)
     } catch (error) {
       console.error('Error loading tasks:', error)
     } finally {
@@ -152,6 +159,130 @@ function TasksContent() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Referral Tasks */}
+        <div className="mt-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="w-5 h-5 text-orange-400" />
+            <h2 className="text-xl font-bold text-white">Referans Görevleri</h2>
+          </div>
+          <div className="space-y-3">
+            {/* 1 Kişi Davet Et */}
+            <Card className={`bg-gradient-to-br ${referralCount >= 1 ? 'from-green-500/10 to-emerald-500/10 border-green-500/30' : 'from-orange-500/10 to-red-500/10 border-orange-500/30'} p-4`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 flex-1">
+                  {referralCount >= 1 ? (
+                    <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
+                  ) : (
+                    <Users className="w-6 h-6 text-orange-400 flex-shrink-0" />
+                  )}
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-white">1 Arkadaş Davet Et</h3>
+                    <p className="text-sm text-gray-400">İlerleme: {referralCount}/1</p>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <Badge className={referralCount >= 1 ? "bg-green-500/20 text-green-300 border-green-500/30" : "bg-orange-500/20 text-orange-300 border-orange-500/30"}>
+                    <Gift className="w-3 h-3 mr-1" />
+                    +100 puan
+                  </Badge>
+                </div>
+              </div>
+            </Card>
+
+            {/* 5 Kişi Davet Et */}
+            <Card className={`bg-gradient-to-br ${referralCount >= 5 ? 'from-green-500/10 to-emerald-500/10 border-green-500/30' : 'from-orange-500/10 to-red-500/10 border-orange-500/30'} p-4`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 flex-1">
+                  {referralCount >= 5 ? (
+                    <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
+                  ) : (
+                    <Users className="w-6 h-6 text-orange-400 flex-shrink-0" />
+                  )}
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-white">5 Arkadaş Davet Et</h3>
+                    <p className="text-sm text-gray-400">İlerleme: {referralCount}/5</p>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <Badge className={referralCount >= 5 ? "bg-green-500/20 text-green-300 border-green-500/30" : "bg-orange-500/20 text-orange-300 border-orange-500/30"}>
+                    <Gift className="w-3 h-3 mr-1" />
+                    +500 puan
+                  </Badge>
+                </div>
+              </div>
+            </Card>
+
+            {/* 10 Kişi Davet Et */}
+            <Card className={`bg-gradient-to-br ${referralCount >= 10 ? 'from-green-500/10 to-emerald-500/10 border-green-500/30' : 'from-orange-500/10 to-red-500/10 border-orange-500/30'} p-4`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 flex-1">
+                  {referralCount >= 10 ? (
+                    <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
+                  ) : (
+                    <Users className="w-6 h-6 text-orange-400 flex-shrink-0" />
+                  )}
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-white">10 Arkadaş Davet Et</h3>
+                    <p className="text-sm text-gray-400">İlerleme: {referralCount}/10</p>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <Badge className={referralCount >= 10 ? "bg-green-500/20 text-green-300 border-green-500/30" : "bg-orange-500/20 text-orange-300 border-orange-500/30"}>
+                    <Gift className="w-3 h-3 mr-1" />
+                    +1000 puan
+                  </Badge>
+                </div>
+              </div>
+            </Card>
+
+            {/* 25 Kişi Davet Et */}
+            <Card className={`bg-gradient-to-br ${referralCount >= 25 ? 'from-green-500/10 to-emerald-500/10 border-green-500/30' : 'from-orange-500/10 to-red-500/10 border-orange-500/30'} p-4`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 flex-1">
+                  {referralCount >= 25 ? (
+                    <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
+                  ) : (
+                    <Users className="w-6 h-6 text-orange-400 flex-shrink-0" />
+                  )}
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-white">25 Arkadaş Davet Et</h3>
+                    <p className="text-sm text-gray-400">İlerleme: {referralCount}/25</p>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <Badge className={referralCount >= 25 ? "bg-green-500/20 text-green-300 border-green-500/30" : "bg-orange-500/20 text-orange-300 border-orange-500/30"}>
+                    <Gift className="w-3 h-3 mr-1" />
+                    +3000 puan
+                  </Badge>
+                </div>
+              </div>
+            </Card>
+
+            {/* 50 Kişi Davet Et */}
+            <Card className={`bg-gradient-to-br ${referralCount >= 50 ? 'from-green-500/10 to-emerald-500/10 border-green-500/30' : 'from-orange-500/10 to-red-500/10 border-orange-500/30'} p-4`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 flex-1">
+                  {referralCount >= 50 ? (
+                    <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
+                  ) : (
+                    <Users className="w-6 h-6 text-orange-400 flex-shrink-0" />
+                  )}
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-white">50 Arkadaş Davet Et</h3>
+                    <p className="text-sm text-gray-400">İlerleme: {referralCount}/50</p>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <Badge className={referralCount >= 50 ? "bg-green-500/20 text-green-300 border-green-500/30" : "bg-orange-500/20 text-orange-300 border-orange-500/30"}>
+                    <Gift className="w-3 h-3 mr-1" />
+                    +7500 puan
+                  </Badge>
+                </div>
+              </div>
+            </Card>
+          </div>
         </div>
 
         {/* Info Card */}
