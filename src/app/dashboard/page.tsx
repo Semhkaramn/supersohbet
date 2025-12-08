@@ -84,55 +84,66 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen pb-24">
-      {/* Header / Profile Card */}
-      <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-4 pb-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center gap-4 mb-6">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-4">
+        <div className="max-w-2xl mx-auto text-center">
+          <h1 className="text-xl font-bold text-white flex items-center justify-center gap-2">
+            <Trophy className="w-5 h-5" />
+            Ana Sayfa
+          </h1>
+        </div>
+      </div>
+
+      {/* User Info & Stats */}
+      <div className="max-w-2xl mx-auto px-4 py-6">
+        {/* User Card */}
+        <Card className="bg-white/5 border-white/10 p-4 mb-4">
+          <div className="flex items-center gap-4">
             <Avatar
-              className="w-16 h-16 border-4 border-white/20 cursor-pointer hover:scale-110 transition-transform"
+              className="w-16 h-16 border-2 border-white/20 cursor-pointer"
               onClick={() => router.push(`/profile?userId=${userId}`)}
             >
-              <AvatarFallback className="bg-white/10 text-white text-xl font-bold">
+              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-xl font-bold">
                 {userData.firstName?.[0] || userData.username?.[0] || '?'}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-white">
+              <h2 className="text-xl font-bold text-white">
                 {userData.firstName || userData.username || 'Kullanıcı'}
-              </h1>
-              <p className="text-white/70 text-sm">@{userData.username || 'kullanici'}</p>
+              </h2>
+              <p className="text-white/60 text-sm">@{userData.username || 'kullanici'}</p>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold text-yellow-300">{userData.points}</div>
-              <p className="text-white/70 text-xs">Puan</p>
+              <div className="text-2xl font-bold text-yellow-300">{userData.points}</div>
+              <p className="text-white/60 text-xs">Puan</p>
             </div>
           </div>
+        </Card>
 
-          {/* Rank Progress */}
-          <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">{userData.rank?.icon || '⭐'}</span>
-                <div>
-                  <p className="text-white font-semibold">{userData.rank?.name || 'Seviye 1'}</p>
-                  <p className="text-white/70 text-xs">
-                    {userData.nextRank
-                      ? `Sonraki seviye için ${userData.nextRank.minXp - userData.xp} XP gerekli`
-                      : 'Maksimum seviye!'}
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-white font-bold">{userData.xp} XP</p>
+        {/* Rank Progress */}
+        <Card className="bg-white/5 border-white/10 p-4 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">{userData.rank?.icon || '⭐'}</span>
+              <div>
+                <p className="text-white font-semibold">{userData.rank?.name || 'Seviye 1'}</p>
+                <p className="text-white/70 text-xs">
+                  {userData.nextRank
+                    ? `Sonraki seviye için ${userData.nextRank.minXp - userData.xp} XP gerekli`
+                    : 'Maksimum seviye!'}
+                </p>
               </div>
             </div>
-            <Progress value={xpProgress} className="h-2 bg-white/20" />
-          </Card>
-        </div>
+            <div className="text-right">
+              <p className="text-white font-bold">{userData.xp} XP</p>
+            </div>
+          </div>
+          <Progress value={xpProgress} className="h-2 bg-white/20" />
+        </Card>
       </div>
 
       {/* Stats Grid */}
-      <div className="max-w-2xl mx-auto px-4 -mt-6">
+      <div className="max-w-2xl mx-auto px-4">
         <div className="grid grid-cols-2 gap-3 mb-6">
           <Card className="bg-white/5 backdrop-blur-sm border-white/10 p-4">
             <div className="flex items-center gap-3">
