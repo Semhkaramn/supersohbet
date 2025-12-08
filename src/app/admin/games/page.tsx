@@ -48,22 +48,12 @@ interface Setting {
   category: string
 }
 
-// Önceden tanımlı sembol listesi
-const PREDEFINED_SYMBOLS = [
-  { value: '777', label: '777 (Triple Seven)', emoji: '7️⃣' },
-  { value: 'BAR', label: 'BAR', emoji: '▬' },
-  { value: '🍒', label: 'Kiraz (Cherry)', emoji: '🍒' },
-  { value: '🍋', label: 'Limon (Lemon)', emoji: '🍋' },
-  { value: '🍊', label: 'Portakal (Orange)', emoji: '🍊' },
-  { value: '🍉', label: 'Karpuz (Watermelon)', emoji: '🍉' },
-  { value: '🍇', label: 'Üzüm (Grape)', emoji: '🍇' },
-  { value: '🍓', label: 'Çilek (Strawberry)', emoji: '🍓' },
-  { value: '💎', label: 'Elmas (Diamond)', emoji: '💎' },
-  { value: '⭐', label: 'Yıldız (Star)', emoji: '⭐' },
-  { value: '💰', label: 'Para Çantası (Money Bag)', emoji: '💰' },
-  { value: '🎰', label: 'Slot Makinesi', emoji: '🎰' },
-  { value: 'JACKPOT', label: 'JACKPOT (Yazı)', emoji: '🎉' },
-  { value: 'CUSTOM', label: 'Özel Sembol (Manuel Giriş)', emoji: '✏️' }
+// Sabit slot sembolleri - sadece 4 tane
+const SLOT_SYMBOLS = [
+  { value: '7️⃣', label: 'Yedi', emoji: '7️⃣' },
+  { value: '🍒', label: 'Kiraz', emoji: '🍒' },
+  { value: '🍇', label: 'Üzüm', emoji: '🍇' },
+  { value: '🍋', label: 'Limon', emoji: '🍋' }
 ]
 
 export default function AdminGamesPage() {
@@ -82,14 +72,13 @@ export default function AdminGamesPage() {
     order: 0
   })
 
-  // Slot states
+  // Slot states - simplified for 4 symbols
   const [slotPrizes, setSlotPrizes] = useState<SlotPrize[]>([])
   const [slotDialogOpen, setSlotDialogOpen] = useState(false)
   const [editingSlotPrize, setEditingSlotPrize] = useState<SlotPrize | null>(null)
   const [slotFormData, setSlotFormData] = useState({
     name: '',
-    symbol: '777',
-    customSymbol: '',
+    symbol: '7️⃣',
     points: 0,
     chance: 25,
     color: '#FFD700',
@@ -253,11 +242,9 @@ export default function AdminGamesPage() {
   function openSlotDialog(prize?: SlotPrize) {
     if (prize) {
       setEditingSlotPrize(prize)
-      const isCustomSymbol = !PREDEFINED_SYMBOLS.find(s => s.value === prize.symbol && s.value !== 'CUSTOM')
       setSlotFormData({
         name: prize.name,
-        symbol: isCustomSymbol ? 'CUSTOM' : prize.symbol,
-        customSymbol: isCustomSymbol ? prize.symbol : '',
+        symbol: prize.symbol,
         points: prize.points,
         chance: prize.chance,
         color: prize.color,
@@ -267,8 +254,7 @@ export default function AdminGamesPage() {
       setEditingSlotPrize(null)
       setSlotFormData({
         name: '',
-        symbol: '777',
-        customSymbol: '',
+        symbol: '7️⃣',
         points: 0,
         chance: 25,
         color: '#FFD700',
@@ -280,15 +266,6 @@ export default function AdminGamesPage() {
 
   async function handleSlotSubmit(e: React.FormEvent) {
     e.preventDefault()
-
-    const finalSymbol = slotFormData.symbol === 'CUSTOM'
-      ? slotFormData.customSymbol
-      : slotFormData.symbol
-
-    if (!finalSymbol) {
-      toast.error('Lütfen bir sembol seçin veya girin')
-      return
-    }
 
     try {
       const url = editingSlotPrize
@@ -302,7 +279,7 @@ export default function AdminGamesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: slotFormData.name,
-          symbol: finalSymbol,
+          symbol: slotFormData.symbol,
           points: slotFormData.points,
           chance: slotFormData.chance,
           color: slotFormData.color,
@@ -846,7 +823,7 @@ export default function AdminGamesPage() {
                   <SelectValue placeholder="Sembol seçin" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-white/20">
-                  {PREDEFINED_SYMBOLS.map(symbol => (
+                  {SLOT_SYMBOLS.map(symbol => (
                     <SelectItem
                       key={symbol.value}
                       value={symbol.value}
@@ -860,16 +837,6 @@ export default function AdminGamesPage() {
                   ))}
                 </SelectContent>
               </Select>
-
-              {slotFormData.symbol === 'CUSTOM' && (
-                <Input
-                  value={slotFormData.customSymbol}
-                  onChange={(e) => setSlotFormData({ ...slotFormData, customSymbol: e.target.value })}
-                  placeholder="Özel sembolünüzü girin (emoji veya yazı)"
-                  className="bg-white/5 border-white/10 text-white mt-2"
-                  required={slotFormData.symbol === 'CUSTOM'}
-                />
-              )}
               <p className="text-xs text-gray-400 mt-1">
                 Listeden seçin veya özel sembol girin
               </p>
