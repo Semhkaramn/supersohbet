@@ -234,10 +234,10 @@ model Task {
   description      String?
 
   // Görev kategorisi
-  category         String          // "daily" (günlük), "weekly" (haftalık), "permanent" (kalıcı)
+  category         String          @default("daily") // "daily" (günlük), "weekly" (haftalık), "permanent" (kalıcı)
 
   // Görev tipi
-  taskType         String          // "invite_users" (üye davet), "send_messages" (mesaj gönder), "spin_wheel" (çark çevir), "earn_points" (puan kazan), "reach_level" (seviye ulaş)
+  taskType         String          @default("send_messages") // "invite_users" (üye davet), "send_messages" (mesaj gönder), "spin_wheel" (çark çevir), "earn_points" (puan kazan), "reach_level" (seviye ulaş)
 
   // Hedef ve gereksinimler
   targetValue      Int             @default(1) // Hedef değer (örn: 5 mesaj, 3 davet)
