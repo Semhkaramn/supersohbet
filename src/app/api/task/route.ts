@@ -63,6 +63,21 @@ export async function GET(request: NextRequest) {
       completions.map(c => [c.taskId, c])
     )
 
+    // Her görev için kullanıcının kaç kez tamamladığını hesapla
+    const completionCountsPromises = allTasks.map(async (task) => {
+      const count = await prisma.taskCompletion.count({
+        where: {
+          userId,
+          taskId: task.id,
+          rewardClaimed: true
+        }
+      })
+      return [task.id, count] as const
+    })
+
+    const completionCounts = await Promise.all(completionCountsPromises)
+    const completionCountMap = new Map(completionCounts)
+
     // Kullanıcının güncel istatistiklerine göre görev ilerlemesini hesapla
     function calculateProgress(task: any, userData: NonNullable<typeof user>) {
       let currentProgress = 0
@@ -96,6 +111,7 @@ export async function GET(request: NextRequest) {
       const completion = completionMap.get(task.id)
       const currentProgress = calculateProgress(task, user)
       const isCompleted = completion?.isCompleted || currentProgress >= task.targetValue
+      const userCompletionCount = completionCountMap.get(task.id) || 0
 
       return {
         id: task.id,
@@ -109,6 +125,11 @@ export async function GET(request: NextRequest) {
         pointsReward: task.pointsReward,
         duration: task.duration,
         expiresAt: task.expiresAt,
+        completionLimit: task.completionLimit,
+        userCompletionCount,
+        remainingAttempts: task.completionLimit !== null
+          ? Math.max(0, task.completionLimit - userCompletionCount)
+          : null,
         progress: `${Math.min(currentProgress, task.targetValue)}/${task.targetValue}`,
         completed: isCompleted,
         rewardClaimed: completion?.rewardClaimed || false
@@ -216,6 +237,24 @@ export async function POST(request: NextRequest) {
         { error: 'Task not completed yet', currentProgress, targetValue: task.targetValue },
         { status: 400 }
       )
+    }
+
+    // Tamamlanma limiti kontrolü
+    if (task.completionLimit !== null) {
+      const completionCount = await prisma.taskCompletion.count({
+        where: {
+          userId,
+          taskId,
+          rewardClaimed: true
+        }
+      })
+
+      if (completionCount >= task.completionLimit) {
+        return NextResponse.json(
+          { error: `Bu görevi en fazla ${task.completionLimit} kez tamamlayabilirsiniz` },
+          { status: 400 }
+        )
+      }
     }
 
     // Daha önce ödül alınmış mı kontrol et
