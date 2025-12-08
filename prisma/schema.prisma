@@ -52,6 +52,7 @@ model User {
   purchases        UserPurchase[]
   wheelSpins       WheelSpin[]
   messages         MessageStats[]
+  pointHistory     PointHistory[]
 
   @@index([telegramId])
   @@index([referralCode])
@@ -178,6 +179,22 @@ model WheelSpin {
   spunAt           DateTime        @default(now())
 
   @@index([userId])
+}
+
+// Puan geçmişi
+model PointHistory {
+  id               String          @id @default(cuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount           Int             // Pozitif = kazanç, Negatif = kayıp
+  type             String          // "admin_add", "admin_remove", "wheel_win", "shop_purchase", "referral_reward", "message_reward" vs
+  description      String          // Detaylı açıklama
+  relatedId        String?         // İlgili kaydın ID'si (wheelSpinId, purchaseId vs)
+  adminUsername    String?         // İşlemi yapan admin (varsa)
+  createdAt        DateTime        @default(now())
+
+  @@index([userId, createdAt])
+  @@index([type])
 }
 
 // Sponsorlar
