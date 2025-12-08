@@ -65,10 +65,7 @@ function WheelContent() {
       const userData = await userRes.json()
       const winnersData = await winnersRes.json()
 
-      console.log('=== FRONTEND PRIZES ORDER ===')
-      prizesData.prizes?.forEach((p: WheelPrize, i: number) => {
-        console.log(`Index ${i}: ${p.name} - ${p.points} puan`)
-      })
+      // Prize listesi yüklendi
 
       setPrizes(prizesData.prizes || [])
       setUserData(userData)
@@ -98,17 +95,12 @@ function WheelContent() {
       const data = await response.json()
 
       if (data.success) {
-        console.log('=== SPIN RESULT ===')
-        console.log('Backend returned prizeId:', data.prizeId)
-        console.log('Backend returned pointsWon:', data.pointsWon)
-
         // Çarkı döndür
         const randomSpins = 5 + Math.random() * 3 // 5-8 tam tur
         const prizeIndex = prizes.findIndex(p => p.id === data.prizeId)
 
-        console.log('Prize index in frontend array:', prizeIndex)
         if (prizeIndex >= 0) {
-          console.log('Prize at that index:', prizes[prizeIndex].name, '-', prizes[prizeIndex].points, 'puan')
+          console.log(`🎯 Çark Sonucu: ${prizes[prizeIndex].name} - ${prizes[prizeIndex].points} puan kazandınız!`)
         }
 
         // Doğru açı hesaplaması:
@@ -125,15 +117,6 @@ function WheelContent() {
         offset = ((offset % 360) + 360) % 360
 
         const finalRotation = rotation + (randomSpins * 360) + offset
-
-        console.log('=== ROTATION CALCULATION ===')
-        console.log('Segment angle:', segmentAngle)
-        console.log('Mid angle of winning segment:', midAngle)
-        console.log('Offset (0-360):', offset)
-        console.log('Random spins:', randomSpins)
-        console.log('Current rotation:', rotation)
-        console.log('Final rotation:', finalRotation)
-        console.log('Final normalized (0-360):', (finalRotation % 360 + 360) % 360)
 
         setRotation(finalRotation)
 
