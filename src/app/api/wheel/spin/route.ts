@@ -95,7 +95,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       prizeId: selectedPrize.id,
-      pointsWon: selectedPrize.points
+      pointsWon: selectedPrize.points,
+      prizeName: selectedPrize.name,
+      prizeIndex: selectedIndex
     })
   } catch (error) {
     console.error('Wheel spin error:', error)
