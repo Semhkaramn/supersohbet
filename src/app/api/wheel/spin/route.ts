@@ -80,11 +80,22 @@ export async function POST(request: NextRequest) {
       })
 
       // Çark çevirme kaydı oluştur
-      await tx.wheelSpin.create({
+      const wheelSpin = await tx.wheelSpin.create({
         data: {
           userId,
           prizeId: selectedPrize.id,
           pointsWon: selectedPrize.points
+        }
+      })
+
+      // Puan geçmişi kaydı oluştur
+      await tx.pointHistory.create({
+        data: {
+          userId,
+          amount: selectedPrize.points,
+          type: 'wheel_win',
+          description: `Çarktan ${selectedPrize.name} kazanıldı`,
+          relatedId: wheelSpin.id
         }
       })
     })
