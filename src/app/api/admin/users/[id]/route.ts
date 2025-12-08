@@ -51,7 +51,7 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const { points, xp, dailySpinsLeft, adminUsername } = body
+    const { points, xp, dailySpinsLeft } = body
 
     // Önce mevcut kullanıcı bilgisini al
     const currentUser = await prisma.user.findUnique({
@@ -87,7 +87,7 @@ export async function PUT(
           description: pointDiff > 0
             ? `Admin tarafından ${pointDiff} puan eklendi`
             : `Admin tarafından ${Math.abs(pointDiff)} puan silindi`,
-          adminUsername: adminUsername || 'Admin'
+          adminUsername: 'Admin'
         }
       })
     }
