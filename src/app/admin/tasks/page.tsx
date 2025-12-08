@@ -24,6 +24,7 @@ interface Task {
   pointsReward: number
   duration?: number
   expiresAt?: string
+  completionLimit?: number
   isActive: boolean
   order: number
   _count?: {
@@ -62,6 +63,7 @@ export default function AdminTasksPage() {
     pointsReward: 0,
     duration: null as number | null,
     expiresAt: '',
+    completionLimit: null as number | null,
     isActive: true,
     order: 0
   })
@@ -101,6 +103,7 @@ export default function AdminTasksPage() {
         pointsReward: task.pointsReward,
         duration: task.duration || null,
         expiresAt: task.expiresAt ? new Date(task.expiresAt).toISOString().slice(0, 16) : '',
+        completionLimit: task.completionLimit || null,
         isActive: task.isActive,
         order: task.order
       })
@@ -116,6 +119,7 @@ export default function AdminTasksPage() {
         pointsReward: 0,
         duration: null,
         expiresAt: '',
+        completionLimit: null,
         isActive: true,
         order: tasks.length
       })
@@ -448,6 +452,24 @@ export default function AdminTasksPage() {
               </div>
             </div>
 
+            {/* Tamamlanma Limiti */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-white border-b border-white/10 pb-2">Tamamlanma Limiti</h3>
+
+              <div>
+                <Label>Her Üye Kaç Kez Tamamlayabilir?</Label>
+                <Input
+                  type="number"
+                  value={formData.completionLimit || ''}
+                  onChange={(e) => setFormData({ ...formData, completionLimit: e.target.value ? parseInt(e.target.value) : null })}
+                  placeholder="Sınırsız"
+                  className="bg-slate-800 border-slate-700"
+                  min="1"
+                />
+                <p className="text-xs text-gray-400 mt-1">Boş bırakılırsa her üye sınırsız sayıda tamamlayabilir</p>
+              </div>
+            </div>
+
             {/* Diğer Ayarlar */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-white border-b border-white/10 pb-2">Diğer Ayarlar</h3>
@@ -551,6 +573,11 @@ function TaskCard({ task, onEdit, onDelete, getTaskTypeLabel, getTaskTypeIcon }:
             {task.duration && (
               <span className="px-2 py-1 bg-orange-500/20 text-orange-300 rounded">
                 ⏱️ {task.duration} saat
+              </span>
+            )}
+            {task.completionLimit && (
+              <span className="px-2 py-1 bg-pink-500/20 text-pink-300 rounded">
+                🔄 {task.completionLimit}x limit
               </span>
             )}
             {task._count && (
