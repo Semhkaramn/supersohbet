@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     // Kullanıcıyı bul
     const user = await prisma.user.findUnique({
-      where: { telegramId: userId },
+      where: { id: userId },
       include: {
         referrals: {
           select: {
