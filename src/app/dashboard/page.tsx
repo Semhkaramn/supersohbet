@@ -18,6 +18,12 @@ interface UserData {
   points: number
   xp: number
   totalMessages: number
+  messageStats?: {
+    daily: number
+    weekly: number
+    monthly: number
+    total: number
+  }
   rank?: {
     name: string
     icon: string
@@ -151,7 +157,7 @@ function DashboardContent() {
                 <ShoppingBag className="w-6 h-6 text-blue-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{userData.totalMessages}</p>
+                <p className="text-2xl font-bold text-white">{userData.messageStats?.total || 0}</p>
                 <p className="text-gray-400 text-sm">Toplam Mesaj</p>
               </div>
             </div>
