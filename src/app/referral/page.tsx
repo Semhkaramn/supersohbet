@@ -228,7 +228,7 @@ function ReferralContent() {
         </Card>
 
         {/* Milestone'lar */}
-        {referralData.milestones && referralData.milestones.length > 0 && (
+        {referralData?.milestones && referralData.milestones.length > 0 && (
           <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 p-5">
             <h3 className="font-bold text-white mb-4 flex items-center gap-2">
               <Trophy className="w-5 h-5 text-yellow-400" />
@@ -236,7 +236,7 @@ function ReferralContent() {
             </h3>
 
             <div className="space-y-3">
-              {referralData.milestones.map((milestone) => (
+              {referralData.milestones?.map((milestone) => (
                 <div
                   key={milestone.id}
                   className={`relative overflow-hidden rounded-lg border p-4 ${
