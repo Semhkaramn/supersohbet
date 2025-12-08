@@ -354,12 +354,7 @@ export default function AdminStatisticsPage() {
 
           <Select value={period} onValueChange={setPeriod}>
             <SelectTrigger className="w-full md:w-[200px] bg-white/5 border-white/10 text-white">
-              <SelectValue>
-                {period === 'all' && 'Tüm Zamanlar'}
-                {period === 'daily' && 'Günlük'}
-                {period === 'weekly' && 'Haftalık'}
-                {period === 'monthly' && 'Aylık'}
-              </SelectValue>
+              <SelectValue placeholder="Periyot seç" />
             </SelectTrigger>
             <SelectContent className="bg-slate-900 border-white/20">
               <SelectItem value="all">Tüm Zamanlar</SelectItem>
@@ -371,11 +366,7 @@ export default function AdminStatisticsPage() {
 
           <Select value={bannedFilter} onValueChange={setBannedFilter}>
             <SelectTrigger className="w-full md:w-[200px] bg-white/5 border-white/10 text-white">
-              <SelectValue>
-                {bannedFilter === 'all' && 'Tümü'}
-                {bannedFilter === 'false' && 'Aktif'}
-                {bannedFilter === 'true' && 'Banlı'}
-              </SelectValue>
+              <SelectValue placeholder="Durum" />
             </SelectTrigger>
             <SelectContent className="bg-slate-900 border-white/20">
               <SelectItem value="all">Tümü</SelectItem>
