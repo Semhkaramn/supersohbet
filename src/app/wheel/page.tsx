@@ -116,22 +116,24 @@ function WheelContent() {
         // Ok üstte sabit (-90°), kazanan dilimin ortası ok altına gelmeli
         const segmentAngle = 360 / prizes.length
         const midAngle = -90 + (prizeIndex * segmentAngle) + (segmentAngle / 2)
-        const targetAngle = -90  // Ok pozisyonu
 
-        // Offset hesabını düzelt - çarkı her zaman saat yönünde döndür
-        let offset = (targetAngle - midAngle) % 360
-        // Offset pozitif ise, ters yöne (saat yönü tersine) gitmemek için 360 çıkar
-        // Böylece çark hep saat yönünde dönmüş olur
-        if (offset > 0) offset -= 360
+        // Offset hesabı: Kazanan segmentin ortası ok pozisyonuna (-90°) gelmeli
+        // Çarkı saat yönünde döndüreceğiz
+        let offset = -90 - midAngle
+
+        // Offset'i 0-360 arasına normalize et (pozitif saat yönünde dönüş)
+        offset = ((offset % 360) + 360) % 360
 
         const finalRotation = rotation + (randomSpins * 360) + offset
 
+        console.log('=== ROTATION CALCULATION ===')
         console.log('Segment angle:', segmentAngle)
-        console.log('Mid angle:', midAngle)
-        console.log('Target angle (ok pozisyonu):', targetAngle)
-        console.log('Offset:', offset)
+        console.log('Mid angle of winning segment:', midAngle)
+        console.log('Offset (0-360):', offset)
+        console.log('Random spins:', randomSpins)
+        console.log('Current rotation:', rotation)
         console.log('Final rotation:', finalRotation)
-        console.log('Normalized:', finalRotation % 360)
+        console.log('Final normalized (0-360):', (finalRotation % 360 + 360) % 360)
 
         setRotation(finalRotation)
 
