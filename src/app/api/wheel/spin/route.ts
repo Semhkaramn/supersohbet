@@ -49,11 +49,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // DEBUG: Prize sıralamasını loglayalım
-    console.log('=== BACKEND PRIZES ORDER ===')
-    prizes.forEach((p, i) => {
-      console.log(`Index ${i}: ${p.name} - ${p.points} puan (order: ${p.order}, prob: ${p.probability})`)
-    })
+    // Prize listesi hazır
 
     // Rastgele ödül seç (probability'ye göre ağırlıklı)
     const totalProbability = prizes.reduce((sum: number, prize) => sum + prize.probability, 0)
@@ -68,15 +64,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const selectedIndex = prizes.findIndex(p => p.id === selectedPrize.id)
-
-    console.log(`=== SELECTED PRIZE ===`)
-    console.log(`Prize: ${selectedPrize.name}`)
-    console.log(`Points: ${selectedPrize.points} puan`)
-    console.log(`Prize ID: ${selectedPrize.id}`)
-    console.log(`Index in prizes array: ${selectedIndex}`)
-    console.log(`Order value: ${selectedPrize.order}`)
-    console.log(`Probability: ${selectedPrize.probability}`)
+    console.log(`✅ Çark: ${selectedPrize.name} geldi → ${selectedPrize.points} puan eklendi`)
 
     // Transaction ile işlemleri gerçekleştir
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
