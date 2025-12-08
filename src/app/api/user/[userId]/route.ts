@@ -11,7 +11,11 @@ export async function GET(
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
-        rank: true
+        rank: true,
+        pointHistory: {
+          orderBy: { createdAt: 'desc' },
+          take: 50
+        }
       }
     })
 
