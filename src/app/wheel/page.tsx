@@ -66,12 +66,6 @@ function WheelContent() {
       const userData = await userRes.json()
       const winnersData = await winnersRes.json()
 
-      // Prize listesi yüklendi
-      console.log('📋 FRONTEND - Çarkta gösterilen prize sırası:')
-      prizesData.prizes?.forEach((p: WheelPrize, i: number) => {
-        console.log(`  Index ${i}: ${p.name} = ${p.points} puan (order: ${p.order})`)
-      })
-
       setPrizes(prizesData.prizes || [])
       setUserData(userData)
       setRecentWinners(winnersData.winners || [])
@@ -100,53 +94,20 @@ function WheelContent() {
       const data = await response.json()
 
       if (data.success) {
-        // Çarkı döndür
-        const randomSpins = 5 + Math.random() * 3 // 5-8 tam tur
+        const prizeIndex = data.prizeIndex
 
-        // Backend'den gelen prizeIndex'i kullan (daha güvenilir)
-        const prizeIndex = data.prizeIndex !== undefined ? data.prizeIndex : prizes.findIndex(p => p.id === data.prizeId)
+        // Basit hesaplama
+        const segmentAngle = 360 / prizes.length
+        const targetAngle = prizeIndex * segmentAngle + (segmentAngle / 2)
+        const randomSpins = 5 + Math.floor(Math.random() * 3)
+        const finalRotation = (randomSpins * 360) + targetAngle
 
-        console.log(`🎯 FRONTEND - Backend'den gelen: Index ${data.prizeIndex}, Prize: ${data.prizeName}, Puan: ${data.pointsWon}`)
+        setRotation(finalRotation)
 
-        if (prizeIndex >= 0 && prizeIndex < prizes.length) {
-          console.log(`✅ FRONTEND - Çarkta gösterilecek: Index ${prizeIndex}: ${prizes[prizeIndex].name} = ${prizes[prizeIndex].points} puan`)
-        } else {
-          console.error(`❌ HATA: Geçersiz prize index! Index: ${prizeIndex}, Prize sayısı: ${prizes.length}`)
-        }
-
-        // Günlük 1 hak olduğu için her spin başlangıçtan (0°) başlasın
-        setRotation(0)
-
-        // Doğru açı hesaplaması (prizes.length kadar ödül için)
-        const segmentAngle = 360 / prizes.length // 6 ödül varsa 60° her segment
-
-        // SVG segmentleri -90 dereceden başlıyor (saat 12 pozisyonu)
-        // Ok üstte sabit (-90°), kazanan dilimin ortası ok altına gelmeli
-        const targetAngle = -90 + (prizeIndex * segmentAngle) + (segmentAngle / 2)
-
-        // Normalize et (0-360 arasına)
-        let targetAngleNormalized = ((targetAngle % 360) + 360) % 360
-
-        // Çark saat yönünde dönecek, hedef açıya ulaşacak
-        const finalRotation = (randomSpins * 360) + targetAngleNormalized
-
-        console.log(`📐 Çark Hesaplama: ÖdülSayısı=${prizes.length}, Segment=${segmentAngle}°, PrizeIndex=${prizeIndex}, Hedef=${targetAngleNormalized.toFixed(1)}°, Final=${finalRotation.toFixed(1)}°`)
-
-        // Animasyon için rotation'ı güncelle
         setTimeout(() => {
-          setRotation(finalRotation)
-        }, 10)
-
-        // Animasyon bitince sonucu göster
-        setTimeout(() => {
-          // Backend'den gelen prizeName ve pointsWon'u kullan
-          toast.success(`🎉 Tebrikler! ${data.prizeName} - ${data.pointsWon} puan kazandınız!`)
+          toast.success(`🎉 Tebrikler! ${data.pointsWon} puan kazandınız!`)
           setSpinning(false)
-          loadData() // Verileri yenile
-          // Günlük hak bittiği için çarkı sıfırla (bir sonraki gün için hazır olsun)
-          setTimeout(() => {
-            setRotation(0)
-          }, 2000)
+          loadData()
         }, 4000)
       } else {
         toast.error(data.error || 'Çark çevrilemedi')
