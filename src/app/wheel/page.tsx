@@ -113,14 +113,19 @@ function WheelContent() {
 
         // Doğru açı hesaplaması:
         // SVG segmentleri -90 dereceden başlıyor (saat 12 pozisyonu)
-        // Ok üstte sabit, kazanan dilimin ortası ok altına gelmeli
+        // Ok üstte sabit (-90°), kazanan dilimin ortası ok altına gelmeli
         const segmentAngle = 360 / prizes.length
         const midAngle = -90 + (prizeIndex * segmentAngle) + (segmentAngle / 2)
-        const finalRotation = rotation + (randomSpins * 360) - midAngle
+        const targetAngle = -90  // Ok pozisyonu
+        const offset = targetAngle - midAngle  // Fark kadar dönmeli
+        const finalRotation = rotation + (randomSpins * 360) + offset
 
         console.log('Segment angle:', segmentAngle)
         console.log('Mid angle:', midAngle)
+        console.log('Target angle (ok pozisyonu):', targetAngle)
+        console.log('Offset:', offset)
         console.log('Final rotation:', finalRotation)
+        console.log('Normalized:', finalRotation % 360)
 
         setRotation(finalRotation)
 
