@@ -25,6 +25,16 @@ interface ReferralData {
   referralPoints: number
   bonusInviter: number
   bonusInvited: number
+  milestones: Array<{
+    id: string
+    requiredCount: number
+    rewardPoints: number
+    name: string
+    description?: string
+    completed: boolean
+    progress: number
+    remaining: number
+  }>
   referrals: Array<{
     id: string
     firstName?: string
@@ -213,6 +223,138 @@ function ReferralContent() {
                 <p className="text-white text-sm font-semibold">Davet eden (sen)</p>
                 <p className="text-slate-400 text-xs">+{referralData.bonusInviter} puan kazanırsın</p>
               </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Milestone'lar */}
+        {referralData.milestones && referralData.milestones.length > 0 && (
+          <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 p-5">
+            <h3 className="font-bold text-white mb-4 flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-yellow-400" />
+              Referans Ödülleri
+            </h3>
+
+            <div className="space-y-3">
+              {referralData.milestones.map((milestone) => (
+                <div
+                  key={milestone.id}
+                  className={`relative overflow-hidden rounded-lg border p-4 ${
+                    milestone.completed
+                      ? 'bg-green-500/10 border-green-500/30'
+                      : 'bg-slate-900/50 border-slate-700'
+                  }`}
+                >
+                  {/* Progress bar */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10"
+                    style={{
+                      width: `${(milestone.progress / milestone.requiredCount) * 100}%`,
+                      transition: 'width 0.3s ease'
+                    }}
+                  />
+
+                  <div className="relative flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        milestone.completed
+                          ? 'bg-green-500/20 border-2 border-green-500'
+                          : 'bg-slate-700/50 border-2 border-slate-600'
+                      }`}>
+                        {milestone.completed ? (
+                          <Check className="w-6 h-6 text-green-400" />
+                        ) : (
+                          <span className="text-white font-bold">{milestone.requiredCount}</span>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-white font-semibold">{milestone.name}</p>
+                        <p className="text-yellow-400 text-sm">{milestone.rewardPoints.toLocaleString()} Puan</p>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      {milestone.completed ? (
+                        <div className="flex items-center gap-2 text-green-400">
+                          <Check className="w-5 h-5" />
+                          <span className="font-semibold">Tamamlandı</span>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-slate-400 text-sm">Kalan</p>
+                          <p className="text-white font-bold text-lg">{milestone.remaining}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Progress text */}
+                  {!milestone.completed && (
+                    <div className="relative mt-3 pt-3 border-t border-slate-700">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-400">
+                          İlerleme: {milestone.progress} / {milestone.requiredCount}
+                        </span>
+                        <span className="text-blue-400">
+                          %{Math.round((milestone.progress / milestone.requiredCount) * 100)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+              <p className="text-blue-300 text-xs flex items-center gap-2">
+                <Gift className="w-4 h-4" />
+                <span>Ödüller otomatik olarak hesabınıza eklenir</span>
+              </p>
+            </div>
+          </Card>
+        )}
+
+        {/* Nasıl Çalışır? */}
+        <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 p-5">
+          <h3 className="font-bold text-white mb-4 flex items-center gap-2">
+            <span className="text-xl">ℹ️</span>
+            Nasıl Çalışır?
+          </h3>
+
+          <div className="space-y-3">
+            <div className="flex gap-3">
+              <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-blue-400 text-sm">1</span>
+              </div>
+              <p className="text-slate-300 text-sm">
+                Referans linkinizi arkadaşlarınızla paylaşın
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-blue-400 text-sm">2</span>
+              </div>
+              <p className="text-slate-300 text-sm">
+                Arkadaşlarınız linke tıklayıp bota katıldığında puan kazanın
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-blue-400 text-sm">3</span>
+              </div>
+              <p className="text-slate-300 text-sm">
+                Belirli sayıda üye getirdiğinizde bonus ödüller alın
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-blue-400 text-sm">4</span>
+              </div>
+              <p className="text-slate-300 text-sm">
+                Ödüller otomatik olarak hesabınıza eklenir
+              </p>
             </div>
           </div>
         </Card>
