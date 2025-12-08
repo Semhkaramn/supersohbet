@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   ArrowLeft,
   Users,
@@ -385,6 +386,12 @@ export default function AdminStatisticsPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={user.photoUrl || undefined} alt={user.firstName || user.username || 'User'} />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white font-bold">
+                          {(user.firstName || user.username || 'U').charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
                       <div>
                         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                           {user.firstName || user.username || 'Kullanıcı'}
@@ -480,6 +487,25 @@ export default function AdminStatisticsPage() {
             <div className="space-y-6">
               {/* User Info */}
               <Card className="bg-white/5 border-white/10 p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={selectedUser.photoUrl || undefined} alt={selectedUser.firstName || selectedUser.username || 'User'} />
+                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white font-bold text-2xl">
+                      {(selectedUser.firstName || selectedUser.username || 'U').charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white">
+                      {selectedUser.firstName || selectedUser.username || 'Kullanıcı'}
+                    </h3>
+                    <p className="text-gray-400">@{selectedUser.username || selectedUser.telegramId}</p>
+                    {selectedUser.rank && (
+                      <p className="text-sm mt-1" style={{ color: selectedUser.rank.color }}>
+                        {selectedUser.rank.icon} {selectedUser.rank.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
                 <h3 className="text-xl font-bold text-white mb-4">Genel Bilgiler</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
