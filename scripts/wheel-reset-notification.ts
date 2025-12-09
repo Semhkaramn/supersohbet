@@ -1,30 +1,7 @@
 import { PrismaClient } from '@prisma/client'
+import { sendTelegramMessage } from '../src/lib/telegram'
 
 const prisma = new PrismaClient()
-
-async function sendTelegramMessage(telegramId: string, text: string, botToken: string) {
-  try {
-    const url = `https://api.telegram.org/bot${botToken}/sendMessage`
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: telegramId,
-        text,
-        parse_mode: 'Markdown'
-      })
-    })
-
-    const data = await response.json()
-    if (!data.ok) {
-      console.error(`Failed to send message to ${telegramId}:`, data.description)
-    }
-    return data.ok
-  } catch (error) {
-    console.error(`Error sending message to ${telegramId}:`, error)
-    return false
-  }
-}
 
 async function notifyWheelReset() {
   try {
@@ -37,16 +14,6 @@ async function notifyWheelReset() {
 
     if (notifySetting?.value !== 'true') {
       console.log('⏭️ Bildirim ayarı kapalı, işlem atlanıyor')
-      return
-    }
-
-    // Bot token'ı al
-    const botTokenSetting = await prisma.settings.findUnique({
-      where: { key: 'telegram_bot_token' }
-    })
-
-    if (!botTokenSetting?.value) {
-      console.error('❌ Bot token bulunamadı')
       return
     }
 
@@ -88,12 +55,15 @@ Bot menüsünden "Şans Çarkı" seçeneğine tıklayarak şansını dene! 🍀
       const user = users[i]
 
       if (user.telegramId) {
-        const success = await sendTelegramMessage(user.telegramId, message, botTokenSetting.value)
+        console.log(`🔔 [WheelResetScript] Bildirim gönderiliyor: ${i + 1}/${users.length} - telegramId=${user.telegramId}`)
+        const success = await sendTelegramMessage(user.telegramId, message)
 
         if (success) {
           successCount++
+          console.log(`✅ [WheelResetScript] Gönderildi: ${user.firstName || user.username}`)
         } else {
           failCount++
+          console.error(`❌ [WheelResetScript] Gönderilemedi: ${user.firstName || user.username} (telegramId: ${user.telegramId})`)
         }
 
         // Her 30 mesajda bir 1 saniye bekle (Telegram rate limit)
