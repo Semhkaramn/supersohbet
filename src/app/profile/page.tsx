@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import BottomNav from '@/components/BottomNav'
-import { Trophy, Star, MessageSquare, TrendingUp, ShoppingBag, Clock, CheckCircle2, Package, Users, History } from 'lucide-react'
+import { Trophy, Star, MessageSquare, TrendingUp, ShoppingBag, Clock, CheckCircle2, Package, Users, History, Crown, Award } from 'lucide-react'
 
 interface PointHistory {
   id: string
@@ -17,6 +17,15 @@ interface PointHistory {
   description: string
   adminUsername?: string
   createdAt: string
+}
+
+interface Rank {
+  id: string
+  name: string
+  icon: string
+  color: string
+  minXp: number
+  order: number
 }
 
 interface UserData {
@@ -48,6 +57,7 @@ interface UserData {
     name: string
     minXp: number
   }
+  allRanks?: Rank[]
   dailySpinsLeft: number
   leaderboardRank?: number
   createdAt: string
@@ -199,14 +209,16 @@ function ProfileContent() {
           </Card>
         </div>
 
-        {/* Rank Card */}
+        {/* Rank Card - Enhanced with Details */}
         <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 p-5 mb-4 shadow-lg">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <span className="text-3xl">{userData.rank?.icon || '⭐'}</span>
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500/50 flex items-center justify-center shadow-lg">
+                <span className="text-4xl">{userData.rank?.icon || '⭐'}</span>
+              </div>
               <div>
-                <p className="text-white font-bold text-lg">{userData.rank?.name || 'Seviye 1'}</p>
-                <p className="text-slate-400 text-xs">
+                <p className="text-white font-bold text-xl">{userData.rank?.name || 'Seviye 1'}</p>
+                <p className="text-slate-400 text-sm">
                   {userData.nextRank
                     ? `${userData.nextRank.minXp - userData.xp} XP kaldı`
                     : 'Maksimum seviye!' }
@@ -220,7 +232,28 @@ function ProfileContent() {
               </div>
             )}
           </div>
-          <Progress value={xpProgress} className="h-2 bg-slate-700" />
+
+          <div className="mb-3">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-slate-300 text-sm font-medium">İlerleme</span>
+              <span className="text-white font-bold text-sm">{userData.xp} / {userData.nextRank?.minXp || userData.xp} XP</span>
+            </div>
+            <Progress value={xpProgress} className="h-3 bg-slate-700" />
+          </div>
+
+          {/* Rank System Details Button */}
+          <button
+            onClick={() => {
+              const rankDetails = document.getElementById('rank-details')
+              if (rankDetails) {
+                rankDetails.scrollIntoView({ behavior: 'smooth' })
+              }
+            }}
+            className="w-full mt-3 bg-gradient-to-r from-purple-600/30 to-indigo-600/30 border border-purple-500/30 rounded-lg p-3 hover:from-purple-600/40 hover:to-indigo-600/40 transition-all flex items-center justify-center gap-2 text-purple-300 font-medium text-sm"
+          >
+            <Award className="w-4 h-4" />
+            Tüm Rütbeleri Gör
+          </button>
         </Card>
 
         {/* Referans İstatistikleri */}
@@ -271,14 +304,18 @@ function ProfileContent() {
 
         {/* Tabs */}
         <Tabs defaultValue="purchases" className="w-full">
-          <TabsList className="w-full grid grid-cols-2 bg-slate-800 border border-slate-700">
+          <TabsList className="w-full grid grid-cols-3 bg-slate-800 border border-slate-700">
             <TabsTrigger value="purchases" className="data-[state=active]:bg-slate-700">
               <ShoppingBag className="w-4 h-4 mr-2" />
               Alımlar
             </TabsTrigger>
             <TabsTrigger value="history" className="data-[state=active]:bg-slate-700">
               <History className="w-4 h-4 mr-2" />
-              Puan Geçmişi
+              Geçmiş
+            </TabsTrigger>
+            <TabsTrigger value="ranks" className="data-[state=active]:bg-slate-700">
+              <Crown className="w-4 h-4 mr-2" />
+              Rütbeler
             </TabsTrigger>
           </TabsList>
 
@@ -409,6 +446,113 @@ function ProfileContent() {
                   </Card>
                 )
               })
+            )}
+          </TabsContent>
+
+          <TabsContent value="ranks" className="mt-4 space-y-3" id="rank-details">
+            {!userData.allRanks || userData.allRanks.length === 0 ? (
+              <Card className="bg-slate-800/50 border-slate-700 p-8 text-center">
+                <Crown className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+                <p className="text-slate-400">Rütbe bilgisi bulunamadı</p>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                <div className="bg-gradient-to-r from-purple-600/20 to-indigo-600/20 border border-purple-500/30 rounded-lg p-4 mb-4">
+                  <h3 className="text-white font-bold text-lg mb-2 flex items-center gap-2">
+                    <Crown className="w-5 h-5 text-purple-400" />
+                    Rütbe Sistemi
+                  </h3>
+                  <p className="text-slate-300 text-sm">
+                    Mesaj göndererek XP kazan ve rütbeni yükselt! Toplam {userData.allRanks.length} rütbe mevcut.
+                  </p>
+                </div>
+
+                {userData.allRanks.map((rank, index) => {
+                  const isCurrentRank = userData.rank?.minXp === rank.minXp
+                  const isCompleted = (userData.xp || 0) >= rank.minXp
+                  const isNextRank = userData.nextRank?.minXp === rank.minXp
+
+                  return (
+                    <Card
+                      key={rank.id}
+                      className={`p-4 transition-all ${
+                        isCurrentRank
+                          ? 'bg-gradient-to-br from-yellow-600/30 to-orange-600/30 border-2 border-yellow-500/50 shadow-lg shadow-yellow-500/20 scale-105'
+                          : isCompleted
+                          ? 'bg-slate-800/80 border-slate-700'
+                          : 'bg-slate-800/50 border-slate-700 opacity-60'
+                      }`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                          isCurrentRank
+                            ? 'bg-gradient-to-br from-yellow-500/30 to-orange-500/30 border-2 border-yellow-500/50'
+                            : isCompleted
+                            ? 'bg-green-500/20 border-2 border-green-500/30'
+                            : 'bg-slate-700/50 border-2 border-slate-600'
+                        }`}>
+                          <span className="text-3xl">{rank.icon}</span>
+                        </div>
+
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className={`font-bold text-lg ${
+                              isCurrentRank ? 'text-yellow-300' : 'text-white'
+                            }`}>
+                              {rank.name}
+                            </h4>
+                            {isCurrentRank && (
+                              <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 text-xs">
+                                Mevcut
+                              </Badge>
+                            )}
+                            {isNextRank && !isCurrentRank && (
+                              <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-xs">
+                                Sonraki
+                              </Badge>
+                            )}
+                            {isCompleted && !isCurrentRank && !isNextRank && (
+                              <CheckCircle2 className="w-4 h-4 text-green-400" />
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <p className="text-slate-400 text-sm">
+                              {rank.minXp.toLocaleString('tr-TR')} XP
+                            </p>
+                            {isNextRank && (
+                              <p className="text-purple-400 text-xs font-medium">
+                                • {rank.minXp - (userData.xp || 0)} XP kaldı
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {isCompleted && (
+                          <div className="text-right">
+                            <div className="w-8 h-8 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center">
+                              <CheckCircle2 className="w-5 h-5 text-green-400" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Progress bar for current rank */}
+                      {isCurrentRank && userData.nextRank && (
+                        <div className="mt-3 pt-3 border-t border-yellow-500/30">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-xs text-yellow-300 font-medium">Sonraki seviyeye ilerleme</span>
+                            <span className="text-xs text-yellow-400 font-bold">
+                              {Math.round(xpProgress)}%
+                            </span>
+                          </div>
+                          <Progress value={xpProgress} className="h-2 bg-slate-700" />
+                        </div>
+                      )}
+                    </Card>
+                  )
+                })}
+              </div>
             )}
           </TabsContent>
         </Tabs>
