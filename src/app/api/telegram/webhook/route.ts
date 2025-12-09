@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserProfilePhoto } from '@/lib/telegram'
+import { getTurkeyDate } from '@/lib/utils'
 
 // Ayarları cache'e al (performans için)
 let settingsCache: Record<string, string> = {}
@@ -473,7 +474,7 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
           xp: shouldGiveXp ? { increment: xpPerMessage } : undefined,
           messageCount: newMessageCount,
           totalMessages: { increment: 1 }, // Sadece ödül kazanan mesajlar
-          lastMessageAt: new Date()
+          lastMessageAt: getTurkeyDate() // Türkiye saati
         }
       })
 
@@ -481,7 +482,7 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
       await prisma.messageStats.updateMany({
         where: {
           userId: user.id,
-          createdAt: { gte: new Date(Date.now() - 2000) } // Son 2 saniyedeki mesaj
+          createdAt: { gte: new Date(getTurkeyDate().getTime() - 2000) } // Son 2 saniyedeki mesaj (Türkiye saati)
         },
         data: {
           earnedReward: true
