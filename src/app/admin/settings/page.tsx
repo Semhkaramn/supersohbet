@@ -180,6 +180,39 @@ export default function AdminSettingsPage() {
     e.preventDefault()
 
     try {
+      let finalFormData = { ...channelFormData }
+
+      // Kanal bilgilerini her zaman Telegram'dan çek
+      if (finalFormData.channelId.trim()) {
+        toast.info('Kanal bilgileri Telegram\'dan çekiliyor...')
+
+        try {
+          const chatInfoResponse = await fetch('/api/admin/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chatUsername: finalFormData.channelId })
+          })
+
+          const chatInfoData = await chatInfoResponse.json()
+
+          if (chatInfoData.success && chatInfoData.chatTitle) {
+            finalFormData.channelName = chatInfoData.chatTitle
+            // Eğer username girilmişse, gerçek ID'yi kullan
+            if (chatInfoData.chatId) {
+              finalFormData.channelId = chatInfoData.chatId
+            }
+            toast.success(`Kanal bulundu: ${chatInfoData.chatTitle}`)
+          } else {
+            toast.error(chatInfoData.error || 'Kanal bilgisi alınamadı. Botun kanal/grupta admin olduğundan emin olun.')
+            return
+          }
+        } catch (err) {
+          console.error('Auto-fetch error:', err)
+          toast.error('Kanal bilgisi alınamadı')
+          return
+        }
+      }
+
       const url = editingChannel
         ? `/api/admin/channels/${editingChannel.id}`
         : '/api/admin/channels'
@@ -189,7 +222,7 @@ export default function AdminSettingsPage() {
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(channelFormData)
+        body: JSON.stringify(finalFormData)
       })
 
       const data = await response.json()
@@ -452,7 +485,49 @@ export default function AdminSettingsPage() {
             <Label className="text-white text-base mb-2 block">Botun mesaj dinleyeceği grup</Label>
             <Select
               value={activityGroupId?.value || ''}
-              onValueChange={(value) => saveSetting('activity_group_id', value)}
+              onValueChange={async (value) => {
+                // Seçilen grubun bilgilerini bul
+                const selectedGroup = groupChannels.find(g => g.channelId === value)
+
+                if (!selectedGroup) {
+                  toast.error('Grup bulunamadı')
+                  return
+                }
+
+                setSaving(true)
+                try {
+                  // Eğer seçilen değer @ ile başlıyorsa veya sayısal ID değilse, Telegram'dan gerçek ID'yi al
+                  const isUsername = value.startsWith('@') || isNaN(Number(value.replace('-', '')))
+
+                  if (isUsername) {
+                    // Telegram'dan gerçek chat ID'yi al
+                    const response = await fetch('/api/admin/settings', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ chatUsername: value })
+                    })
+
+                    const data = await response.json()
+
+                    if (data.success && data.chatId) {
+                      // Gerçek chat ID'yi kaydet
+                      await saveSetting('activity_group_id', data.chatId)
+                      toast.success(`Aktif grup ayarlandı: ${data.chatTitle} (ID: ${data.chatId})`)
+                    } else {
+                      toast.error(data.error || 'Grup ID\'si alınamadı')
+                    }
+                  } else {
+                    // Zaten sayısal ID, direkt kaydet
+                    await saveSetting('activity_group_id', value)
+                    toast.success(`Aktif grup ayarlandı: ${selectedGroup.channelName} (ID: ${value})`)
+                  }
+                } catch (error) {
+                  console.error('Error resolving chat ID:', error)
+                  toast.error('Bir hata oluştu')
+                } finally {
+                  setSaving(false)
+                }
+              }}
             >
               <SelectTrigger className="bg-white/10 border-white/20 text-white w-full">
                 <SelectValue placeholder="Grup seçin" />
@@ -472,6 +547,11 @@ export default function AdminSettingsPage() {
             <p className="text-xs text-gray-400 mt-1">
               Bot sadece burada seçili olan grupta mesaj dinler ve puan verir.
             </p>
+            {activityGroupId?.value && (
+              <p className="text-xs text-green-400 mt-2">
+                ✅ Aktif grup ID: {activityGroupId.value}
+              </p>
+            )}
           </div>
         </Card>
 
@@ -760,7 +840,8 @@ export default function AdminSettingsPage() {
               <h3 className="text-yellow-300 font-semibold mb-1">Önemli Notlar</h3>
               <ul className="text-yellow-200 text-sm space-y-1">
                 <li>• Telegram Bot Token'ı girip kaydettiğinizde bot otomatik olarak başlar ve webhook otomatik kurulur</li>
-                <li>• Kanal eklerken tip olarak "Kanal" veya "Grup" seçin - bot sadece gruplarda mesaj dinler ve puan verir</li>
+                <li>• Kanal/Grup eklerken sadece username (@kanaladi) veya ID girin, isim otomatik çekilir</li>
+                <li>• "Aktif Grup Seçimi" ile sadece belirli bir grupta mesaj dinleme ve puan verme aktif olur</li>
                 <li>• Bakım modu aktifken kullanıcılar bota erişemez ve puan kazanamaz</li>
                 <li>• Cloudinary ayarları Shop ve Sponsor resimlerini yüklemek için gereklidir</li>
                 <li>• Ayarlar değiştirildikten sonra maksimum 1 dakika içinde aktif olur</li>
@@ -787,21 +868,6 @@ export default function AdminSettingsPage() {
                 onChange={(e) => setChannelFormData({ ...channelFormData, channelId: e.target.value })}
                 className="bg-white/5 border-white/10 text-white mt-1"
                 placeholder="@kanaladi veya -1001234567890"
-                required
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                Kanal username'i (@kanaladi) veya kanal ID'si (-1001234567890)
-              </p>
-            </div>
-
-            <div>
-              <Label htmlFor="channelName" className="text-white">Kanal Adı</Label>
-              <Input
-                id="channelName"
-                value={channelFormData.channelName}
-                onChange={(e) => setChannelFormData({ ...channelFormData, channelName: e.target.value })}
-                className="bg-white/5 border-white/10 text-white mt-1"
-                placeholder="Örnek Kanal"
                 required
               />
             </div>
