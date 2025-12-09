@@ -134,6 +134,7 @@ model ShopItem {
   description      String?
   price            Int             // Puan cinsinden
   imageUrl         String?
+  imagePublicId    String?         // Cloudinary public ID - resim silinirken kullanılacak
   category         String          @default("Genel")
   stock            Int?            // null = sınırsız
   purchaseLimit    Int?            // Her kullanıcı kaç kez satın alabilir (null = sınırsız)
