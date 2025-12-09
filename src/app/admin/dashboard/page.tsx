@@ -13,7 +13,8 @@ import {
   Settings,
   BarChart3,
   LogOut,
-  FileText
+  FileText,
+  Send
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -62,6 +63,13 @@ export default function AdminDashboard() {
   }
 
   const menuItems = [
+    {
+      title: 'Toplu Mesaj',
+      description: 'Kullanıcılara mesaj gönder',
+      icon: Send,
+      href: '/admin/broadcast',
+      color: 'from-blue-500 to-blue-600'
+    },
     {
       title: 'İstatistikler',
       description: 'Detaylı istatistikler ve kullanıcı yönetimi',
