@@ -43,6 +43,7 @@ function HomeContent() {
   const [maintenanceMode, setMaintenanceMode] = useState(false)
   const [isBanned, setIsBanned] = useState(false)
   const [banInfo, setBanInfo] = useState<{ reason?: string; date?: string; by?: string }>({})
+  const [currentUser, setCurrentUser] = useState<TelegramUser | null>(null)
 
   useEffect(() => {
     const initTelegramApp = async () => {
@@ -61,6 +62,7 @@ function HomeContent() {
           if (telegramData) {
             try {
               const userData: TelegramUser = JSON.parse(decodeURIComponent(telegramData))
+              setCurrentUser(userData)
               await checkUserChannels(userData)
               return
             } catch (err) {
@@ -73,6 +75,7 @@ function HomeContent() {
 
           if (initData.user) {
             setDebugInfo(`Kullanıcı bulundu: ${initData.user.first_name} (ID: ${initData.user.id})`)
+            setCurrentUser(initData.user)
             await checkUserChannels(initData.user)
           } else {
             // Biraz bekleyip tekrar dene
@@ -80,6 +83,7 @@ function HomeContent() {
               const retryData = tg.initDataUnsafe
               if (retryData.user) {
                 setDebugInfo(`İkinci denemede kullanıcı bulundu: ${retryData.user.first_name}`)
+                setCurrentUser(retryData.user)
                 checkUserChannels(retryData.user)
               } else {
                 setDebugInfo('Telegram kullanıcı verisi bulunamadı. InitData: ' + JSON.stringify(initData))
@@ -155,14 +159,58 @@ function HomeContent() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen p-4">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-xl mb-2">Yükleniyor...</p>
-          {debugInfo && (
-            <p className="text-sm text-gray-400 mt-4 max-w-md">
-              {debugInfo}
-            </p>
+      <div className="flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-slate-900 via-blue-900/20 to-purple-900/20">
+        <div className="text-center max-w-md">
+          {currentUser ? (
+            <div className="space-y-6">
+              {/* User Profile */}
+              <div className="flex flex-col items-center">
+                {currentUser.photo_url ? (
+                  <img
+                    src={currentUser.photo_url}
+                    alt={currentUser.first_name}
+                    className="w-24 h-24 rounded-full border-4 border-blue-500/50 shadow-lg mb-4"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold border-4 border-blue-500/50 shadow-lg mb-4">
+                    {currentUser.first_name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+
+                <h2 className="text-2xl font-bold text-white mb-1">
+                  {currentUser.first_name} {currentUser.last_name || ''}
+                </h2>
+                {currentUser.username && (
+                  <p className="text-blue-400 text-lg">@{currentUser.username}</p>
+                )}
+              </div>
+
+              {/* Loading Animation */}
+              <div className="flex flex-col items-center space-y-4">
+                <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <div className="space-y-2">
+                  <p className="text-xl font-semibold text-white">Giriş yapılıyor...</p>
+                  <p className="text-sm text-gray-400">Hesabınız kontrol ediliyor</p>
+                </div>
+              </div>
+
+              {/* Progress Dots */}
+              <div className="flex justify-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: '300ms' }}></div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+              <p className="text-xl text-white">Yükleniyor...</p>
+              {debugInfo && (
+                <p className="text-sm text-gray-400 mt-4">
+                  {debugInfo}
+                </p>
+              )}
+            </div>
           )}
         </div>
       </div>
