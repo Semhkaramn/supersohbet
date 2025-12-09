@@ -13,7 +13,8 @@ import {
   Ticket,
   Trophy,
   Heart,
-  X
+  X,
+  Wallet
 } from 'lucide-react'
 
 interface MenuDrawerProps {
@@ -45,6 +46,16 @@ export function MenuDrawer({ open, onOpenChange, userId }: MenuDrawerProps) {
       iconColor: 'text-cyan-400',
       borderColor: 'border-cyan-500/30',
       iconBg: 'bg-cyan-500/20'
+    },
+    {
+      title: 'Cüzdan & Sponsor',
+      description: 'Cüzdan ve sponsor bilgilerini yönet',
+      icon: Wallet,
+      href: `/wallet-info?userId=${userId}`,
+      gradient: 'from-green-500/20 to-emerald-500/20',
+      iconColor: 'text-green-400',
+      borderColor: 'border-green-500/30',
+      iconBg: 'bg-green-500/20'
     },
     {
       title: 'Referans',
