@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Plus, Edit, Trash2, Heart, Crown } from 'lucide-react'
+import { ArrowLeft, Plus, Edit, Trash2, Heart, Crown, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
@@ -40,6 +40,7 @@ export default function AdminSponsorsPage() {
     category: 'normal',
     order: 0
   })
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     const token = localStorage.getItem('admin_token')
@@ -60,6 +61,36 @@ export default function AdminSponsorsPage() {
       toast.error('Sponsorlar yüklenemedi')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploading(true)
+    try {
+      const uploadFormData = new FormData()
+      uploadFormData.append('file', file)
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: uploadFormData
+      })
+
+      const data = await response.json()
+
+      if (data.url) {
+        setFormData({ ...formData, logoUrl: data.url })
+        toast.success('Dosya yüklendi!')
+      } else {
+        toast.error(data.error || 'Yükleme başarısız')
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      toast.error('Dosya yüklenemedi')
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -331,6 +362,37 @@ export default function AdminSponsorsPage() {
                 className="bg-white/5 border-white/10 text-white mt-1"
                 placeholder="https://..."
               />
+              <div className="mt-2 space-y-2">
+                <div className="flex gap-2">
+                  <input
+                    type="file"
+                    id="logo-file-upload"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('logo-file-upload')?.click()}
+                    disabled={uploading}
+                    className="border-white/20 hover:bg-white/10"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {uploading ? 'Yükleniyor...' : 'Dosya Yükle'}
+                  </Button>
+                  {formData.logoUrl && (
+                    <img src={formData.logoUrl} alt="Preview" className="h-10 w-10 object-contain rounded bg-white/5" />
+                  )}
+                </div>
+                <p className="text-xs text-blue-300">
+                  💡 <strong>Deploy Modu:</strong> Sistem Ayarları'nda "Upload URL" ayarını yaparsanız,
+                  dosyalar otomatik olarak Hostinger sitenize yüklenecektir.
+                </p>
+                <p className="text-xs text-gray-400">
+                  Ayar yapılmazsa dosyalar yerel sunucuya yüklenir. Örnek URL: https://siteniz.com/uploads/upload.php
+                </p>
+              </div>
             </div>
 
             <div>
