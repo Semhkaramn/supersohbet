@@ -785,23 +785,66 @@ export default function AdminStatisticsPage() {
 
                 <TabsContent value="purchases" className="space-y-2">
                   <Card className="bg-white/5 border-white/10 p-6">
-                    <h4 className="text-lg font-bold text-white mb-4">Satın Alma Geçmişi</h4>
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {userDetail.purchases.map((purchase: any) => (
-                        <div key={purchase.id} className="bg-white/5 p-3 rounded flex justify-between items-center">
-                          <div>
-                            <p className="text-white font-semibold">{purchase.item.name}</p>
-                            <p className="text-gray-400 text-sm">{purchase.item.description}</p>
-                            <p className="text-gray-400 text-xs">
-                              {new Date(purchase.purchasedAt).toLocaleString('tr-TR')}
-                            </p>
-                          </div>
-                          <div className="text-lg font-bold text-red-400">
-                            -{purchase.pointsSpent} Puan
-                          </div>
+                    <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                      <ShoppingCart className="w-5 h-5 text-green-400" />
+                      Mağaza Satın Alma Geçmişi
+                    </h4>
+                    {userDetail.purchases && userDetail.purchases.length > 0 ? (
+                      <>
+                        <div className="mb-4 p-3 bg-gradient-to-br from-green-500/20 to-green-600/20 border-green-500/30 border rounded-lg">
+                          <p className="text-green-300 text-sm mb-1">Toplam Satın Alma</p>
+                          <p className="text-3xl font-bold text-white">{userDetail.purchases.length}</p>
+                          <p className="text-green-200 text-xs mt-1">
+                            Toplam Harcanan: {userDetail.purchases.reduce((sum: number, p: any) => sum + p.pointsSpent, 0)} Puan
+                          </p>
                         </div>
-                      ))}
-                    </div>
+                        <div className="space-y-3 max-h-96 overflow-y-auto">
+                          {userDetail.purchases.map((purchase: any) => (
+                            <div key={purchase.id} className="bg-gradient-to-br from-white/5 to-white/10 border border-white/10 p-4 rounded-lg hover:border-white/20 transition-all">
+                              <div className="flex gap-4">
+                                {purchase.item.imageUrl && (
+                                  <div className="w-16 h-16 rounded-lg bg-white/5 flex-shrink-0 overflow-hidden border border-white/10">
+                                    <img
+                                      src={purchase.item.imageUrl}
+                                      alt={purchase.item.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                )}
+                                <div className="flex-1">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                      <p className="text-white font-semibold text-lg">{purchase.item.name}</p>
+                                      <p className="text-gray-400 text-sm mt-1">{purchase.item.description}</p>
+                                      <div className="flex items-center gap-3 mt-2">
+                                        <p className="text-gray-400 text-xs flex items-center gap-1">
+                                          <Clock className="w-3 h-3" />
+                                          {new Date(purchase.purchasedAt).toLocaleString('tr-TR')}
+                                        </p>
+                                        <p className="text-gray-500 text-xs">
+                                          ID: {purchase.id.slice(0, 8)}...
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-xl font-bold text-red-400">
+                                        -{purchase.pointsSpent}
+                                      </div>
+                                      <p className="text-gray-400 text-xs">Puan</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-12">
+                        <ShoppingCart className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                        <p className="text-gray-400">Henüz mağazadan satın alma yapılmamış</p>
+                      </div>
+                    )}
                   </Card>
                 </TabsContent>
               </Tabs>
