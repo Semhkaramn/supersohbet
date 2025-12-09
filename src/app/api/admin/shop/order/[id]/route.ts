@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getTurkeyDate } from '@/lib/utils'
 
 export async function PUT(
   request: Request,
@@ -28,7 +29,7 @@ export async function PUT(
 
     if (status) {
       updateData.status = status
-      updateData.processedAt = new Date()
+      updateData.processedAt = getTurkeyDate() // Türkiye saati
     }
 
     if (deliveryInfo !== undefined) {
