@@ -104,6 +104,21 @@ export default function AdminShopPage() {
     loadOrders()
   }, [])
 
+  // Auto-refresh orders when on orders tab
+  useEffect(() => {
+    if (activeTab !== 'orders') return
+
+    // Initial load
+    loadOrders(statusFilter)
+
+    // Set up polling - refresh every 10 seconds (silent mode)
+    const interval = setInterval(() => {
+      loadOrders(statusFilter, true)
+    }, 10000)
+
+    return () => clearInterval(interval)
+  }, [activeTab, statusFilter])
+
   async function loadItems() {
     try {
       const response = await fetch('/api/admin/shop')
@@ -117,8 +132,10 @@ export default function AdminShopPage() {
     }
   }
 
-  async function loadOrders(filter = 'all') {
-    setOrdersLoading(true)
+  async function loadOrders(filter = 'all', silent = false) {
+    if (!silent) {
+      setOrdersLoading(true)
+    }
     try {
       const url = filter === 'all'
         ? '/api/admin/shop/orders'
@@ -128,9 +145,13 @@ export default function AdminShopPage() {
       setOrders(data.orders || [])
     } catch (error) {
       console.error('Error loading orders:', error)
-      toast.error('Siparişler yüklenemedi')
+      if (!silent) {
+        toast.error('Siparişler yüklenemedi')
+      }
     } finally {
-      setOrdersLoading(false)
+      if (!silent) {
+        setOrdersLoading(false)
+      }
     }
   }
 
