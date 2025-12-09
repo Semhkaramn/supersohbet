@@ -184,7 +184,7 @@ function SponsorsContent() {
                 {vipSponsors.length > 0 && (
                   <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                     <Heart className="w-5 h-5 text-pink-400" />
-                    Diğer Sponsorlar
+                    Sponsorlar
                   </h2>
                 )}
 
