@@ -85,7 +85,8 @@ async function main() {
     // Genel Ayarlar
     { key: 'maintenance_mode', value: 'false', description: 'Bakım modu aktif mi?', category: 'general' },
     { key: 'allow_new_users', value: 'true', description: 'Yeni kullanıcı kayıtları açık mı?', category: 'general' },
-    { key: 'upload_url', value: '', description: 'Resim yükleme URL (boş bırakılırsa yerel yükleme)', category: 'general' },
+    { key: 'upload_url', value: '', description: 'Hostinger Upload URL (https://siteniz.com/uploads/upload.php)', category: 'general' },
+    { key: 'site_base_url', value: '', description: 'Site Ana URL (https://siteniz.com) - Hostinger sitenizin adresi', category: 'general' },
   ]
 
   for (const setting of settings) {
