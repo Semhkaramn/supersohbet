@@ -85,6 +85,7 @@ async function main() {
     // Genel Ayarlar
     { key: 'maintenance_mode', value: 'false', description: 'Bakım modu aktif mi?', category: 'general' },
     { key: 'allow_new_users', value: 'true', description: 'Yeni kullanıcı kayıtları açık mı?', category: 'general' },
+    { key: 'upload_url', value: '', description: 'Resim yükleme URL (boş bırakılırsa yerel yükleme)', category: 'general' },
   ]
 
   for (const setting of settings) {
