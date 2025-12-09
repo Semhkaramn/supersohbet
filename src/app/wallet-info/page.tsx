@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -34,7 +34,7 @@ interface UserSponsorInfo {
   sponsor: Sponsor
 }
 
-export default function WalletInfoPage() {
+function WalletInfoContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const userId = searchParams.get('userId')
@@ -497,5 +497,17 @@ export default function WalletInfoPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function WalletInfoPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <WalletInfoContent />
+    </Suspense>
   )
 }
