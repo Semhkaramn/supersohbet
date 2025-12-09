@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { ArrowLeft, Plus, Edit, Trash2, BarChart3 } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
@@ -29,6 +30,8 @@ export default function AdminRanksPage() {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingRank, setEditingRank] = useState<Rank | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -115,10 +118,15 @@ export default function AdminRanksPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Bu rütbeyi silmek istediğinizden emin misiniz?')) return
+    setDeleteId(id)
+    setConfirmOpen(true)
+  }
+
+  async function confirmDelete() {
+    if (!deleteId) return
 
     try {
-      const response = await fetch(`/api/admin/ranks/${id}`, {
+      const response = await fetch(`/api/admin/ranks/${deleteId}`, {
         method: 'DELETE'
       })
 
@@ -133,6 +141,9 @@ export default function AdminRanksPage() {
     } catch (error) {
       console.error('Delete error:', error)
       toast.error('Bir hata oluştu')
+    } finally {
+      setConfirmOpen(false)
+      setDeleteId(null)
     }
   }
 
@@ -328,6 +339,15 @@ export default function AdminRanksPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Rütbe Silme"
+        description="Bu rütbeyi silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }
