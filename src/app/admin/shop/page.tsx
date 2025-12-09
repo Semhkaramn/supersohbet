@@ -110,10 +110,13 @@ export default function AdminShopPage() {
     }
   }
 
-  async function loadOrders() {
+  async function loadOrders(filter = 'all') {
+    setOrdersLoading(true)
     try {
-      setOrdersLoading(true)
-      const response = await fetch('/api/admin/shop/orders')
+      const url = filter === 'all'
+        ? '/api/admin/shop/orders'
+        : `/api/admin/shop/orders?status=${filter}`
+      const response = await fetch(url)
       const data = await response.json()
       setOrders(data.orders || [])
     } catch (error) {
