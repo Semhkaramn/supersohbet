@@ -65,6 +65,11 @@ async function main() {
     { key: 'telegram_bot_username', value: '', description: 'Telegram Bot Kullanıcı Adı (@username)', category: 'telegram' },
     { key: 'telegram_webhook_url', value: 'https://soft-fairy-c52849.netlify.app/api/telegram/webhook', description: 'Telegram Webhook URL', category: 'telegram' },
 
+    // Cloudinary Ayarları
+    { key: 'cloudinary_cloud_name', value: '', description: 'Cloudinary Cloud Name', category: 'cloudinary' },
+    { key: 'cloudinary_api_key', value: '', description: 'Cloudinary API Key', category: 'cloudinary' },
+    { key: 'cloudinary_api_secret', value: '', description: 'Cloudinary API Secret', category: 'cloudinary' },
+
     // Puan ve XP Ayarları
     { key: 'points_per_message', value: '10', description: 'Mesaj başına kazanılan puan', category: 'points' },
     { key: 'xp_per_message', value: '5', description: 'Mesaj başına kazanılan XP', category: 'points' },
