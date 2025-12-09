@@ -2,6 +2,8 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { MaintenanceScreen } from '@/components/MaintenanceScreen'
+import { BannedScreen } from '@/components/BannedScreen'
 
 interface TelegramUser {
   id: number
@@ -38,6 +40,9 @@ function HomeContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [debugInfo, setDebugInfo] = useState<string>('')
+  const [maintenanceMode, setMaintenanceMode] = useState(false)
+  const [isBanned, setIsBanned] = useState(false)
+  const [banInfo, setBanInfo] = useState<{ reason?: string; date?: string; by?: string }>({})
 
   useEffect(() => {
     const initTelegramApp = async () => {
@@ -106,6 +111,25 @@ function HomeContent() {
 
       const data = await response.json()
 
+      // Bakım modu kontrolü
+      if (data.maintenanceMode) {
+        setMaintenanceMode(true)
+        setLoading(false)
+        return
+      }
+
+      // Ban kontrolü
+      if (data.isBanned) {
+        setIsBanned(true)
+        setBanInfo({
+          reason: data.banReason,
+          date: data.bannedAt,
+          by: data.bannedBy
+        })
+        setLoading(false)
+        return
+      }
+
       if (data.needsChannelJoin) {
         router.push('/channels?userId=' + data.userId)
       } else {
@@ -117,6 +141,16 @@ function HomeContent() {
       setDebugInfo('API Hatası: ' + (err instanceof Error ? err.message : String(err)))
       setLoading(false)
     }
+  }
+
+  // Bakım modu ekranı
+  if (maintenanceMode) {
+    return <MaintenanceScreen />
+  }
+
+  // Ban ekranı
+  if (isBanned) {
+    return <BannedScreen banReason={banInfo.reason} bannedAt={banInfo.date} bannedBy={banInfo.by} />
   }
 
   if (loading) {
