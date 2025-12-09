@@ -6,6 +6,16 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import BottomNav from '@/components/BottomNav'
 import { ShoppingBag, Coins, Heart, Package, Clock, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -48,6 +58,8 @@ function ShopContent() {
   const [selectedCategory, setSelectedCategory] = useState('Tüm Kategoriler')
   const [loading, setLoading] = useState(true)
   const [loadingPurchases, setLoadingPurchases] = useState(false)
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null)
 
   useEffect(() => {
     if (!userId) {
@@ -93,17 +105,25 @@ function ShopContent() {
     }
   }
 
-  async function purchaseItem(itemId: string, price: number) {
-    if (!userData || userData.points < price) {
+  function openPurchaseConfirm(item: ShopItem) {
+    if (!userData || userData.points < item.price) {
       toast.error('Yetersiz puan!')
       return
     }
+    setSelectedItem(item)
+    setConfirmDialogOpen(true)
+  }
+
+  async function confirmPurchase() {
+    if (!selectedItem) return
+
+    setConfirmDialogOpen(false)
 
     try {
       const response = await fetch('/api/shop/purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, itemId })
+        body: JSON.stringify({ userId, itemId: selectedItem.id })
       })
 
       const data = await response.json()
@@ -118,6 +138,8 @@ function ShopContent() {
     } catch (error) {
       console.error('Purchase error:', error)
       toast.error('Bir hata oluştu')
+    } finally {
+      setSelectedItem(null)
     }
   }
 
@@ -266,7 +288,7 @@ function ShopContent() {
                         )}
                       </div>
                       <Button
-                        onClick={() => purchaseItem(item.id, item.price)}
+                        onClick={() => openPurchaseConfirm(item)}
                         disabled={userData ? userData.points < item.price : true}
                         className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
                         size="sm"
@@ -347,6 +369,80 @@ function ShopContent() {
       </div>
 
       <BottomNav userId={userId!} />
+
+      {/* Purchase Confirmation Dialog */}
+      <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <AlertDialogContent className="bg-gray-900 border-white/10">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Satın Alma Onayı</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-300">
+              {selectedItem && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    {selectedItem.imageUrl && (
+                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-blue-500/20 to-purple-500/20 relative">
+                        <Image
+                          src={selectedItem.imageUrl}
+                          alt={selectedItem.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-semibold text-white">{selectedItem.name}</p>
+                      {selectedItem.description && (
+                        <p className="text-sm text-gray-400">{selectedItem.description}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-3 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Ürün Fiyatı:</span>
+                      <div className="flex items-center gap-1">
+                        <Coins className="w-4 h-4 text-yellow-400" />
+                        <span className="font-bold text-yellow-300">{selectedItem.price}</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Mevcut Puanınız:</span>
+                      <div className="flex items-center gap-1">
+                        <Coins className="w-4 h-4 text-yellow-400" />
+                        <span className="font-bold text-yellow-300">{userData?.points || 0}</span>
+                      </div>
+                    </div>
+                    <div className="border-t border-white/10 pt-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Kalan Puan:</span>
+                        <div className="flex items-center gap-1">
+                          <Coins className="w-4 h-4 text-yellow-400" />
+                          <span className="font-bold text-yellow-300">
+                            {(userData?.points || 0) - selectedItem.price}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-center text-gray-400">
+                    Bu ürünü satın almak istediğinizden emin misiniz?
+                  </p>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-white/10 text-white border-white/20 hover:bg-white/20">
+              İptal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmPurchase}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              Satın Al
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
