@@ -107,17 +107,6 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen pb-24 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-6 shadow-xl">
-        <div className="max-w-2xl mx-auto text-center">
-          <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
-            <Trophy className="w-6 h-6" />
-            Ana Sayfa
-          </h1>
-          <p className="text-blue-100 text-sm mt-1">Hoş geldin!</p>
-        </div>
-      </div>
-
       {/* User Info & Stats */}
       <div className="max-w-2xl mx-auto px-4 py-6">
         {/* User Card */}
