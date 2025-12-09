@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { ArrowLeft, Plus, Edit, Trash2, MessageSquare } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
@@ -26,6 +27,8 @@ export default function AdminChannelsPage() {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingChannel, setEditingChannel] = useState<Channel | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     channelId: '',
@@ -109,10 +112,15 @@ export default function AdminChannelsPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Bu kanalı silmek istediğinizden emin misiniz?')) return
+    setDeleteId(id)
+    setConfirmOpen(true)
+  }
+
+  async function confirmDelete() {
+    if (!deleteId) return
 
     try {
-      const response = await fetch(`/api/admin/channels/${id}`, {
+      const response = await fetch(`/api/admin/channels/${deleteId}`, {
         method: 'DELETE'
       })
 
@@ -127,6 +135,9 @@ export default function AdminChannelsPage() {
     } catch (error) {
       console.error('Delete error:', error)
       toast.error('Bir hata oluştu')
+    } finally {
+      setConfirmOpen(false)
+      setDeleteId(null)
     }
   }
 
@@ -332,6 +343,15 @@ export default function AdminChannelsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Kanal Sil"
+        description="Bu kanalı silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }
