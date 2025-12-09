@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { prisma } from "./prisma";
+import { sendTelegramMessage as sendTelegramMsg } from "./telegram";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -33,38 +34,7 @@ export function getTurkeyDateAgo(daysAgo: number): Date {
   return new Date(today.getTime() - daysAgo * 24 * 60 * 60 * 1000);
 }
 
-/**
- * Telegram mesaj gönderme yardımcı fonksiyonu
- */
-async function sendTelegramNotification(telegramId: string, message: string) {
-  try {
-    const botTokenSetting = await prisma.settings.findUnique({
-      where: { key: 'telegram_bot_token' }
-    })
 
-    if (!botTokenSetting?.value) {
-      console.error('Bot token not configured')
-      return false
-    }
-
-    const url = `https://api.telegram.org/bot${botTokenSetting.value}/sendMessage`
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: telegramId,
-        text: message,
-        parse_mode: 'Markdown'
-      })
-    })
-
-    const data = await response.json()
-    return data.ok
-  } catch (error) {
-    console.error('Error sending telegram notification:', error)
-    return false
-  }
-}
 
 /**
  * Kullanıcının çark haklarını kontrol eder ve gerekirse sıfırlar
@@ -148,10 +118,14 @@ Merhaba ${user.firstName || user.username || 'Kullanıcı'}!
 Bot menüsünden "Şans Çarkı" seçeneğine tıklayarak şansını dene! 🍀
         `.trim()
 
-        // Asenkron olarak bildirim gönder
-        sendTelegramNotification(user.telegramId, message).catch(err =>
-          console.error('Failed to send wheel reset notification:', err)
-        )
+        // KRİTİK: Mesajı HEMEN gönder - await ile bekle!
+        console.log(`🔔 [WheelReset] Çark bildirimi gönderiliyor: userId=${userId}`)
+        const sent = await sendTelegramMsg(user.telegramId, message)
+        if (sent) {
+          console.log(`✅ [WheelReset] Bildirim başarıyla gönderildi: userId=${userId}`)
+        } else {
+          console.error(`❌ [WheelReset] Bildirim gönderilemedi: userId=${userId}, telegramId=${user.telegramId}`)
+        }
       }
 
       return updatedUser;
