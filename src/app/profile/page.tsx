@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import BottomNav from '@/components/BottomNav'
-import { Trophy, Star, MessageSquare, TrendingUp, ShoppingBag, Clock, CheckCircle2, Package, Users, History, Crown } from 'lucide-react'
+import { Trophy, Star, MessageSquare, TrendingUp, ShoppingBag, Clock, CheckCircle2, Package, Users, History, Crown, Wallet, Settings } from 'lucide-react'
 
 interface PointHistory {
   id: string
