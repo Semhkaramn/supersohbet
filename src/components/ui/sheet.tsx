@@ -25,18 +25,28 @@ export function Sheet({ open, onOpenChange, children }: SheetProps) {
       {/* Backdrop */}
       <div
         className={cn(
-          "fixed inset-0 z-[60] bg-black/80 transition-opacity duration-300",
+          "fixed inset-0 z-[60] bg-black/80 transition-opacity duration-300 ease-out",
           open ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
         onClick={() => onOpenChange(false)}
+        style={{
+          willChange: open ? 'opacity' : 'auto',
+          transform: 'translate3d(0, 0, 0)'
+        }}
       />
 
       {/* Sheet */}
       <div
         className={cn(
-          "fixed right-0 top-0 z-[60] h-full w-full sm:w-96 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 shadow-xl transition-transform duration-300 ease-in-out",
+          "fixed right-0 top-0 z-[60] h-full w-full sm:w-96 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 shadow-xl transition-transform duration-300 ease-out",
           open ? "translate-x-0" : "translate-x-full"
         )}
+        style={{
+          willChange: open ? 'transform' : 'auto',
+          transform: open ? 'translate3d(0, 0, 0)' : 'translate3d(100%, 0, 0)',
+          backfaceVisibility: 'hidden',
+          perspective: 1000
+        }}
       >
         {children}
       </div>
@@ -49,21 +59,27 @@ interface SheetContentProps {
   onClose: () => void
 }
 
-export function SheetContent({ children, onClose }: SheetContentProps) {
+export function SheetContent({ children, onClose, className, style }: SheetContentProps & { className?: string, style?: React.CSSProperties }) {
   return (
-    <div className="flex flex-col h-full">
+    <div className={cn("flex flex-col h-full", className)} style={style}>
       {/* Close button */}
       <div className="flex items-center justify-end p-4 border-b border-white/10">
         <button
           onClick={onClose}
-          className="p-2 rounded-lg hover:bg-white/10 transition-colors text-white"
+          className="p-2 rounded-lg hover:bg-white/10 transition-colors duration-150 ease-out text-white"
         >
           <X className="w-6 h-6" />
         </button>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div
+        className="flex-1 overflow-y-auto"
+        style={{
+          transform: 'translate3d(0, 0, 0)',
+          WebkitOverflowScrolling: 'touch'
+        }}
+      >
         {children}
       </div>
     </div>
