@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Plus, Edit, Trash2, ShoppingCart, Package, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Plus, Edit, Trash2, ShoppingCart, Package, Clock, CheckCircle, XCircle, AlertCircle, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
@@ -86,6 +86,9 @@ export default function AdminShopPage() {
     deliveryInfo: ''
   })
 
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [imagePublicId, setImagePublicId] = useState<string | null>(null)
+
   useEffect(() => {
     const token = localStorage.getItem('admin_token')
     if (!token) {
@@ -139,6 +142,21 @@ export default function AdminShopPage() {
         purchaseLimit: item.purchaseLimit ?? null,
         order: item.order
       })
+
+      // Mevcut resmin public_id'sini extract et
+      if (item.imageUrl && item.imageUrl.includes('cloudinary')) {
+        try {
+          const urlParts = item.imageUrl.split('/')
+          const publicIdWithExt = urlParts.slice(-2).join('/')
+          const publicId = publicIdWithExt.replace(/\.[^/.]+$/, '')
+          setImagePublicId(publicId)
+        } catch (err) {
+          console.error('Public ID extraction error:', err)
+          setImagePublicId(null)
+        }
+      } else {
+        setImagePublicId(null)
+      }
     } else {
       setEditingItem(null)
       setFormData({
@@ -151,6 +169,7 @@ export default function AdminShopPage() {
         purchaseLimit: null,
         order: items.length
       })
+      setImagePublicId(null)
     }
     setDialogOpen(true)
   }
@@ -162,6 +181,67 @@ export default function AdminShopPage() {
       deliveryInfo: order.deliveryInfo || ''
     })
     setOrderDialogOpen(true)
+  }
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Dosya boyutu kontrolü (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Dosya boyutu 5MB\'dan küçük olmalıdır')
+      return
+    }
+
+    setUploadingImage(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('folder', 'supersohbet/shop')
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setFormData(prev => ({ ...prev, imageUrl: data.url }))
+        setImagePublicId(data.publicId)
+        toast.success('Resim yüklendi')
+      } else {
+        toast.error(data.error || 'Resim yüklenemedi')
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      toast.error('Resim yüklenirken hata oluştu')
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
+  async function handleRemoveImage() {
+    if (!imagePublicId) {
+      setFormData(prev => ({ ...prev, imageUrl: '' }))
+      return
+    }
+
+    try {
+      await fetch('/api/upload', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ publicId: imagePublicId })
+      })
+
+      setFormData(prev => ({ ...prev, imageUrl: '' }))
+      setImagePublicId(null)
+      toast.success('Resim silindi')
+    } catch (error) {
+      console.error('Image remove error:', error)
+      toast.error('Resim silinirken hata oluştu')
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -185,6 +265,7 @@ export default function AdminShopPage() {
       if (data.item) {
         toast.success(editingItem ? 'Ürün güncellendi' : 'Ürün eklendi')
         setDialogOpen(false)
+        setImagePublicId(null)
         loadItems()
       } else {
         toast.error(data.error || 'İşlem başarısız')
@@ -229,6 +310,9 @@ export default function AdminShopPage() {
     if (!confirm('Bu ürünü silmek istediğinizden emin misiniz?')) return
 
     try {
+      // Önce ürünü bul ve resminin public_id'sini al
+      const item = items.find(i => i.id === id)
+
       const response = await fetch(`/api/admin/shop/${id}`, {
         method: 'DELETE'
       })
@@ -236,6 +320,23 @@ export default function AdminShopPage() {
       const data = await response.json()
 
       if (data.success) {
+        // Cloudinary'den resmi sil (varsa)
+        if (item?.imageUrl && item.imageUrl.includes('cloudinary')) {
+          try {
+            const urlParts = item.imageUrl.split('/')
+            const publicIdWithExt = urlParts.slice(-2).join('/')
+            const publicId = publicIdWithExt.replace(/\.[^/.]+$/, '')
+
+            await fetch('/api/upload', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ publicId })
+            })
+          } catch (err) {
+            console.error('Cloudinary silme hatası:', err)
+          }
+        }
+
         toast.success('Ürün silindi')
         loadItems()
       } else {
@@ -660,14 +761,41 @@ export default function AdminShopPage() {
             </div>
 
             <div>
-              <Label htmlFor="imageUrl" className="text-white">Resim URL</Label>
-              <Input
-                id="imageUrl"
-                value={formData.imageUrl}
-                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                className="bg-white/5 border-white/10 text-white mt-1"
-                placeholder="https://..."
-              />
+              <Label className="text-white">Ürün Resmi</Label>
+              <div className="mt-2 space-y-2">
+                {formData.imageUrl ? (
+                  <div className="relative">
+                    <img
+                      src={formData.imageUrl}
+                      alt="Ürün"
+                      className="w-full h-48 object-cover rounded-lg border border-white/10"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      onClick={handleRemoveImage}
+                      className="absolute top-2 right-2"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-white/10 rounded-lg p-6 text-center">
+                    <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={uploadingImage}
+                      className="bg-white/5 border-white/10 text-white"
+                    />
+                    <p className="text-xs text-gray-400 mt-2">
+                      {uploadingImage ? 'Yükleniyor...' : 'PNG, JPG, GIF (Max 5MB)'}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
