@@ -20,7 +20,8 @@ export async function GET(request: Request) {
             telegramId: true,
             username: true,
             firstName: true,
-            lastName: true
+            lastName: true,
+            trc20WalletAddress: true
           }
         },
         item: {
@@ -30,7 +31,14 @@ export async function GET(request: Request) {
             description: true,
             price: true,
             imageUrl: true,
-            category: true
+            category: true,
+            sponsor: {
+              select: {
+                id: true,
+                name: true,
+                identifierType: true
+              }
+            }
           }
         }
       },
