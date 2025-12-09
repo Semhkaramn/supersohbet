@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useUser } from '@/contexts/UserContext'
 
 interface Channel {
   id: string
@@ -20,17 +21,23 @@ function ChannelsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const userId = searchParams.get('userId')
+  const { appData, loading: contextLoading } = useUser()
 
   const [channels, setChannels] = useState<Channel[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!userId) {
       router.push('/')
       return
     }
-    loadChannels()
-  }, [userId])
+    // Context'ten kanalları al
+    if (appData.channels.length > 0 && channels.length === 0) {
+      setChannels(appData.channels)
+    } else {
+      loadChannels()
+    }
+  }, [userId, appData.channels, router])
 
   // Otomatik kontrol - Her 3 saniyede bir
   useEffect(() => {
@@ -46,6 +53,7 @@ function ChannelsContent() {
   }, [channels, userId])
 
   async function loadChannels() {
+    setLoading(true)
     try {
       const response = await fetch(`/api/channels/required?userId=${userId}`)
       const data = await response.json()
@@ -125,13 +133,10 @@ function ChannelsContent() {
     }
   }, [allJoined, channels.length, userId, router])
 
-  if (loading) {
+  if (loading || contextLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-300">Kanallar yükleniyor...</p>
-        </div>
+        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     )
   }
