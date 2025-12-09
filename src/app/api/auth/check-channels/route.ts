@@ -14,6 +14,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Bakım modu kontrolü
+    const maintenanceSetting = await prisma.settings.findUnique({
+      where: { key: 'maintenance_mode' }
+    })
+
+    if (maintenanceSetting?.value === 'true') {
+      return NextResponse.json({
+        maintenanceMode: true,
+        message: 'Sistem bakımda'
+      })
+    }
+
     console.log('👤 Kullanıcı giriş yapıyor:', {
       telegramId: telegramUser.id,
       username: telegramUser.username,
@@ -35,6 +47,16 @@ export async function POST(request: NextRequest) {
           firstName: telegramUser.first_name,
           lastName: telegramUser.last_name,
         }
+      })
+    }
+
+    // Ban kontrolü
+    if (user.isBanned) {
+      return NextResponse.json({
+        isBanned: true,
+        banReason: user.banReason,
+        bannedAt: user.bannedAt,
+        bannedBy: user.bannedBy
       })
     }
 
