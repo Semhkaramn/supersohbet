@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import BottomNav from '@/components/BottomNav'
 import { Trophy, Star, MessageSquare, TrendingUp, ShoppingBag, Clock, CheckCircle2, Package, Users, History } from 'lucide-react'
+import { useUser } from '@/contexts/UserContext'
 
 interface PointHistory {
   id: string
@@ -68,37 +69,18 @@ function ProfileContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const userId = searchParams.get('userId')
+  const { appData, loading } = useUser()
 
-  const [userData, setUserData] = useState<UserData | null>(null)
-  const [purchases, setPurchases] = useState<Purchase[]>([])
-  const [loading, setLoading] = useState(true)
+  const userData = appData.userData
+  const purchases = appData.purchases
 
   useEffect(() => {
     if (!userId) {
       router.push('/')
       return
     }
-    loadData()
-  }, [userId])
-
-  async function loadData() {
-    try {
-      const [userRes, purchasesRes] = await Promise.all([
-        fetch(`/api/user/${userId}`),
-        fetch(`/api/user/${userId}/purchases`)
-      ])
-
-      const userData = await userRes.json()
-      const purchasesData = await purchasesRes.json()
-
-      setUserData(userData)
-      setPurchases(purchasesData.purchases || [])
-    } catch (error) {
-      console.error('Error loading profile data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+    // Veriler zaten context'te yüklü
+  }, [userId, router])
 
   if (loading) {
     return (
@@ -173,7 +155,7 @@ function ProfileContent() {
               </h2>
               <p className="text-white/60">@{userData.username || 'kullanici'}</p>
               <p className="text-white/40 text-xs mt-1">
-                Üyelik: {new Date(userData.createdAt).toLocaleDateString('tr-TR')}
+                Üyelik: {userData.createdAt ? new Date(userData.createdAt).toLocaleDateString('tr-TR') : 'Bilinmiyor'}
               </p>
             </div>
           </div>
