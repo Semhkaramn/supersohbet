@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import BottomNav from '@/components/BottomNav'
 import { Ticket, Gift, TrendingUp, Trophy } from 'lucide-react'
 import { toast } from 'sonner'
+import { useUser } from '@/contexts/UserContext'
 
 interface WheelPrize {
   id: string
@@ -38,49 +39,30 @@ function WheelContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const userId = searchParams.get('userId')
+  const { appData, loading: contextLoading, refreshUserData } = useUser()
 
-  const [prizes, setPrizes] = useState<WheelPrize[]>([])
-  const [userData, setUserData] = useState<UserData | null>(null)
-  const [recentWinners, setRecentWinners] = useState<RecentWinner[]>([])
+  const prizes = appData.wheelPrizes
+  const userData = appData.userData
+  const recentWinners = appData.recentWinners
+
   const [spinning, setSpinning] = useState(false)
   const [rotation, setRotation] = useState(0)
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!userId) {
       router.push('/')
       return
     }
-    loadData()
-  }, [userId])
-
-  async function loadData() {
-    try {
-      const [prizesRes, userRes, winnersRes] = await Promise.all([
-        fetch('/api/wheel/prizes'),
-        fetch(`/api/user/${userId}`),
-        fetch('/api/wheel/recent-winners')
-      ])
-
-      const prizesData = await prizesRes.json()
-      const userData = await userRes.json()
-      const winnersData = await winnersRes.json()
-
-      setPrizes(prizesData.prizes || [])
-      setUserData(userData)
-      setRecentWinners(winnersData.winners || [])
-    } catch (error) {
-      console.error('Error loading wheel data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+    // Veriler zaten context'te yüklü
+  }, [userId, router])
 
   async function spinWheel() {
     if (!userData || userData.dailySpinsLeft <= 0) {
-      toast.error('Günlük çark hakkınız kalmadı!')
+      toast.error('Günlük çevirme hakkınız kalmadı!')
       return
     }
+
+    if (spinning) return
 
     setSpinning(true)
 
@@ -93,56 +75,32 @@ function WheelContent() {
 
       const data = await response.json()
 
-      if (data.success) {
-        const prizeIndex = data.prizeIndex
-
-        // Profesyonel çark hesaplaması
-        // Her segment kaç derece?
-        const segmentAngle = 360 / prizes.length
-
-        // Kazanan segment'in başlangıç açısı (SVG -90°'den başlıyor)
-        const prizeStartAngle = -90 + (prizeIndex * segmentAngle)
-
-        // Segment'in ortasını bul
-        const prizeMidAngle = prizeStartAngle + (segmentAngle / 2)
-
-        // Ok üstte (-90°) sabit, kazanan dilimi ok altına getir
-        // Çarkı saat yönünde döndüreceğiz
-        let targetAngle = -90 - prizeMidAngle
-
-        // Açıyı normalize et (pozitif yap)
-        while (targetAngle < 0) {
-          targetAngle += 360
-        }
-        targetAngle = targetAngle % 360
-
-        // 5-10 tam tur random
-        const randomSpins = 5 + Math.floor(Math.random() * 5)
-
-        // Toplam rotasyon
-        const totalRotation = (randomSpins * 360) + targetAngle
-
-        // Animasyonu başlat
-        setRotation(totalRotation)
-
-        // 4 saniye sonra sonuç göster
-        setTimeout(() => {
-          toast.success(`🎉 Tebrikler! ${data.pointsWon} puan kazandınız!`)
-          setSpinning(false)
-          loadData()
-        }, 4000)
-      } else {
-        toast.error(data.error || 'Çark çevrilemedi')
+      if (!response.ok) {
+        toast.error(data.error || 'Çark çevrilirken hata oluştu')
         setSpinning(false)
+        return
       }
+
+      // Çarkı döndür
+      const prizeIndex = prizes.findIndex(p => p.id === data.prizeId)
+      const degree = 360 * 5 + (360 / prizes.length) * prizeIndex
+      setRotation(rotation + degree)
+
+      // Animasyon bitince ödülü göster
+      setTimeout(() => {
+        toast.success(`Tebrikler! ${data.prize.name} kazandınız! (+${data.pointsWon} puan)`)
+        setSpinning(false)
+        // Kullanıcı verisini yenile
+        refreshUserData()
+      }, 4000)
     } catch (error) {
-      console.error('Spin error:', error)
+      console.error('Error spinning wheel:', error)
       toast.error('Bir hata oluştu')
       setSpinning(false)
     }
   }
 
-  if (loading) {
+  if (contextLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -302,7 +260,7 @@ function WheelContent() {
                     <div className="text-right">
                       <p className="text-yellow-400 font-bold text-lg">+{winner.pointsWon}</p>
                       <p className="text-slate-500 text-xs">
-                        {new Date(winner.spunAt).toLocaleDateString('tr-TR', {
+                        {new Date(winner.spunAt || winner.wonAt).toLocaleDateString('tr-TR', {
                           month: 'short',
                           day: 'numeric'
                         })}
