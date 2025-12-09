@@ -462,6 +462,25 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
             where: { id: user.id },
             data: { rankId: currentRank.id }
           })
+
+          // Seviye atlama bildirimi - Ayar aktifse grupta bildirim gönder
+          const notifyLevelUp = getSetting('notify_level_up', 'false')
+          if (notifyLevelUp === 'true') {
+            const levelUpMessage = `
+🎊 **Tebrikler ${firstName || username || 'Kullanıcı'}!**
+
+${currentRank.icon} **${currentRank.name}** rütbesine yükseldin!
+⭐ XP: ${updatedUser.xp.toLocaleString()}
+
+Harika performans! Böyle devam et! 🚀
+            `.trim()
+
+            // Grupta bildirim gönder (activity_group_id'de)
+            const activityGroupId = getSetting('activity_group_id', '')
+            if (activityGroupId) {
+              await sendTelegramMessage(parseInt(activityGroupId), levelUpMessage)
+            }
+          }
         }
       }
     }
