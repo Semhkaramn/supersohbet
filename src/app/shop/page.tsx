@@ -20,6 +20,7 @@ import BottomNav from '@/components/BottomNav'
 import { ShoppingBag, Coins, Heart, Package, Clock, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import Image from 'next/image'
+import { useUser } from '@/contexts/UserContext'
 
 interface ShopItem {
   id: string
@@ -51,13 +52,13 @@ function ShopContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const userId = searchParams.get('userId')
+  const { appData, loading, refreshShop, refreshUserData } = useUser()
 
-  const [items, setItems] = useState<ShopItem[]>([])
-  const [userData, setUserData] = useState<UserData | null>(null)
-  const [purchases, setPurchases] = useState<Purchase[]>([])
+  const items = appData.shopItems
+  const userData = appData.userData
+  const purchases = appData.purchases
+
   const [selectedCategory, setSelectedCategory] = useState('Tüm Kategoriler')
-  const [loading, setLoading] = useState(true)
-  const [loadingPurchases, setLoadingPurchases] = useState(false)
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null)
 
@@ -66,80 +67,39 @@ function ShopContent() {
       router.push('/')
       return
     }
-    loadData()
-  }, [userId])
+    // Veri zaten context'te, ama sayfa açıldığında refresh edelim
+    refreshShop()
+  }, [userId, refreshShop, router])
 
-  async function loadData() {
-    try {
-      const [itemsRes, userRes] = await Promise.all([
-        fetch('/api/shop/items'),
-        fetch(`/api/user/${userId}`)
-      ])
-
-      const itemsData = await itemsRes.json()
-      const userData = await userRes.json()
-
-      setItems(itemsData.items || [])
-      setUserData(userData)
-    } catch (error) {
-      console.error('Error loading shop data:', error)
-      toast.error('Veriler yüklenirken hata oluştu')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function loadPurchases() {
-    if (!userId || purchases.length > 0) return
-
-    setLoadingPurchases(true)
-    try {
-      const response = await fetch(`/api/user/${userId}/purchases`)
-      const data = await response.json()
-      setPurchases(data.purchases || [])
-    } catch (error) {
-      console.error('Error loading purchases:', error)
-      toast.error('Siparişler yüklenirken hata oluştu')
-    } finally {
-      setLoadingPurchases(false)
-    }
-  }
-
-  function openPurchaseConfirm(item: ShopItem) {
-    if (!userData || userData.points < item.price) {
-      toast.error('Yetersiz puan!')
-      return
-    }
-    setSelectedItem(item)
-    setConfirmDialogOpen(true)
-  }
-
-  async function confirmPurchase() {
-    if (!selectedItem) return
-
-    setConfirmDialogOpen(false)
+  async function handlePurchase() {
+    if (!selectedItem || !userId) return
 
     try {
       const response = await fetch('/api/shop/purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, itemId: selectedItem.id })
+        body: JSON.stringify({
+          userId,
+          itemId: selectedItem.id
+        })
       })
 
       const data = await response.json()
 
-      if (data.success) {
-        toast.success('Satın alma başarılı! 🎉')
-        loadData()
-        setPurchases([]) // Reset purchases to reload
-      } else {
-        toast.error(data.error || 'Satın alma başarısız')
+      if (!response.ok) {
+        toast.error(data.error || 'Satın alma işlemi başarısız')
+        return
       }
+
+      toast.success('Satın alma işlemi başarılı!')
+      setConfirmDialogOpen(false)
+      setSelectedItem(null)
+
+      // Context'teki shop ve kullanıcı verisini yenile
+      await Promise.all([refreshShop(), refreshUserData()])
     } catch (error) {
       console.error('Purchase error:', error)
       toast.error('Bir hata oluştu')
-    } finally {
-      setSelectedItem(null)
     }
   }
 
@@ -180,9 +140,6 @@ function ShopContent() {
   }
 
   const categories = ['Tüm Kategoriler', ...new Set(items.map(item => item.category))]
-  const filteredItems = selectedCategory === 'Tüm Kategoriler'
-    ? items
-    : items.filter(item => item.category === selectedCategory)
 
   if (loading) {
     return (
@@ -219,7 +176,7 @@ function ShopContent() {
       <div className="max-w-2xl mx-auto px-4">
         <Tabs defaultValue="products" className="w-full" onValueChange={(value) => {
           if (value === 'orders') {
-            loadPurchases()
+            // Siparişler yüklenecek, ama context'te zaten var
           }
         }}>
           <TabsList className="grid w-full grid-cols-2 bg-white/5 border-white/10 mb-4">
@@ -252,14 +209,14 @@ function ShopContent() {
             </div>
 
             {/* Items Grid */}
-            {filteredItems.length === 0 ? (
+            {items.length === 0 ? (
               <div className="text-center py-12">
                 <ShoppingBag className="w-16 h-16 text-gray-500 mx-auto mb-4" />
                 <p className="text-gray-400">Henüz ürün bulunmuyor</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-4">
-                {filteredItems.map(item => (
+                {items.map(item => (
                   <Card key={item.id} className="bg-white/5 backdrop-blur-sm border-white/10 overflow-hidden">
                     {item.imageUrl && (
                       <div className="aspect-square bg-gradient-to-br from-blue-500/20 to-purple-500/20 relative">
@@ -288,7 +245,14 @@ function ShopContent() {
                         )}
                       </div>
                       <Button
-                        onClick={() => openPurchaseConfirm(item)}
+                        onClick={() => {
+                          if (!userData || userData.points < item.price) {
+                            toast.error('Yetersiz puan!')
+                            return
+                          }
+                          setSelectedItem(item)
+                          setConfirmDialogOpen(true)
+                        }}
                         disabled={userData ? userData.points < item.price : true}
                         className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
                         size="sm"
@@ -310,11 +274,7 @@ function ShopContent() {
           </TabsContent>
 
           <TabsContent value="orders">
-            {loadingPurchases ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            ) : purchases.length === 0 ? (
+            {purchases.length === 0 ? (
               <div className="text-center py-12">
                 <Package className="w-16 h-16 text-gray-500 mx-auto mb-4" />
                 <p className="text-gray-400">Henüz siparişiniz yok</p>
@@ -435,7 +395,7 @@ function ShopContent() {
               İptal
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={confirmPurchase}
+              onClick={handlePurchase}
               className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               Satın Al
