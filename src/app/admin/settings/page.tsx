@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Settings, Save, MessageSquare, Plus, Edit, Trash2, ArrowLeft, Power, PowerOff } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 
 interface Setting {
   id: string
@@ -46,6 +47,14 @@ export default function AdminSettingsPage() {
     channelLink: '',
     channelType: 'channel',
     order: 0
+  })
+
+  // ConfirmDialog state
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<() => void>(() => () => {})
+  const [confirmMessage, setConfirmMessage] = useState({
+    title: '',
+    description: ''
   })
 
   useEffect(() => {
@@ -241,25 +250,30 @@ export default function AdminSettingsPage() {
   }
 
   async function handleChannelDelete(id: string) {
-    if (!confirm('Bu kanalı silmek istediğinizden emin misiniz?')) return
+    setConfirmMessage({
+      title: 'Kanalı Sil',
+      description: 'Bu kanalı silmek istediğinizden emin misiniz?'
+    })
+    setConfirmAction(() => async () => {
+      try {
+        const response = await fetch(`/api/admin/channels/${id}`, {
+          method: 'DELETE'
+        })
 
-    try {
-      const response = await fetch(`/api/admin/channels/${id}`, {
-        method: 'DELETE'
-      })
+        const data = await response.json()
 
-      const data = await response.json()
-
-      if (data.success) {
-        toast.success('Kanal silindi')
-        loadChannels()
-      } else {
-        toast.error(data.error || 'Silme başarısız')
+        if (data.success) {
+          toast.success('Kanal silindi')
+          loadChannels()
+        } else {
+          toast.error(data.error || 'Silme başarısız')
+        }
+      } catch (error) {
+        console.error('Delete error:', error)
+        toast.error('Bir hata oluştu')
       }
-    } catch (error) {
-      console.error('Delete error:', error)
-      toast.error('Bir hata oluştu')
-    }
+    })
+    setConfirmOpen(true)
   }
 
   async function toggleChannelActive(id: string, currentActive: boolean) {
@@ -300,6 +314,7 @@ export default function AdminSettingsPage() {
   const minMessageLength = getSetting('min_message_length')
   const messageCooldown = getSetting('message_cooldown_seconds')
   const dailyWheelSpins = getSetting('daily_wheel_spins')
+  const wheelResetHour = getSetting('wheel_reset_hour')
   const referralBonusInviter = getSetting('referral_bonus_inviter')
   const referralBonusInvited = getSetting('referral_bonus_invited')
   const cloudinaryCloudName = getSetting('cloudinary_cloud_name')
@@ -671,27 +686,54 @@ export default function AdminSettingsPage() {
         {/* Çark Ayarları */}
         <Card className="bg-white/5 border-white/10 p-6">
           <h2 className="text-xl font-bold text-white mb-4">🎡 Şans Çarkı Ayarları</h2>
-          <div>
-            <Label className="text-white text-base">Günlük Ücretsiz Çark Hakkı</Label>
-            <div className="flex gap-2 mt-2">
-              <Input
-                value={dailyWheelSpins?.value || ''}
-                onChange={(e) => handleInputChange('daily_wheel_spins', e.target.value)}
-                className="bg-white/10 border-white/20 text-white"
-                type="number"
-              />
-              <Button
-                onClick={() => saveSetting('daily_wheel_spins', dailyWheelSpins?.value || '')}
-                disabled={saving}
-                size="sm"
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Save className="w-4 h-4" />
-              </Button>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-white text-base">Günlük Ücretsiz Çark Hakkı</Label>
+              <div className="flex gap-2 mt-2">
+                <Input
+                  value={dailyWheelSpins?.value || ''}
+                  onChange={(e) => handleInputChange('daily_wheel_spins', e.target.value)}
+                  className="bg-white/10 border-white/20 text-white"
+                  type="number"
+                />
+                <Button
+                  onClick={() => saveSetting('daily_wheel_spins', dailyWheelSpins?.value || '')}
+                  disabled={saving}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Save className="w-4 h-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                Şans çarkı tamamen ücretsizdir, sadece günlük çevirme hakkı sınırlaması vardır.
+              </p>
             </div>
-            <p className="text-xs text-gray-400 mt-2">
-              Şans çarkı tamamen ücretsizdir, sadece günlük çevirme hakkı sınırlaması vardır.
-            </p>
+
+            <div>
+              <Label className="text-white text-base">Günlük Sıfırlama Saati</Label>
+              <div className="flex gap-2 mt-2">
+                <Input
+                  value={wheelResetHour?.value || '0'}
+                  onChange={(e) => handleInputChange('wheel_reset_hour', e.target.value)}
+                  className="bg-white/10 border-white/20 text-white"
+                  type="number"
+                  min="0"
+                  max="23"
+                />
+                <Button
+                  onClick={() => saveSetting('wheel_reset_hour', wheelResetHour?.value || '0')}
+                  disabled={saving}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Save className="w-4 h-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                Çark haklarının her gün sıfırlanacağı saat (0-23). Örnek: 0 = Gece Yarısı, 12 = Öğlen
+              </p>
+            </div>
           </div>
         </Card>
 
@@ -908,6 +950,21 @@ export default function AdminSettingsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        onConfirm={() => {
+          confirmAction()
+          setConfirmOpen(false)
+        }}
+        title={confirmMessage.title}
+        description={confirmMessage.description}
+        confirmText="Sil"
+        cancelText="İptal"
+        variant="destructive"
+      />
     </div>
   )
 }
