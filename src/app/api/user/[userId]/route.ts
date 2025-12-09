@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserProfilePhoto } from '@/lib/telegram'
+import { checkAndResetWheelSpins } from '@/lib/utils'
 
 export async function GET(
   request: NextRequest,
@@ -35,6 +36,33 @@ export async function GET(
         bannedAt: user.bannedAt,
         bannedBy: user.bannedBy
       })
+    }
+
+    // Çark haklarını kontrol et ve gerekirse sıfırla
+    try {
+      const wheelResetHourSetting = await prisma.settings.findUnique({
+        where: { key: 'wheel_reset_hour' }
+      })
+      const dailyWheelSpinsSetting = await prisma.settings.findUnique({
+        where: { key: 'daily_wheel_spins' }
+      })
+
+      const wheelResetHour = Number.parseInt(wheelResetHourSetting?.value || '0')
+      const dailyWheelSpins = Number.parseInt(dailyWheelSpinsSetting?.value || '3')
+
+      await checkAndResetWheelSpins(userId, wheelResetHour, dailyWheelSpins)
+
+      // Güncellenmiş kullanıcıyı tekrar al
+      const updatedUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { dailySpinsLeft: true }
+      })
+      if (updatedUser) {
+        user.dailySpinsLeft = updatedUser.dailySpinsLeft
+      }
+    } catch (wheelResetError) {
+      console.error('Wheel reset error:', wheelResetError)
+      // Hata olsa bile devam et
     }
 
     // Telegram profil fotoğrafını güncelle
