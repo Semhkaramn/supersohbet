@@ -57,20 +57,23 @@ export function Sheet({ open, onOpenChange, children }: SheetProps) {
 interface SheetContentProps {
   children: React.ReactNode
   onClose: () => void
+  hideCloseButton?: boolean
 }
 
-export function SheetContent({ children, onClose, className, style }: SheetContentProps & { className?: string, style?: React.CSSProperties }) {
+export function SheetContent({ children, onClose, hideCloseButton = false, className, style }: SheetContentProps & { className?: string, style?: React.CSSProperties }) {
   return (
     <div className={cn("flex flex-col h-full", className)} style={style}>
       {/* Close button */}
-      <div className="flex items-center justify-end p-4 border-b border-white/10">
-        <button
-          onClick={onClose}
-          className="p-2 rounded-lg hover:bg-white/10 transition-colors duration-150 ease-out text-white"
-        >
-          <X className="w-6 h-6" />
-        </button>
-      </div>
+      {!hideCloseButton && (
+        <div className="flex items-center justify-end p-4 border-b border-white/10">
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-white/10 transition-colors duration-150 ease-out text-white"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+      )}
 
       {/* Content */}
       <div
