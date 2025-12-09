@@ -273,6 +273,10 @@ export default function AdminSettingsPage() {
   const cloudinaryCloudName = getSetting('cloudinary_cloud_name')
   const cloudinaryApiKey = getSetting('cloudinary_api_key')
   const cloudinaryApiSecret = getSetting('cloudinary_api_secret')
+  const activityGroupId = getSetting('activity_group_id')
+
+  // Sadece grup tipindeki kanalları filtrele
+  const groupChannels = channels.filter(ch => ch.channelType === 'group')
 
   return (
     <div className="min-h-screen p-6">
@@ -438,6 +442,36 @@ export default function AdminSettingsPage() {
                 </div>
               ))
             )}
+          </div>
+        </Card>
+
+        {/* Aktif Grup Seçimi */}
+        <Card className="bg-white/5 border-white/10 p-6">
+          <h2 className="text-xl font-bold text-white mb-4">💬 Aktif Grup Seçimi</h2>
+          <div>
+            <Label className="text-white text-base mb-2 block">Botun mesaj dinleyeceği grup</Label>
+            <Select
+              value={activityGroupId?.value || ''}
+              onValueChange={(value) => saveSetting('activity_group_id', value)}
+            >
+              <SelectTrigger className="bg-white/10 border-white/20 text-white w-full">
+                <SelectValue placeholder="Grup seçin" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-900 border-white/20">
+                {groupChannels.length === 0 ? (
+                  <div className="text-gray-400 px-4 py-2">Hiç grup eklenmemiş</div>
+                ) : (
+                  groupChannels.map((group) => (
+                    <SelectItem key={group.channelId} value={group.channelId} className="text-white">
+                      {group.channelName} <span className="text-xs text-gray-400 ml-2">{group.channelId}</span>
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-400 mt-1">
+              Bot sadece burada seçili olan grupta mesaj dinler ve puan verir.
+            </p>
           </div>
         </Card>
 
