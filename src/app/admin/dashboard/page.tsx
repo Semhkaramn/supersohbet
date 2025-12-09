@@ -14,7 +14,11 @@ import {
   BarChart3,
   LogOut,
   FileText,
-  Send
+  Send,
+  Shield,
+  UserCog,
+  Radio,
+  User
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -31,9 +35,16 @@ interface Stats {
   }
 }
 
+interface AdminInfo {
+  username: string
+  isSuperAdmin: boolean
+  permissions: Record<string, boolean>
+}
+
 export default function AdminDashboard() {
   const router = useRouter()
   const [stats, setStats] = useState<Stats | null>(null)
+  const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -42,16 +53,30 @@ export default function AdminDashboard() {
       router.push('/admin')
       return
     }
-    loadStats()
+    loadData()
   }, [])
 
-  async function loadStats() {
+  async function loadData() {
     try {
-      const response = await fetch('/api/admin/stats')
-      const data = await response.json()
-      setStats(data)
+      const token = localStorage.getItem('admin_token')
+
+      // Load stats
+      const statsResponse = await fetch('/api/admin/stats', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const statsData = await statsResponse.json()
+      setStats(statsData)
+
+      // Load admin info
+      const adminResponse = await fetch('/api/admin/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (adminResponse.ok) {
+        const adminData = await adminResponse.json()
+        setAdminInfo(adminData)
+      }
     } catch (error) {
-      console.error('Error loading stats:', error)
+      console.error('Error loading data:', error)
     } finally {
       setLoading(false)
     }
@@ -62,64 +87,103 @@ export default function AdminDashboard() {
     router.push('/admin')
   }
 
-  const menuItems = [
+  const allMenuItems = [
     {
       title: 'Toplu Mesaj',
       description: 'Kullanıcılara mesaj gönder',
       icon: Send,
       href: '/admin/broadcast',
-      color: 'from-blue-500 to-blue-600'
+      color: 'from-blue-500 to-blue-600',
+      permission: 'canAccessBroadcast'
     },
     {
       title: 'İstatistikler',
-      description: 'Detaylı istatistikler ve kullanıcı yönetimi',
+      description: 'Detaylı istatistikler',
       icon: BarChart3,
       href: '/admin/statistics',
-      color: 'from-cyan-500 to-cyan-600'
+      color: 'from-cyan-500 to-cyan-600',
+      permission: 'canAccessStatistics'
+    },
+    {
+      title: 'Kullanıcı Yönetimi',
+      description: 'Kullanıcıları yönet',
+      icon: Users,
+      href: '/admin/users',
+      color: 'from-purple-500 to-purple-600',
+      permission: 'canAccessUsers'
     },
     {
       title: 'Görevler',
       description: 'Görevleri ekle/düzenle',
       icon: FileText,
       href: '/admin/tasks',
-      color: 'from-indigo-500 to-indigo-600'
+      color: 'from-indigo-500 to-indigo-600',
+      permission: 'canAccessTasks'
     },
     {
       title: 'Market Yönetimi',
       description: 'Ürünleri ekle/düzenle',
       icon: ShoppingCart,
       href: '/admin/shop',
-      color: 'from-emerald-500 to-emerald-600'
+      color: 'from-emerald-500 to-emerald-600',
+      permission: 'canAccessShop'
     },
     {
       title: 'Çark Ödülleri',
       description: 'Çark ödüllerini yönet',
       icon: Ticket,
       href: '/admin/wheel',
-      color: 'from-orange-500 to-orange-600'
+      color: 'from-orange-500 to-orange-600',
+      permission: 'canAccessWheel'
     },
     {
       title: 'Sponsorlar',
       description: 'Sponsor ekle/düzenle',
       icon: Heart,
       href: '/admin/sponsors',
-      color: 'from-pink-500 to-pink-600'
+      color: 'from-pink-500 to-pink-600',
+      permission: 'canAccessSponsors'
     },
     {
       title: 'Rütbe Sistemi',
       description: 'Rütbeleri yönet',
-      icon: BarChart3,
+      icon: Shield,
       href: '/admin/ranks',
-      color: 'from-yellow-500 to-yellow-600'
+      color: 'from-yellow-500 to-yellow-600',
+      permission: 'canAccessRanks'
+    },
+    {
+      title: 'Kanallar',
+      description: 'Zorunlu kanalları yönet',
+      icon: Radio,
+      href: '/admin/channels',
+      color: 'from-teal-500 to-teal-600',
+      permission: 'canAccessChannels'
+    },
+    {
+      title: 'Admin Yönetimi',
+      description: 'Adminleri ve yetkilerini yönet',
+      icon: UserCog,
+      href: '/admin/admins',
+      color: 'from-red-500 to-red-600',
+      permission: 'canAccessAdmins'
     },
     {
       title: 'Sistem Ayarları',
       description: 'Bot ve sistem parametreleri',
       icon: Settings,
       href: '/admin/settings',
-      color: 'from-slate-500 to-slate-600'
+      color: 'from-slate-500 to-slate-600',
+      permission: 'canAccessSettings'
     },
   ]
+
+  // Filter menu items based on permissions
+  const menuItems = allMenuItems.filter(item => {
+    if (!adminInfo) return false
+    if (adminInfo.isSuperAdmin) return true
+    return adminInfo.permissions[item.permission] === true
+  })
 
   if (loading) {
     return (
@@ -136,16 +200,29 @@ export default function AdminDashboard() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-4xl font-bold text-white mb-2">Admin Paneli</h1>
-            <p className="text-gray-400">SüperSohbet Bot Yönetimi</p>
+            <p className="text-gray-400">
+              Hoş geldin, <span className="text-white font-semibold">{adminInfo?.username}</span>
+              {adminInfo?.isSuperAdmin && (
+                <span className="ml-2 text-yellow-500 font-semibold">• Ana Admin</span>
+              )}
+            </p>
           </div>
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            className="border-white/20 hover:bg-white/10"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Çıkış Yap
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link href="/admin/profile">
+              <Button variant="outline" className="border-white/20 hover:bg-white/10">
+                <User className="w-4 h-4 mr-2" />
+                Profil
+              </Button>
+            </Link>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="border-white/20 hover:bg-white/10"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Çıkış Yap
+            </Button>
+          </div>
         </div>
 
         {/* Stats Grid */}
