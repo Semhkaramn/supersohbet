@@ -6,6 +6,13 @@ export async function GET(request: NextRequest) {
     const items = await prisma.shopItem.findMany({
       orderBy: { order: 'asc' },
       include: {
+        sponsor: {
+          select: {
+            id: true,
+            name: true,
+            identifierType: true
+          }
+        },
         _count: {
           select: { purchases: true }
         }
@@ -25,7 +32,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, description, price, imageUrl, imagePublicId, category, stock, purchaseLimit, order } = body
+    const { name, description, price, imageUrl, imagePublicId, category, sponsorId, stock, purchaseLimit, order } = body
 
     if (!name || typeof price !== 'number') {
       return NextResponse.json(
@@ -42,6 +49,7 @@ export async function POST(request: NextRequest) {
         imageUrl: imageUrl || null,
         imagePublicId: imagePublicId || null,
         category: category || 'Genel',
+        sponsorId: sponsorId || null,
         stock: stock || null,
         purchaseLimit: purchaseLimit || null,
         order: order || 0
