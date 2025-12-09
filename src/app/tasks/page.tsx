@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import BottomNav from '@/components/BottomNav'
 import { FileText, CheckCircle2, Clock, Zap, Users, Gift, Target, MessageSquare, Award, TrendingUp, Calendar, History } from 'lucide-react'
 import { toast } from 'sonner'
+import { useUser } from '@/contexts/UserContext'
 
 interface Task {
   id: string
@@ -60,13 +61,14 @@ function TasksContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const userId = searchParams.get('userId')
+  const { appData, loading, refreshTasks } = useUser()
 
-  const [dailyTasks, setDailyTasks] = useState<Task[]>([])
-  const [weeklyTasks, setWeeklyTasks] = useState<Task[]>([])
-  const [permanentTasks, setPermanentTasks] = useState<Task[]>([])
-  const [taskHistory, setTaskHistory] = useState<TaskHistoryItem[]>([])
-  const [referralCount, setReferralCount] = useState(0)
-  const [loading, setLoading] = useState(true)
+  const dailyTasks = appData.dailyTasks
+  const weeklyTasks = appData.weeklyTasks
+  const permanentTasks = appData.permanentTasks
+  const taskHistory = appData.taskHistory
+  const referralCount = appData.referralCount
+
   const [claiming, setClaiming] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('active')
 
@@ -75,54 +77,33 @@ function TasksContent() {
       router.push('/')
       return
     }
-    loadTasks()
-  }, [userId])
-
-  async function loadTasks() {
-    try {
-      const [tasksRes, referralRes] = await Promise.all([
-        fetch(`/api/task?userId=${userId}`),
-        fetch(`/api/referral/info?userId=${userId}`)
-      ])
-      const tasksData = await tasksRes.json()
-      const referralData = await referralRes.json()
-
-      setDailyTasks(tasksData.dailyTasks || [])
-      setWeeklyTasks(tasksData.weeklyTasks || [])
-      setPermanentTasks(tasksData.permanentTasks || [])
-      setTaskHistory(tasksData.taskHistory || [])
-      setReferralCount(referralData.totalReferrals || 0)
-    } catch (error) {
-      console.error('Error loading tasks:', error)
-      toast.error('Görevler yüklenemedi')
-    } finally {
-      setLoading(false)
-    }
-  }
+    // Veri zaten context'te, ama sayfa açıldığında refresh edelim
+    refreshTasks()
+  }, [userId, refreshTasks, router])
 
   async function claimReward(taskId: string) {
-    if (!userId) return
-
     setClaiming(taskId)
     try {
       const response = await fetch('/api/task', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, taskId })
+        body: JSON.stringify({ userId, taskId, action: 'claim' })
       })
 
       const data = await response.json()
 
-      if (response.ok && data.success) {
-        toast.success(`Ödül alındı! +${data.rewards.points} puan, +${data.rewards.xp} XP`)
-        // Görevleri yeniden yükle
-        await loadTasks()
-      } else {
-        toast.error(data.error || 'Ödül alınamadı')
+      if (!response.ok) {
+        toast.error(data.error || 'Ödül alınırken hata oluştu')
+        return
       }
+
+      toast.success(`Ödül alındı! +${data.xpReward} XP, +${data.pointsReward} Puan`)
+
+      // Context'teki görevleri ve kullanıcı verisini yenile
+      await Promise.all([refreshTasks(), appData.userData && fetch(`/api/user/${appData.userData.id}`).then(res => res.json())])
     } catch (error) {
       console.error('Error claiming reward:', error)
-      toast.error('Bir hata oluştu')
+      toast.error('Ödül alınırken hata oluştu')
     } finally {
       setClaiming(null)
     }
