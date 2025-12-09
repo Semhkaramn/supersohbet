@@ -92,20 +92,20 @@ function SponsorsContent() {
   return (
     <div className="min-h-screen pb-24 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
       {/* Search Header */}
-      <div className="bg-gradient-to-br from-pink-600 via-rose-600 to-pink-700 p-6 shadow-xl sticky top-0 z-10">
+      <div className="bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 p-6 shadow-xl sticky top-0 z-10">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center gap-3 mb-3">
             <Heart className="w-6 h-6 text-white animate-pulse" fill="currentColor" />
             <h1 className="text-2xl font-bold text-white">Sponsorlar</h1>
           </div>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-pink-200" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
             <Input
               type="text"
               placeholder="Sponsor ara..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-white/20 border-white/30 text-white placeholder:text-pink-100 focus:bg-white/30 focus:border-white/50 transition-all"
+              className="pl-10 bg-white/20 border-white/30 text-white placeholder:text-slate-300 focus:bg-white/30 focus:border-white/50 transition-all"
             />
           </div>
         </div>
@@ -200,7 +200,7 @@ function SponsorsContent() {
               <div className="space-y-4">
                 {vipSponsors.length > 0 && (
                   <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                    <Heart className="w-5 h-5 text-pink-400" />
+                    <Heart className="w-5 h-5 text-slate-400" />
                     Sponsorlar
                   </h2>
                 )}
