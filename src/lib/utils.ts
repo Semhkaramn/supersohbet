@@ -34,6 +34,39 @@ export function getTurkeyDateAgo(daysAgo: number): Date {
 }
 
 /**
+ * Telegram mesaj gönderme yardımcı fonksiyonu
+ */
+async function sendTelegramNotification(telegramId: string, message: string) {
+  try {
+    const botTokenSetting = await prisma.settings.findUnique({
+      where: { key: 'telegram_bot_token' }
+    })
+
+    if (!botTokenSetting?.value) {
+      console.error('Bot token not configured')
+      return false
+    }
+
+    const url = `https://api.telegram.org/bot${botTokenSetting.value}/sendMessage`
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: telegramId,
+        text: message,
+        parse_mode: 'Markdown'
+      })
+    })
+
+    const data = await response.json()
+    return data.ok
+  } catch (error) {
+    console.error('Error sending telegram notification:', error)
+    return false
+  }
+}
+
+/**
  * Kullanıcının çark haklarını kontrol eder ve gerekirse sıfırlar
  * @param userId Kullanıcı ID'si
  * @param wheelResetHour Sıfırlama saati (0-23), varsayılan 0 (gece yarısı)
@@ -50,6 +83,9 @@ export async function checkAndResetWheelSpins(
       where: { id: userId },
       select: {
         id: true,
+        telegramId: true,
+        firstName: true,
+        username: true,
         dailySpinsLeft: true,
         lastSpinReset: true,
       },
@@ -94,6 +130,30 @@ export async function checkAndResetWheelSpins(
       });
 
       console.log(`🔄 Çark hakları sıfırlandı: User ${userId} - ${dailyWheelSpins} hak`);
+
+      // Bildirim gönder (ayar aktifse)
+      const notifySetting = await prisma.settings.findUnique({
+        where: { key: 'notify_wheel_reset' }
+      })
+
+      if (notifySetting?.value === 'true' && user.telegramId) {
+        const message = `
+🎡 **Şans Çarkı Hakkın Yenilendi!**
+
+Merhaba ${user.firstName || user.username || 'Kullanıcı'}!
+
+✨ Yeni günlük çark hakkın: **${dailyWheelSpins}**
+🎁 Hemen çevir, muhteşem ödüller kazan!
+
+Bot menüsünden "Şans Çarkı" seçeneğine tıklayarak şansını dene! 🍀
+        `.trim()
+
+        // Asenkron olarak bildirim gönder
+        sendTelegramNotification(user.telegramId, message).catch(err =>
+          console.error('Failed to send wheel reset notification:', err)
+        )
+      }
+
       return updatedUser;
     }
 
