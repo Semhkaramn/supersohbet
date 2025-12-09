@@ -579,25 +579,6 @@ export default function AdminStatisticsPage() {
                       </div>
                     </div>
                   </Card>
-
-                  <Card className="bg-white/5 border-white/10 p-6">
-                    <h4 className="text-lg font-bold text-white mb-4">Son Mesajlar</h4>
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {userDetail.messageStats.recent.map((msg: any) => (
-                        <div key={msg.id} className="bg-white/5 p-3 rounded flex justify-between">
-                          <div>
-                            <p className="text-white text-sm">{msg.messageLength} karakter</p>
-                            <p className="text-gray-400 text-xs">
-                              {new Date(msg.createdAt).toLocaleString('tr-TR')}
-                            </p>
-                          </div>
-                          {msg.earnedReward && (
-                            <span className="text-green-400 text-xs">Ödül Kazandı</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
                 </TabsContent>
 
                 <TabsContent value="points" className="space-y-2">
