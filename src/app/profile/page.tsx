@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import BottomNav from '@/components/BottomNav'
-import { Trophy, Star, MessageSquare, TrendingUp, ShoppingBag, Clock, CheckCircle2, Package, Users, History, Crown, Award } from 'lucide-react'
+import { Trophy, Star, MessageSquare, TrendingUp, ShoppingBag, Clock, CheckCircle2, Package, Users, History, Crown } from 'lucide-react'
 
 interface PointHistory {
   id: string
@@ -240,20 +240,6 @@ function ProfileContent() {
             </div>
             <Progress value={xpProgress} className="h-3 bg-slate-700" />
           </div>
-
-          {/* Rank System Details Button */}
-          <button
-            onClick={() => {
-              const rankDetails = document.getElementById('rank-details')
-              if (rankDetails) {
-                rankDetails.scrollIntoView({ behavior: 'smooth' })
-              }
-            }}
-            className="w-full mt-3 bg-gradient-to-r from-purple-600/30 to-indigo-600/30 border border-purple-500/30 rounded-lg p-3 hover:from-purple-600/40 hover:to-indigo-600/40 transition-all flex items-center justify-center gap-2 text-purple-300 font-medium text-sm"
-          >
-            <Award className="w-4 h-4" />
-            Tüm Rütbeleri Gör
-          </button>
         </Card>
 
         {/* Referans İstatistikleri */}
