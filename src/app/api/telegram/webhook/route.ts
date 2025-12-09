@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getTurkeyDate } from '@/lib/utils'
+import { sendTelegramMessage as sendTelegramMsg } from '@/lib/telegram'
 
 // Ayarları cache'e al (performans için)
 let settingsCache: Record<string, string> = {}
@@ -21,34 +22,7 @@ function getSetting(key: string, defaultValue: string = '0'): string {
   return settingsCache[key] || defaultValue
 }
 
-async function sendTelegramMessage(chatId: number, text: string, keyboard?: any) {
-  const botToken = getSetting('telegram_bot_token', '')
-  if (!botToken) {
-    console.error('Bot token not set')
-    return
-  }
 
-  const url = `https://api.telegram.org/bot${botToken}/sendMessage`
-  const body: any = {
-    chat_id: chatId,
-    text,
-    parse_mode: 'Markdown'
-  }
-
-  if (keyboard) {
-    body.reply_markup = keyboard
-  }
-
-  try {
-    await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    })
-  } catch (error) {
-    console.error('Error sending message:', error)
-  }
-}
 
 async function answerCallbackQuery(callbackQueryId: string, text?: string) {
   const botToken = getSetting('telegram_bot_token', '')
@@ -114,7 +88,7 @@ ${banStatus.banReason ? `Neden: ${banStatus.banReason}` : 'Sistem kurallarını 
 
 Bot özelliklerini kullanmanız engellenmiştir.
           `.trim()
-          await sendTelegramMessage(chatId, banMessage)
+          await sendTelegramMsg(chatId, banMessage)
         }
         return NextResponse.json({ ok: true })
       }
@@ -147,7 +121,7 @@ Daha fazla bilgi için Ödül Merkezi'ne git!
 
         await answerCallbackQuery(query.id)
         if (chatId) {
-          await sendTelegramMessage(chatId, statsMessage)
+          await sendTelegramMsg(chatId, statsMessage)
         }
       }
 
@@ -204,7 +178,7 @@ ${banStatus.banReason ? `Neden: ${banStatus.banReason}` : 'Sistem kurallarını 
 
 Bot özelliklerini kullanmanız engellenmiştir.
           `.trim()
-          await sendTelegramMessage(chatId, banMessage)
+          await sendTelegramMsg(chatId, banMessage)
           return NextResponse.json({ ok: true })
         }
       }
@@ -242,7 +216,7 @@ Başlamak için yanındaki menü butonuna tıkla! 👆
 
         // Menu button BotFather'da app olarak ayarlandığı için
         // inline keyboard butonlarını kaldırdık
-        await sendTelegramMessage(chatId, welcomeMessage)
+        await sendTelegramMsg(chatId, welcomeMessage)
 
         // Kullanıcıyı kaydet
         const allowNewUsers = getSetting('allow_new_users', 'true') === 'true'
@@ -300,7 +274,7 @@ Başlamak için yanındaki menü butonuna tıkla! 👆
               })
 
               // Bonus mesajını gönder
-              await sendTelegramMessage(chatId, `
+              await sendTelegramMsg(chatId, `
 
 🎁 **Referans Bonusu!**
 
@@ -310,7 +284,7 @@ ${referrer.firstName || referrer.username || 'Bir kullanıcı'} seni davet etti!
 
               // Davet eden kişiye bildirim gönder
               if (referrer.telegramId) {
-                await sendTelegramMessage(parseInt(referrer.telegramId), `
+                await sendTelegramMsg(parseInt(referrer.telegramId), `
 👥 **Yeni Davet!**
 
 ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
@@ -475,10 +449,18 @@ ${currentRank.icon} **${currentRank.name}** rütbesine yükseldin!
 Harika performans! Böyle devam et! 🚀
             `.trim()
 
-            // Grupta bildirim gönder (activity_group_id'de)
+            // KRİTİK: Grupta bildirim gönder (activity_group_id'de) - HEMEN!
             const activityGroupId = getSetting('activity_group_id', '')
             if (activityGroupId) {
-              await sendTelegramMessage(parseInt(activityGroupId), levelUpMessage)
+              console.log(`🔔 [RankUp] Rütbe atlaması bildirimi gönderiliyor: user=${username}, rank=${currentRank.name}, groupId=${activityGroupId}`)
+              const sent = await sendTelegramMsg(parseInt(activityGroupId), levelUpMessage)
+              if (sent) {
+                console.log(`✅ [RankUp] Bildirim başarıyla gruba gönderildi: groupId=${activityGroupId}`)
+              } else {
+                console.error(`❌ [RankUp] Bildirim gruba gönderilemedi: groupId=${activityGroupId}`)
+              }
+            } else {
+              console.warn(`⚠️ [RankUp] Activity group ID ayarlanmamış, rütbe bildirimi gönderilemedi`)
             }
           }
         }
