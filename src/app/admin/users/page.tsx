@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { ArrowLeft, Users, Edit, Trash2, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
@@ -35,6 +36,8 @@ export default function AdminUsersPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     points: 0,
@@ -112,10 +115,15 @@ export default function AdminUsersPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) return
+    setDeleteId(id)
+    setConfirmOpen(true)
+  }
+
+  async function confirmDelete() {
+    if (!deleteId) return
 
     try {
-      const response = await fetch(`/api/admin/users/${id}`, {
+      const response = await fetch(`/api/admin/users/${deleteId}`, {
         method: 'DELETE'
       })
 
@@ -130,6 +138,9 @@ export default function AdminUsersPage() {
     } catch (error) {
       console.error('Delete error:', error)
       toast.error('Bir hata oluştu')
+    } finally {
+      setConfirmOpen(false)
+      setDeleteId(null)
     }
   }
 
@@ -296,6 +307,15 @@ export default function AdminUsersPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Kullanıcı Sil"
+        description="Bu kullanıcıyı silmek istediğinize emin misiniz?"
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }
