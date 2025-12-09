@@ -40,19 +40,25 @@ export async function requireAdmin(request: NextRequest) {
   const token = authHeader?.replace('Bearer ', '')
 
   if (!token) {
-    return NextResponse.json(
-      { error: 'Unauthorized - Token required' },
-      { status: 401 }
-    )
+    return {
+      admin: null,
+      error: NextResponse.json(
+        { error: 'Unauthorized - Token required' },
+        { status: 401 }
+      )
+    }
   }
 
   const admin = await getAdminFromToken(token)
 
   if (!admin) {
-    return NextResponse.json(
-      { error: 'Unauthorized - Invalid token' },
-      { status: 401 }
-    )
+    return {
+      admin: null,
+      error: NextResponse.json(
+        { error: 'Unauthorized - Invalid token' },
+        { status: 401 }
+      )
+    }
   }
 
   return { admin, error: null }
@@ -77,10 +83,13 @@ export async function requirePermission(
 
   // Belirtilen yetkiyi kontrol et
   if (!admin[permission]) {
-    return NextResponse.json(
-      { error: 'Forbidden - Insufficient permissions' },
-      { status: 403 }
-    )
+    return {
+      admin: null,
+      error: NextResponse.json(
+        { error: 'Forbidden - Insufficient permissions' },
+        { status: 403 }
+      )
+    }
   }
 
   return { admin, error: null }
