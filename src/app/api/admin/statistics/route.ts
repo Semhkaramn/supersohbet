@@ -5,22 +5,14 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
-    const period = searchParams.get('period') || 'all' // daily, weekly, monthly, all
+    const sortBy = searchParams.get('sortBy') || 'points' // rank, points, messages
+    const sortOrder = searchParams.get('sortOrder') || 'desc' // asc, desc
     const bannedFilter = searchParams.get('banned') // 'true', 'false', or null
 
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
     const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
-
-    let dateFilter = {}
-    if (period === 'daily') {
-      dateFilter = { gte: today }
-    } else if (period === 'weekly') {
-      dateFilter = { gte: weekAgo }
-    } else if (period === 'monthly') {
-      dateFilter = { gte: monthAgo }
-    }
 
     // Build where clause for users
     const whereClause: any = {}
@@ -33,6 +25,16 @@ export async function GET(request: NextRequest) {
     }
     if (bannedFilter !== null) {
       whereClause.isBanned = bannedFilter === 'true'
+    }
+
+    // Determine sort order
+    let orderBy: any = {}
+    if (sortBy === 'points') {
+      orderBy = { points: sortOrder }
+    } else if (sortBy === 'messages') {
+      orderBy = { totalMessages: sortOrder }
+    } else if (sortBy === 'rank') {
+      orderBy = { rank: { minXp: sortOrder } }
     }
 
     // Get users with statistics
@@ -60,20 +62,19 @@ export async function GET(request: NextRequest) {
           select: {
             name: true,
             icon: true,
-            color: true
+            color: true,
+            minXp: true
           }
         },
         _count: {
           select: {
             purchases: true,
             wheelSpins: true,
-            messages: period !== 'all' ? {
-              where: { createdAt: dateFilter }
-            } : true
+            messages: true
           }
         }
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy,
       take: 100
     })
 
