@@ -21,6 +21,86 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// POST - Grup username'inden chat ID'yi al
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { chatUsername } = body
+
+    if (!chatUsername) {
+      return NextResponse.json(
+        { error: 'Chat username is required' },
+        { status: 400 }
+      )
+    }
+
+    // Bot token'ı al
+    const botTokenSetting = await prisma.settings.findUnique({
+      where: { key: 'telegram_bot_token' }
+    })
+
+    if (!botTokenSetting?.value) {
+      return NextResponse.json(
+        { error: 'Bot token not configured' },
+        { status: 400 }
+      )
+    }
+
+    // Username'i temizle (@ işaretini kaldır)
+    const cleanUsername = chatUsername.replace('@', '').trim()
+
+    // Telegram API'den chat bilgisini al
+    try {
+      const telegramResponse = await fetch(
+        `https://api.telegram.org/bot${botTokenSetting.value}/getChat`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: `@${cleanUsername}` })
+        }
+      )
+
+      const telegramData = await telegramResponse.json()
+
+      if (telegramData.ok && telegramData.result) {
+        const chatId = String(telegramData.result.id)
+        const chatTitle = telegramData.result.title
+        const chatType = telegramData.result.type
+
+        console.log(`✅ Chat ID bulundu: ${chatTitle} (${chatId})`)
+
+        return NextResponse.json({
+          success: true,
+          chatId,
+          chatTitle,
+          chatType
+        })
+      } else {
+        console.error('❌ Telegram API hatası:', telegramData)
+        return NextResponse.json(
+          {
+            error: 'Grup bulunamadı. Botun grupta olduğundan ve admin olduğundan emin olun.',
+            telegramError: telegramData.description
+          },
+          { status: 400 }
+        )
+      }
+    } catch (telegramError) {
+      console.error('Telegram API error:', telegramError)
+      return NextResponse.json(
+        { error: 'Telegram API bağlantı hatası' },
+        { status: 500 }
+      )
+    }
+  } catch (error) {
+    console.error('Settings POST error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
 // PUT - Ayarı güncelle veya oluştur (upsert)
 export async function PUT(request: NextRequest) {
   try {
