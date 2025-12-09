@@ -102,6 +102,11 @@ export async function GET(
       orderBy: { minXp: 'asc' }
     })
 
+    // Tüm rank listesini al
+    const allRanks = await prisma.rank.findMany({
+      orderBy: { minXp: 'asc' }
+    })
+
     // Leaderboard sıralamasını hesapla (Puana göre, eşitlikte XP'ye göre)
     const higherRankedCount = await prisma.user.count({
       where: {
@@ -170,6 +175,7 @@ export async function GET(
       dailySpinsLeft: user.dailySpinsLeft,
       rank: currentRank || user.rank,
       nextRank,
+      allRanks,
       leaderboardRank,
       pointHistory: user.pointHistory,
       createdAt: user.createdAt
