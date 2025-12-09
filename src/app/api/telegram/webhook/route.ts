@@ -176,13 +176,17 @@ Daha fazla bilgi için Ödül Merkezi'ne git!
       const lastName = message.from.last_name
       const messageText = message.text
 
-      // Aktif grup kontrolü - Sadece seçili grupta mesaj dinle
+      // Aktif grup kontrolü - Sadece GRUP mesajlarında kontrol et, private chat'leri geçir
+      const chatType = message.chat.type
       const activityGroupId = getSetting('activity_group_id', '')
-      if (activityGroupId && activityGroupId.trim() !== '') {
+
+      // Eğer grup veya supergroup ise ve activity_group_id ayarlanmışsa kontrol et
+      if ((chatType === 'group' || chatType === 'supergroup') && activityGroupId && activityGroupId.trim() !== '') {
         const chatIdStr = String(chatId)
         const isActivityGroup = chatIdStr === activityGroupId
 
         console.log(`🔍 Grup Kontrolü:`, {
+          chatType,
           messageChatId: chatIdStr,
           activityGroupId: activityGroupId,
           isMatch: isActivityGroup,
@@ -195,8 +199,10 @@ Daha fazla bilgi için Ödül Merkezi'ne git!
         }
 
         console.log(`✅ Mesaj aktif grupta - işleniyor`)
+      } else if (chatType === 'private') {
+        console.log(`💬 Private mesaj - işleniyor (grup kontrolü atlandı)`)
       } else {
-        console.log(`⚠️ Aktif grup ayarlanmamış - tüm gruplarda mesaj dinleniyor`)
+        console.log(`⚠️ Aktif grup ayarlanmamış veya private chat - tüm mesajlar işleniyor`)
       }
 
       // /start komutu hariç her şey için ban kontrolü
@@ -399,6 +405,12 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
       const xpPerMessage = parseInt(getSetting('xp_per_message', '5'))
       const messagesForXp = parseInt(getSetting('messages_for_xp', '1'))
       const allowNewUsers = getSetting('allow_new_users', 'true') === 'true'
+
+      // PUAN KAZANMA SADECE GRUPLARDA OLUR - Private chat'te puan verilmez
+      if (chatType === 'private') {
+        console.log(`💬 Private chat mesajı - puan verilmez`)
+        return NextResponse.json({ ok: true, message: 'Private chat - no points' })
+      }
 
       // Kullanıcıyı bul veya oluştur
       let user = await prisma.user.findUnique({
