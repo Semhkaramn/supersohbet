@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getTurkeyToday, getTurkeyDateAgo } from '@/lib/utils'
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
+    const searchParams = request.nextUrl.searchParams
     const search = searchParams.get('search') || ''
     const sortBy = searchParams.get('sortBy') || 'points' // rank, points, messages
     const sortOrder = searchParams.get('sortOrder') || 'desc' // asc, desc
     const bannedFilter = searchParams.get('banned') // 'true', 'false', or null
 
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
-    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+    const today = getTurkeyToday() // Türkiye saatine göre bugün
+    const weekAgo = getTurkeyDateAgo(7) // 7 gün önce
+    const monthAgo = getTurkeyDateAgo(30) // 30 gün önce
 
     // Build where clause for users
     const whereClause: any = {}
