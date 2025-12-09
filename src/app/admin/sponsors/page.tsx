@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { ArrowLeft, Plus, Edit, Trash2, Heart } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ArrowLeft, Plus, Edit, Trash2, Heart, Crown } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
@@ -18,6 +19,7 @@ interface Sponsor {
   description?: string
   logoUrl?: string
   websiteUrl?: string
+  category: string
   isActive: boolean
   order: number
   clicks: number
@@ -35,6 +37,7 @@ export default function AdminSponsorsPage() {
     description: '',
     logoUrl: '',
     websiteUrl: '',
+    category: 'normal',
     order: 0
   })
 
@@ -68,6 +71,7 @@ export default function AdminSponsorsPage() {
         description: sponsor.description || '',
         logoUrl: sponsor.logoUrl || '',
         websiteUrl: sponsor.websiteUrl || '',
+        category: sponsor.category,
         order: sponsor.order
       })
     } else {
@@ -77,6 +81,7 @@ export default function AdminSponsorsPage() {
         description: '',
         logoUrl: '',
         websiteUrl: '',
+        category: 'normal',
         order: sponsors.length
       })
     }
@@ -216,12 +221,22 @@ export default function AdminSponsorsPage() {
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="text-lg font-semibold text-white">{sponsor.name}</h3>
+                          {sponsor.category === 'vip' && (
+                            <Crown className="w-4 h-4 text-yellow-400" />
+                          )}
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                             sponsor.isActive
                               ? 'bg-green-500/20 text-green-400'
                               : 'bg-gray-500/20 text-gray-400'
                           }`}>
                             {sponsor.isActive ? 'Aktif' : 'Pasif'}
+                          </span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            sponsor.category === 'vip'
+                              ? 'bg-yellow-500/20 text-yellow-400'
+                              : 'bg-blue-500/20 text-blue-400'
+                          }`}>
+                            {sponsor.category === 'vip' ? 'VIP' : 'Normal'}
                           </span>
                         </div>
                         <p className="text-gray-400 text-sm mt-1">{sponsor.description}</p>
@@ -327,6 +342,22 @@ export default function AdminSponsorsPage() {
                 className="bg-white/5 border-white/10 text-white mt-1"
                 placeholder="https://..."
               />
+            </div>
+
+            <div>
+              <Label htmlFor="category" className="text-white">Kategori</Label>
+              <Select
+                value={formData.category}
+                onValueChange={(value) => setFormData({ ...formData, category: value })}
+              >
+                <SelectTrigger className="bg-white/5 border-white/10 text-white mt-1">
+                  <SelectValue placeholder="Kategori seçin" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-white/20">
+                  <SelectItem value="normal" className="text-white">Normal</SelectItem>
+                  <SelectItem value="vip" className="text-white">VIP</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
