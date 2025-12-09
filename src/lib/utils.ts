@@ -7,6 +7,33 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Türkiye saatini (Europe/Istanbul - UTC+3) döndürür
+ */
+export function getTurkeyDate(): Date {
+  const now = new Date();
+  // Türkiye saatine çevir (UTC+3)
+  const turkeyTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Istanbul' }));
+  return turkeyTime;
+}
+
+/**
+ * Türkiye saatine göre bugünün başlangıcını döndürür (00:00:00)
+ */
+export function getTurkeyToday(): Date {
+  const turkeyNow = getTurkeyDate();
+  return new Date(turkeyNow.getFullYear(), turkeyNow.getMonth(), turkeyNow.getDate());
+}
+
+/**
+ * Türkiye saatine göre belirli bir tarih aralığı döndürür
+ * @param daysAgo Kaç gün önce
+ */
+export function getTurkeyDateAgo(daysAgo: number): Date {
+  const today = getTurkeyToday();
+  return new Date(today.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+}
+
+/**
  * Kullanıcının çark haklarını kontrol eder ve gerekirse sıfırlar
  * @param userId Kullanıcı ID'si
  * @param wheelResetHour Sıfırlama saati (0-23), varsayılan 0 (gece yarısı)
@@ -30,10 +57,10 @@ export async function checkAndResetWheelSpins(
 
     if (!user) return null;
 
-    const now = new Date();
+    const now = getTurkeyDate(); // Türkiye saatini kullan
     const lastReset = user.lastSpinReset;
 
-    // Sıfırlama saatini hesapla (bugünün veya dünün reset saati)
+    // Sıfırlama saatini hesapla (bugünün veya dünün reset saati) - Türkiye saatine göre
     const todayResetTime = new Date(now);
     todayResetTime.setHours(wheelResetHour, 0, 0, 0);
 
