@@ -430,7 +430,7 @@ export default function AdminStatisticsPage() {
                         <ShoppingCart className="w-3 h-3" /> {user._count.purchases} Satın Alma
                       </span>
                       <span className="text-sm text-orange-400 flex items-center gap-1">
-                        <Ticket className="w-3 h-3" /> {user._count.wheelSpins} Çevirme
+                        <Ticket className="w-3 h-3" /> {user._count.wheelSpins} Toplam Çevirme
                       </span>
                     </div>
                   </div>
