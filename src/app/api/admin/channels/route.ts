@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { channelId, channelName, channelLink, order } = body
+    const { channelId, channelName, channelLink, channelType, order } = body
 
     if (!channelId || !channelName || !channelLink) {
       return NextResponse.json(
@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
         channelId,
         channelName,
         channelLink,
+        channelType: channelType || 'channel',
         order: order || 0
       }
     })
