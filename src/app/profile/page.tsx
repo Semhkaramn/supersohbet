@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import BottomNav from '@/components/BottomNav'
-import { Trophy, Star, MessageSquare, TrendingUp, ShoppingBag, Clock, CheckCircle2, Package, Users, History, Crown, Wallet, Settings } from 'lucide-react'
+import { Trophy, Star, MessageSquare, TrendingUp, ShoppingBag, Clock, CheckCircle2, Package, Users, History, Crown, Wallet, Settings, ArrowRight } from 'lucide-react'
 
 interface PointHistory {
   id: string
@@ -196,6 +196,45 @@ function ProfileContent() {
           <Card className="bg-white/5 border-white/10 p-3 text-center">
             <div className="text-xl font-bold text-orange-300">{userData.totalReferrals || 0}</div>
             <p className="text-white/60 text-xs">Davet</p>
+          </Card>
+        </div>
+
+        {/* Quick Action Buttons */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <Card
+            className="bg-gradient-to-br from-green-600/20 to-emerald-600/20 border-green-500/30 p-4 cursor-pointer hover:from-green-600/30 hover:to-emerald-600/30 transition-all"
+            onClick={() => router.push(`/wallet-info?userId=${userId}`)}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-green-500/30 flex items-center justify-center">
+                  <Wallet className="w-5 h-5 text-green-400" />
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold text-sm">Cüzdan & Sponsor</h3>
+                  <p className="text-white/60 text-xs">Bilgilerini Yönet</p>
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-green-400" />
+            </div>
+          </Card>
+
+          <Card
+            className="bg-gradient-to-br from-purple-600/20 to-indigo-600/20 border-purple-500/30 p-4 cursor-pointer hover:from-purple-600/30 hover:to-indigo-600/30 transition-all"
+            onClick={() => router.push(`/wallet-info?userId=${userId}`)}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-purple-500/30 flex items-center justify-center">
+                  <Settings className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold text-sm">Ayarlar</h3>
+                  <p className="text-white/60 text-xs">Hesap Ayarları</p>
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-purple-400" />
+            </div>
           </Card>
         </div>
 
