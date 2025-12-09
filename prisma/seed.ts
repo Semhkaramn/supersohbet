@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
@@ -41,17 +42,32 @@ async function main() {
     { key: 'activity_group_id', value: '', description: 'Mesaj dinleme ve puan verme yapılacak grup ID', category: 'general' },
   ]
 
-  // Admin kullanıcısı oluştur
-  const adminPasswordHash = await bcrypt.hash('admin123', 10)
-  const admin = await prisma.admin.upsert({
-    where: { username: 'admin' },
+  // Ana admin kullanıcısı oluştur (semhkaramn)
+  const superAdminPasswordHash = await bcrypt.hash('Abuzittin74.', 10)
+  const superAdmin = await prisma.admin.upsert({
+    where: { username: 'semhkaramn' },
     update: {},
     create: {
-      username: 'admin',
-      passwordHash: adminPasswordHash
+      username: 'semhkaramn',
+      passwordHash: superAdminPasswordHash,
+      isSuperAdmin: true,
+      canAccessDashboard: true,
+      canAccessBroadcast: true,
+      canAccessStatistics: true,
+      canAccessTasks: true,
+      canAccessShop: true,
+      canAccessWheel: true,
+      canAccessSponsors: true,
+      canAccessRanks: true,
+      canAccessSettings: true,
+      canAccessChannels: true,
+      canAccessUsers: true,
+      canAccessAdmins: true,
     }
   })
-  console.log('✅ Admin created:', admin.username)
+  console.log('✅ Super Admin created:', superAdmin.username)
+
+
 
   // Rütbeleri oluştur
   const ranks = [
