@@ -108,6 +108,28 @@ export default function AdminStatisticsPage() {
     dailySpinsLeft: 1
   })
 
+  // Görev kategorilerini Türkçeye çevir
+  function translateTaskCategory(category: string): string {
+    const translations: Record<string, string> = {
+      'daily': 'Günlük',
+      'weekly': 'Haftalık',
+      'permanent': 'Kalıcı'
+    }
+    return translations[category] || category
+  }
+
+  // Görev türlerini Türkçeye çevir
+  function translateTaskType(taskType: string): string {
+    const translations: Record<string, string> = {
+      'spin_wheel': 'Çark Çevir',
+      'send_messages': 'Mesaj Gönder',
+      'invite_users': 'Kullanıcı Davet Et',
+      'earn_points': 'Puan Kazan',
+      'reach_level': 'Seviye Ulaş'
+    }
+    return translations[taskType] || taskType
+  }
+
   useEffect(() => {
     const token = localStorage.getItem('admin_token')
     if (!token) {
@@ -592,7 +614,7 @@ export default function AdminStatisticsPage() {
                             <p className="text-gray-400 text-xs">
                               {new Date(ph.createdAt).toLocaleString('tr-TR')}
                             </p>
-                            <p className="text-gray-500 text-xs">Tip: {ph.type}</p>
+
                           </div>
                           <div className={`text-lg font-bold ${ph.amount > 0 ? 'text-green-400' : 'text-red-400'}`}>
                             {ph.amount > 0 ? '+' : ''}{ph.amount}
@@ -620,10 +642,10 @@ export default function AdminStatisticsPage() {
                               </p>
                               <div className="flex gap-2 mt-1">
                                 <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">
-                                  {completion.task.category}
+                                  {translateTaskCategory(completion.task.category)}
                                 </span>
                                 <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded">
-                                  {completion.task.taskType}
+                                  {translateTaskType(completion.task.taskType)}
                                 </span>
                               </div>
                             </div>
