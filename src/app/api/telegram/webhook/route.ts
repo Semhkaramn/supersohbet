@@ -176,6 +176,23 @@ Daha fazla bilgi için Ödül Merkezi'ne git!
       const lastName = message.from.last_name
       const messageText = message.text
 
+      // Aktif grup kontrolü - Sadece seçili grupta mesaj dinle
+      const activityGroupId = getSetting('activity_group_id', '')
+      if (activityGroupId) {
+        // chatId'yi string'e çevir ve karşılaştır
+        const chatIdStr = String(chatId)
+        const isActivityGroup = chatIdStr === activityGroupId ||
+                                chatIdStr === activityGroupId.replace('@', '') ||
+                                `@${chatIdStr}` === activityGroupId ||
+                                `-100${chatIdStr}` === activityGroupId ||
+                                chatIdStr === activityGroupId.replace('-100', '')
+
+        if (!isActivityGroup) {
+          console.log(`⏭️ Mesaj aktif grupta değil (chatId: ${chatId}, activityGroupId: ${activityGroupId})`)
+          return NextResponse.json({ ok: true, message: 'Not activity group' })
+        }
+      }
+
       // /start komutu hariç her şey için ban kontrolü
       if (messageText !== '/start' && !messageText.startsWith('/start ')) {
         const banStatus = await checkUserBan(userId)
