@@ -218,6 +218,7 @@ model Sponsor {
   name             String
   description      String?
   logoUrl          String?
+  logoPublicId     String?         // Cloudinary public ID - resim silinirken kullanılacak
   websiteUrl       String?
   category         String          @default("normal") // "vip" veya "normal"
   isActive         Boolean         @default(true)
