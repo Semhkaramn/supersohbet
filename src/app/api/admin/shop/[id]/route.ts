@@ -8,7 +8,7 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const { name, description, price, imageUrl, category, stock, isActive, order } = body
+    const { name, description, price, imageUrl, category, stock, purchaseLimit, isActive, order } = body
 
     const updateData: any = {}
     if (name) updateData.name = name
@@ -17,6 +17,7 @@ export async function PUT(
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl
     if (category) updateData.category = category
     if (stock !== undefined) updateData.stock = stock
+    if (purchaseLimit !== undefined) updateData.purchaseLimit = purchaseLimit
     if (typeof isActive === 'boolean') updateData.isActive = isActive
     if (typeof order === 'number') updateData.order = order
 
