@@ -88,6 +88,7 @@ model RequiredChannel {
   channelId        String          @unique // @channel_username veya -100123456789
   channelName      String
   channelLink      String
+  channelType      String          @default("channel") // "channel" veya "group"
   isActive         Boolean         @default(true)
   order            Int             @default(0) // Gösterim sırası
   createdAt        DateTime        @default(now())
@@ -96,6 +97,7 @@ model RequiredChannel {
   userJoins        UserChannelJoin[]
 
   @@index([isActive])
+  @@index([channelType])
 }
 
 // Kullanıcı kanal katılım takibi
