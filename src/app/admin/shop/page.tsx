@@ -788,13 +788,13 @@ export default function AdminShopPage() {
                     <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
                     <Input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/webm"
                       onChange={handleImageUpload}
                       disabled={uploadingImage}
                       className="bg-white/5 border-white/10 text-white"
                     />
                     <p className="text-xs text-gray-400 mt-2">
-                      {uploadingImage ? 'Yükleniyor...' : 'PNG, JPG, GIF (Max 5MB)'}
+                      {uploadingImage ? 'Yükleniyor...' : 'PNG, JPG, GIF, SVG, WebP, WebM (Max 5MB)'}
                     </p>
                   </div>
                 )}
