@@ -281,8 +281,9 @@ Başlamak için yanındaki menü butonuna tıkla! 👆
 
             if (referrer && referrer.telegramId !== userId) {
               // Bonusları al
-              const referralBonusInviter = parseInt(getSetting('referral_bonus_inviter', '100'))
-              const referralBonusInvited = parseInt(getSetting('referral_bonus_invited', '50'))
+              const referralBonusInviter = Number.parseInt(getSetting('referral_bonus_inviter', '100'))
+              const referralBonusInvited = Number.parseInt(getSetting('referral_bonus_invited', '50'))
+              const dailyWheelSpins = Number.parseInt(getSetting('daily_wheel_spins', '3'))
 
               // Yeni kullanıcıyı oluştur
               const newUser = await prisma.user.create({
@@ -293,7 +294,8 @@ Başlamak için yanındaki menü butonuna tıkla! 👆
                   lastName,
                   photoUrl,
                   referredById: referrer.id,
-                  points: referralBonusInvited // Davet edilene bonus
+                  points: referralBonusInvited, // Davet edilene bonus
+                  dailySpinsLeft: dailyWheelSpins
                 }
               })
 
@@ -346,25 +348,31 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
               }
             } else {
               // Referans kodu geçersiz, normal kayıt
+              const dailyWheelSpins = Number.parseInt(getSetting('daily_wheel_spins', '3'))
+
               await prisma.user.create({
                 data: {
                   telegramId: userId,
                   username,
                   firstName,
                   lastName,
-                  photoUrl
+                  photoUrl,
+                  dailySpinsLeft: dailyWheelSpins
                 }
               })
             }
           } else if (!existingUser) {
             // Referans kodu yok, normal kayıt
+            const dailyWheelSpins = Number.parseInt(getSetting('daily_wheel_spins', '3'))
+
             await prisma.user.create({
               data: {
                 telegramId: userId,
                 username,
                 firstName,
                 lastName,
-                photoUrl
+                photoUrl,
+                dailySpinsLeft: dailyWheelSpins
               }
             })
           } else {
@@ -403,13 +411,15 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
         }
 
         const photoUrl = await getPhotoUrl(userId)
+        const dailyWheelSpins = Number.parseInt(getSetting('daily_wheel_spins', '3'))
         user = await prisma.user.create({
           data: {
             telegramId: userId,
             username,
             firstName,
             lastName,
-            photoUrl
+            photoUrl,
+            dailySpinsLeft: dailyWheelSpins
           }
         })
       }
