@@ -156,6 +156,29 @@ function WalletInfoContent() {
       return
     }
 
+    // Sponsor tipini bul
+    const sponsor = allSponsors.find(s => s.id === sponsorId)
+    if (!sponsor) {
+      toast.error('Sponsor bulunamadı')
+      return
+    }
+
+    // Identifier tipine göre validasyon
+    if (sponsor.identifierType === 'id') {
+      // ID ise sadece sayı kabul et
+      if (!/^\d+$/.test(sponsorInput.trim())) {
+        toast.error('ID sadece sayılardan oluşmalıdır')
+        return
+      }
+    } else if (sponsor.identifierType === 'email') {
+      // Email ise email formatı kontrol et
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(sponsorInput.trim())) {
+        toast.error('Geçerli bir email adresi giriniz')
+        return
+      }
+    }
+
     try {
       const response = await fetch('/api/user/sponsor-info', {
         method: 'POST',
@@ -165,7 +188,7 @@ function WalletInfoContent() {
         },
         body: JSON.stringify({
           sponsorId,
-          identifier: sponsorInput
+          identifier: sponsorInput.trim()
         })
       })
 
@@ -464,9 +487,22 @@ function WalletInfoContent() {
                           <Input
                             value={sponsorInput}
                             onChange={(e) => setSponsorInput(e.target.value)}
-                            placeholder={`${getIdentifierLabel(sponsor.identifierType)} girin`}
+                            placeholder={
+                              sponsor.identifierType === 'id'
+                                ? 'Örn: 123456789'
+                                : sponsor.identifierType === 'email'
+                                ? 'Örn: kullanici@example.com'
+                                : 'Örn: kullaniciadi'
+                            }
+                            type={sponsor.identifierType === 'email' ? 'email' : sponsor.identifierType === 'id' ? 'tel' : 'text'}
+                            inputMode={sponsor.identifierType === 'id' ? 'numeric' : sponsor.identifierType === 'email' ? 'email' : 'text'}
                             className="bg-white/5 border-white/20 text-white"
                           />
+                          <p className="text-white/40 text-xs mt-1">
+                            {sponsor.identifierType === 'id' && 'Sadece rakamlar girebilirsiniz'}
+                            {sponsor.identifierType === 'email' && 'Geçerli bir email adresi giriniz'}
+                            {sponsor.identifierType === 'username' && 'Kullanıcı adınızı giriniz'}
+                          </p>
                         </div>
                         <div className="flex gap-2">
                           <Button
