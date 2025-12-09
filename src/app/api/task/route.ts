@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getTurkeyDate } from '@/lib/utils'
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const now = new Date()
+    const now = getTurkeyDate() // Türkiye saati
 
     // Tüm aktif görevleri getir (süresi dolmamış olanlar)
     const allTasks = await prisma.task.findMany({
@@ -355,15 +356,15 @@ export async function POST(request: NextRequest) {
           targetProgress: task.targetValue,
           isCompleted: true,
           rewardClaimed: true,
-          completedAt: new Date(),
-          claimedAt: new Date()
+          completedAt: getTurkeyDate(),
+          claimedAt: getTurkeyDate()
         },
         update: {
           currentProgress,
           isCompleted: true,
           rewardClaimed: true,
-          completedAt: new Date(),
-          claimedAt: new Date()
+          completedAt: getTurkeyDate(),
+          claimedAt: getTurkeyDate()
         }
       })
 
