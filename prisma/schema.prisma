@@ -53,6 +53,9 @@ model User {
   totalReferrals   Int             @default(0) // Toplam davet sayısı
   referralPoints   Int             @default(0) // Referanslardan kazanılan puanlar
 
+  // TRC20 USDT Cüzdan
+  trc20WalletAddress String?       // TRC20 USDT cüzdan adresi
+
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
@@ -61,6 +64,7 @@ model User {
   wheelSpins       WheelSpin[]
   messages         MessageStats[]
   pointHistory     PointHistory[]
+  sponsorInfos     UserSponsorInfo[] // Kullanıcının sponsor bilgileri
 
   @@index([telegramId])
   @@index([referralCode])
@@ -145,12 +149,18 @@ model ShopItem {
   purchaseLimit    Int?            // Her kullanıcı kaç kez satın alabilir (null = sınırsız)
   isActive         Boolean         @default(true)
   order            Int             @default(0)
+
+  // Sponsor kategorisi için sponsor seçimi
+  sponsorId        String?         // Sponsor kategorisi için hangi sponsor
+  sponsor          Sponsor?        @relation(fields: [sponsorId], references: [id], onDelete: SetNull)
+
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
   purchases        UserPurchase[]
 
   @@index([isActive, category])
+  @@index([sponsorId])
 }
 
 // Kullanıcı satın alımları
@@ -165,6 +175,13 @@ model UserPurchase {
   deliveryInfo     String?         // Teslimat bilgileri, notlar
   processedBy      String?         // İşlemi yapan admin
   processedAt      DateTime?       // İşlenme tarihi
+
+  // Nakit kategorisi için cüzdan bilgisi
+  walletAddress    String?         // TRC20 USDT cüzdan adresi
+
+  // Sponsor kategorisi için sponsor bilgisi
+  sponsorInfo      String?         // Kullanıcının sponsor bilgisi (username, id veya email)
+
   purchasedAt      DateTime        @default(now())
 
   @@index([userId])
@@ -227,11 +244,18 @@ model Sponsor {
   logoPublicId     String?         // Cloudinary public ID - resim silinirken kullanılacak
   websiteUrl       String?
   category         String          @default("normal") // "vip" veya "normal"
+
+  // Kullanıcıdan hangi bilgiyi isteyeceğiz
+  identifierType   String          @default("username") // "username", "id" veya "email"
+
   isActive         Boolean         @default(true)
   order            Int             @default(0)
   clicks           Int             @default(0)
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
+
+  shopItems        ShopItem[]      // Bu sponsora bağlı ürünler
+  userInfos        UserSponsorInfo[] // Kullanıcıların bu sponsor için kaydettiği bilgiler
 
   @@index([isActive])
   @@index([category])
@@ -330,6 +354,25 @@ model UserMilestoneCompletion {
 
   @@unique([userId, milestoneId])
   @@index([userId])
+}
+
+// Kullanıcıların sponsor bilgileri
+model UserSponsorInfo {
+  id               String          @id @default(cuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sponsorId        String
+  sponsor          Sponsor         @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+
+  // Kullanıcının bu sponsor için kaydettiği bilgi
+  identifier       String          // username, id veya email değeri
+
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@unique([userId, sponsorId]) // Her kullanıcı her sponsor için bir bilgi kaydedebilir
+  @@index([userId])
+  @@index([sponsorId])
 }
 
 // Admin kullanıcılar
