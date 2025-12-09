@@ -12,7 +12,8 @@ import {
   Home,
   Ticket,
   Trophy,
-  Heart
+  Heart,
+  X
 } from 'lucide-react'
 
 interface MenuDrawerProps {
@@ -116,6 +117,7 @@ export function MenuDrawer({ open, onOpenChange, userId }: MenuDrawerProps) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         onClose={() => onOpenChange(false)}
+        hideCloseButton={true}
         className="will-change-transform"
         style={{
           transform: 'translate3d(0, 0, 0)',
@@ -125,15 +127,23 @@ export function MenuDrawer({ open, onOpenChange, userId }: MenuDrawerProps) {
       >
         <div className="flex flex-col h-full" style={{ transform: 'translate3d(0, 0, 0)' }}>
           {/* Header */}
-          <div className="p-6 pb-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-                <Sparkles className="w-5 h-5 text-white" />
+          <div className="p-6 pb-4 border-b border-white/10">
+            <div className="flex items-center gap-3 justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">Menü</h3>
+                  <p className="text-xs text-slate-400">Tüm özellikler</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-xl font-bold text-white">Menü</h3>
-                <p className="text-xs text-slate-400">Tüm özellikler</p>
-              </div>
+              <button
+                onClick={() => onOpenChange(false)}
+                className="p-2 rounded-lg hover:bg-white/10 transition-colors duration-150 ease-out text-white"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
           </div>
 
