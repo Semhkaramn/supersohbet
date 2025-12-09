@@ -13,7 +13,8 @@ import {
   Check,
   Share2,
   Star,
-  ArrowRight
+  ArrowRight,
+  Trophy
 } from 'lucide-react'
 import { toast } from 'sonner'
 
