@@ -136,22 +136,77 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const dailyTasks = allTasks
-      .filter(t => t.category === 'daily')
-      .map(formatTask)
+    // Aktif görevleri filtrele (tamamlanmamış veya tekrar yapılabilir olanlar)
+    const filterActiveTasks = (tasks: any[]) => {
+      return tasks.filter(task => {
+        const completion = completionMap.get(task.id)
+        const currentProgress = calculateProgress(task, user)
+        const isCompleted = completion?.isCompleted || currentProgress >= task.targetValue
+        const userCompletionCount = completionCountMap.get(task.id) || 0
 
-    const weeklyTasks = allTasks
-      .filter(t => t.category === 'weekly')
-      .map(formatTask)
+        // Görev tamamlanmamışsa göster
+        if (!isCompleted || !completion?.rewardClaimed) {
+          return true
+        }
 
-    const permanentTasks = allTasks
-      .filter(t => t.category === 'permanent')
-      .map(formatTask)
+        // Completion limit varsa ve henüz tamamlanmadıysa göster
+        if (task.completionLimit !== null && userCompletionCount < task.completionLimit) {
+          return true
+        }
+
+        // Completion limit yoksa (sınırsız) gösterme (geçmişe taşı)
+        return false
+      })
+    }
+
+    const dailyTasks = filterActiveTasks(
+      allTasks.filter(t => t.category === 'daily')
+    ).map(formatTask)
+
+    const weeklyTasks = filterActiveTasks(
+      allTasks.filter(t => t.category === 'weekly')
+    ).map(formatTask)
+
+    const permanentTasks = filterActiveTasks(
+      allTasks.filter(t => t.category === 'permanent')
+    ).map(formatTask)
+
+    // Görev Geçmişi - Tamamlanan ve ödülü alınmış görevler
+    const taskHistory = await prisma.taskCompletion.findMany({
+      where: {
+        userId,
+        isCompleted: true,
+        rewardClaimed: true
+      },
+      include: {
+        task: true
+      },
+      orderBy: {
+        claimedAt: 'desc'
+      },
+      take: 100 // Son 100 tamamlanmış görev
+    })
+
+    const formattedHistory = taskHistory.map(completion => ({
+      id: completion.id,
+      taskId: completion.taskId,
+      title: completion.task.title,
+      description: completion.task.description,
+      category: completion.task.category,
+      taskType: completion.task.taskType,
+      targetValue: completion.targetProgress,
+      completedProgress: completion.currentProgress,
+      xpReward: completion.task.xpReward,
+      pointsReward: completion.task.pointsReward,
+      completedAt: completion.completedAt,
+      claimedAt: completion.claimedAt
+    }))
 
     return NextResponse.json({
       dailyTasks,
       weeklyTasks,
-      permanentTasks
+      permanentTasks,
+      taskHistory: formattedHistory
     })
   } catch (error) {
     console.error('Get tasks error:', error)
