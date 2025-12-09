@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -9,68 +9,24 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import BottomNav from '@/components/BottomNav'
 import { BannedScreen } from '@/components/BannedScreen'
 import { Trophy, Star, ShoppingBag, TrendingUp } from 'lucide-react'
-
-interface UserData {
-  id: string
-  telegramId: string
-  username?: string
-  firstName?: string
-  lastName?: string
-  photoUrl?: string
-  points: number
-  xp: number
-  totalMessages: number
-  messageStats?: {
-    daily: number
-    weekly: number
-    monthly: number
-    total: number
-  }
-  rank?: {
-    name: string
-    icon: string
-    color: string
-    minXp: number
-  }
-  nextRank?: {
-    name: string
-    minXp: number
-  }
-  dailySpinsLeft: number
-  leaderboardRank?: number
-  banned?: boolean
-  banReason?: string
-  bannedAt?: Date | string
-  bannedBy?: string
-}
+import { useUser } from '@/contexts/UserContext'
 
 function DashboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const userId = searchParams.get('userId')
-
-  const [userData, setUserData] = useState<UserData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { appData, loading, refreshUserData } = useUser()
+  const userData = appData.userData
 
   useEffect(() => {
     if (!userId) {
       router.push('/')
       return
     }
-    loadUserData()
-  }, [userId])
-
-  async function loadUserData() {
-    try {
-      const response = await fetch(`/api/user/${userId}`)
-      const data = await response.json()
-      setUserData(data)
-    } catch (error) {
-      console.error('Error loading user data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+    // Veri zaten context'te, ekstra yükleme yapmaya gerek yok
+    // Ama sayfa değiştiğinde güncel data için refresh yapabiliriz
+    refreshUserData()
+  }, [userId, refreshUserData, router])
 
   if (loading) {
     return (
