@@ -178,19 +178,25 @@ Daha fazla bilgi için Ödül Merkezi'ne git!
 
       // Aktif grup kontrolü - Sadece seçili grupta mesaj dinle
       const activityGroupId = getSetting('activity_group_id', '')
-      if (activityGroupId) {
-        // chatId'yi string'e çevir ve karşılaştır
+      if (activityGroupId && activityGroupId.trim() !== '') {
         const chatIdStr = String(chatId)
-        const isActivityGroup = chatIdStr === activityGroupId ||
-                                chatIdStr === activityGroupId.replace('@', '') ||
-                                `@${chatIdStr}` === activityGroupId ||
-                                `-100${chatIdStr}` === activityGroupId ||
-                                chatIdStr === activityGroupId.replace('-100', '')
+        const isActivityGroup = chatIdStr === activityGroupId
+
+        console.log(`🔍 Grup Kontrolü:`, {
+          messageChatId: chatIdStr,
+          activityGroupId: activityGroupId,
+          isMatch: isActivityGroup,
+          from: `${firstName || username || userId}`
+        })
 
         if (!isActivityGroup) {
-          console.log(`⏭️ Mesaj aktif grupta değil (chatId: ${chatId}, activityGroupId: ${activityGroupId})`)
+          console.log(`⏭️ Mesaj aktif grupta değil - atlandı`)
           return NextResponse.json({ ok: true, message: 'Not activity group' })
         }
+
+        console.log(`✅ Mesaj aktif grupta - işleniyor`)
+      } else {
+        console.log(`⚠️ Aktif grup ayarlanmamış - tüm gruplarda mesaj dinleniyor`)
       }
 
       // /start komutu hariç her şey için ban kontrolü
