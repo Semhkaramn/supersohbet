@@ -299,7 +299,6 @@ export default function AdminSettingsPage() {
   const messagesForXp = getSetting('messages_for_xp')
   const minMessageLength = getSetting('min_message_length')
   const messageCooldown = getSetting('message_cooldown_seconds')
-  const wheelSpinCost = getSetting('wheel_spin_cost')
   const dailyWheelSpins = getSetting('daily_wheel_spins')
   const referralBonusInviter = getSetting('referral_bonus_inviter')
   const referralBonusInvited = getSetting('referral_bonus_invited')
@@ -673,46 +672,27 @@ export default function AdminSettingsPage() {
         {/* Çark Ayarları */}
         <Card className="bg-white/5 border-white/10 p-6">
           <h2 className="text-xl font-bold text-white mb-4">🎡 Şans Çarkı Ayarları</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label className="text-white text-base">Çark Çevirme Maliyeti (Puan)</Label>
-              <div className="flex gap-2 mt-2">
-                <Input
-                  value={wheelSpinCost?.value || ''}
-                  onChange={(e) => handleInputChange('wheel_spin_cost', e.target.value)}
-                  className="bg-white/10 border-white/20 text-white"
-                  type="number"
-                />
-                <Button
-                  onClick={() => saveSetting('wheel_spin_cost', wheelSpinCost?.value || '')}
-                  disabled={saving}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Save className="w-4 h-4" />
-                </Button>
-              </div>
+          <div>
+            <Label className="text-white text-base">Günlük Ücretsiz Çark Hakkı</Label>
+            <div className="flex gap-2 mt-2">
+              <Input
+                value={dailyWheelSpins?.value || ''}
+                onChange={(e) => handleInputChange('daily_wheel_spins', e.target.value)}
+                className="bg-white/10 border-white/20 text-white"
+                type="number"
+              />
+              <Button
+                onClick={() => saveSetting('daily_wheel_spins', dailyWheelSpins?.value || '')}
+                disabled={saving}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Save className="w-4 h-4" />
+              </Button>
             </div>
-
-            <div>
-              <Label className="text-white text-base">Günlük Ücretsiz Çark Hakkı</Label>
-              <div className="flex gap-2 mt-2">
-                <Input
-                  value={dailyWheelSpins?.value || ''}
-                  onChange={(e) => handleInputChange('daily_wheel_spins', e.target.value)}
-                  className="bg-white/10 border-white/20 text-white"
-                  type="number"
-                />
-                <Button
-                  onClick={() => saveSetting('daily_wheel_spins', dailyWheelSpins?.value || '')}
-                  disabled={saving}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Save className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
+            <p className="text-xs text-gray-400 mt-2">
+              Şans çarkı tamamen ücretsizdir, sadece günlük çevirme hakkı sınırlaması vardır.
+            </p>
           </div>
         </Card>
 
