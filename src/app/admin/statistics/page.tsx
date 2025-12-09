@@ -659,6 +659,7 @@ export default function AdminStatisticsPage() {
                         <div className="bg-white/5 border border-white/10 rounded-lg p-4">
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10">
+                              {userDetail.user.referredBy.photoUrl && <AvatarImage src={userDetail.user.referredBy.photoUrl} alt={userDetail.user.referredBy.firstName || userDetail.user.referredBy.username || 'User'} />}
                               <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white font-bold">
                                 {(userDetail.user.referredBy.firstName || userDetail.user.referredBy.username || 'U').charAt(0).toUpperCase()}
                               </AvatarFallback>
@@ -686,6 +687,7 @@ export default function AdminStatisticsPage() {
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                   <Avatar className="h-10 w-10">
+                                    {ref.photoUrl && <AvatarImage src={ref.photoUrl} alt={ref.firstName || ref.username || 'User'} />}
                                     <AvatarFallback className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold">
                                       {(ref.firstName || ref.username || 'U').charAt(0).toUpperCase()}
                                     </AvatarFallback>
