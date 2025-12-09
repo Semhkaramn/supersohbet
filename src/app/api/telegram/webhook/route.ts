@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getTurkeyDate } from '@/lib/utils'
 import { notifyLevelUp } from '@/lib/notifications'
+import {
+  getRollState,
+  startRoll,
+  saveStep,
+  startBreak,
+  resumeRoll,
+  stopRoll,
+  trackUserMessage,
+  cleanInactiveUsers,
+  getStatusList,
+  getStepList,
+  clearRollData,
+  lockRoll,
+  unlockRoll
+} from '@/lib/roll-system'
 
 // Ayarları cache'e al (performans için)
 let settingsCache: Record<string, string> = {}
@@ -82,6 +97,42 @@ async function checkUserBan(userId: string): Promise<{ isBanned: boolean; banRea
   } catch (error) {
     console.error('Error checking ban status:', error)
     return { isBanned: false }
+  }
+}
+
+// Admin kontrolü - Hem env'den hem grup adminlerinden kontrol eder
+async function checkAdmin(chatId: number, userId: number): Promise<boolean> {
+  try {
+    // ENV'den tanımlı adminler
+    const adminIds = getSetting('roll_admin_ids', '')
+    if (adminIds) {
+      const adminList = adminIds.split(',').map(id => id.trim())
+      if (adminList.includes(String(userId))) {
+        return true
+      }
+    }
+
+    // Grup adminlerini kontrol et
+    const botToken = getSetting('telegram_bot_token', '')
+    if (!botToken) return false
+
+    const url = `https://api.telegram.org/bot${botToken}/getChatMember`
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, user_id: userId })
+    })
+
+    const data = await response.json()
+    if (data.ok && data.result) {
+      const status = data.result.status
+      return status === 'administrator' || status === 'creator'
+    }
+
+    return false
+  } catch (error) {
+    console.error('Error checking admin:', error)
+    return false
   }
 }
 
@@ -207,6 +258,177 @@ Bot özelliklerini kullanmanız engellenmiştir.
           `.trim()
           await sendTelegramMessage(chatId, banMessage)
           return NextResponse.json({ ok: true })
+        }
+      }
+
+      // ROLL SİSTEMİ - Sadece gruplarda çalışır
+      if (chatType === 'group' || chatType === 'supergroup') {
+        const groupId = String(chatId)
+        const text = messageText.trim()
+
+        // "liste" komutu - Herkes kullanabilir
+        if (text.toLowerCase() === 'liste') {
+          const statusMsg = getStatusList(groupId)
+          await sendTelegramMessage(chatId, statusMsg)
+          return NextResponse.json({ ok: true })
+        }
+
+        // Roll komutları - Sadece adminler
+        if (text.startsWith('roll ') || text === 'roll') {
+          const isAdmin = await checkAdmin(chatId, Number(userId))
+
+          const parts = text.split(' ')
+
+          if (parts.length === 1) {
+            // Sadece "roll" yazılmış - sessiz kal
+            return NextResponse.json({ ok: true })
+          }
+
+          const command = parts.slice(1).join(' ').toLowerCase()
+
+          // roll <sayı> - Roll başlat
+          if (/^\d+$/.test(command)) {
+            if (!isAdmin) return NextResponse.json({ ok: true })
+
+            const duration = Number.parseInt(command)
+            startRoll(groupId, duration)
+
+            await sendTelegramMessage(
+              chatId,
+              `✅ Roll Başladı!\n⏳ ${duration} dakika içinde mesaj yazmayan listeden çıkarılır.`
+            )
+            return NextResponse.json({ ok: true })
+          }
+
+          // roll adım - Adım kaydet ve duraklat
+          if (command === 'adım' || command === 'adim') {
+            if (!isAdmin) return NextResponse.json({ ok: true })
+
+            const result = saveStep(groupId)
+
+            if (!result.success) {
+              await sendTelegramMessage(chatId, result.message)
+              return NextResponse.json({ ok: true })
+            }
+
+            const stepList = getStepList(groupId)
+            await sendTelegramMessage(
+              chatId,
+              `📌 Adım ${result.stepNumber} Kaydedildi!\n\n${stepList}`
+            )
+            return NextResponse.json({ ok: true })
+          }
+
+          // roll mola - Mola başlat
+          if (command === 'mola') {
+            if (!isAdmin) return NextResponse.json({ ok: true })
+
+            const state = getRollState(groupId)
+
+            if (state.status === 'stopped') {
+              await sendTelegramMessage(chatId, '⚠️ Roll aktif değil. Mola başlatılamaz.')
+              return NextResponse.json({ ok: true })
+            }
+
+            if (state.status === 'break') {
+              await sendTelegramMessage(chatId, '⚠️ Zaten molada.')
+              return NextResponse.json({ ok: true })
+            }
+
+            startBreak(groupId)
+            await sendTelegramMessage(chatId, '☕ Mola başladı! Liste korunuyor.')
+            return NextResponse.json({ ok: true })
+          }
+
+          // roll devam - Akıllı devam (hem paused hem break için)
+          if (command === 'devam') {
+            if (!isAdmin) return NextResponse.json({ ok: true })
+
+            const state = getRollState(groupId)
+
+            if (state.status !== 'paused' && state.status !== 'break') {
+              await sendTelegramMessage(chatId, '⚠️ Roll zaten aktif veya durdurulmuş.')
+              return NextResponse.json({ ok: true })
+            }
+
+            const wasBreak = state.status === 'break'
+            resumeRoll(groupId)
+
+            // Get updated state after resumeRoll
+            const updatedState = getRollState(groupId)
+            const stepList = getStepList(groupId)
+            const nextStep = updatedState.currentStep + 1
+            const statusText = updatedState.status === 'active' ? '▶️ Aktif' : '⏸ Duraklatıldı'
+
+            if (wasBreak) {
+              await sendTelegramMessage(
+                chatId,
+                `${stepList ? stepList + '\n\n' : ''}✅ Mola bitti! ${statusText}\n⏳ ${updatedState.activeDuration} dakika kuralı geçerlidir.`
+              )
+            } else {
+              await sendTelegramMessage(
+                chatId,
+                `${stepList ? stepList + '\n\n' : ''}▶️ Adım ${nextStep}'e geçildi!\n⏳ ${updatedState.activeDuration} dakika kuralı geçerlidir.`
+              )
+            }
+
+            return NextResponse.json({ ok: true })
+          }
+
+          // roll kilit - Yeni kullanıcı girişini kapat
+          if (command === 'kilit') {
+            if (!isAdmin) return NextResponse.json({ ok: true })
+
+            const state = getRollState(groupId)
+
+            if (state.status === 'stopped') {
+              await sendTelegramMessage(chatId, '⚠️ Roll aktif değil.')
+              return NextResponse.json({ ok: true })
+            }
+
+            if (state.status === 'locked') {
+              await sendTelegramMessage(chatId, '⚠️ Liste zaten kilitli.')
+              return NextResponse.json({ ok: true })
+            }
+
+            lockRoll(groupId)
+            await sendTelegramMessage(chatId, '🔒 Liste kilitlendi! Yeni kullanıcı giremez, mevcut kullanıcılar devam edebilir.')
+            return NextResponse.json({ ok: true })
+          }
+
+          // roll bitir - Sonlandır
+          if (command === 'bitir') {
+            if (!isAdmin) return NextResponse.json({ ok: true })
+
+            const state = getRollState(groupId)
+
+            if (state.status === 'stopped') {
+              await sendTelegramMessage(chatId, '⚠️ Roll zaten durdurulmuş.')
+              return NextResponse.json({ ok: true })
+            }
+
+            stopRoll(groupId)
+
+            const stepList = getStepList(groupId)
+
+            if (!stepList) {
+              await sendTelegramMessage(chatId, '✅ Roll Sonlandı!\n📭 Hiç adım kaydedilmedi.')
+            } else {
+              await sendTelegramMessage(chatId, `🏁 Roll Sonlandı!\n\n${stepList}`)
+            }
+
+            clearRollData(groupId)
+            return NextResponse.json({ ok: true })
+          }
+
+          // Geçersiz komut - sessiz kal
+          return NextResponse.json({ ok: true })
+        }
+
+        // Normal mesaj - tracking aktifse kaydet
+        const state = getRollState(groupId)
+        if (state.status === 'active' || state.status === 'locked') {
+          trackUserMessage(groupId, userId, username || null, firstName || null)
         }
       }
 
@@ -376,27 +598,15 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
         return NextResponse.json({ ok: true, message: 'Private chat - no points' })
       }
 
-      // Kullanıcıyı bul veya oluştur
+      // Kullanıcıyı bul - SADECE /start ile kayıt olanlar puan kazanabilir
       let user = await prisma.user.findUnique({
         where: { telegramId: userId }
       })
 
+      // Kullanıcı yoksa puan verilmez - önce /start yapmalı
       if (!user) {
-        if (!allowNewUsers) {
-          return NextResponse.json({ ok: true, message: 'New users not allowed' })
-        }
-
-        // photoUrl web'den giriş yaparken güncellenecek
-        const dailyWheelSpins = Number.parseInt(getSetting('daily_wheel_spins', '3'))
-        user = await prisma.user.create({
-          data: {
-            telegramId: userId,
-            username,
-            firstName,
-            lastName,
-            dailySpinsLeft: dailyWheelSpins
-          }
-        })
+        console.log(`⚠️ Kullanıcı kayıtlı değil - puan verilmedi (userId: ${userId})`)
+        return NextResponse.json({ ok: true, message: 'User not registered - must use /start first' })
       }
 
       // TÜM MESAJLARI İSTATİSTİK İÇİN KAYDET (KURALLARDAN BAĞIMSIZ)
