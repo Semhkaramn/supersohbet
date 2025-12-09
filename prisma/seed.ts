@@ -1,10 +1,45 @@
 import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
-  console.log('🌱 Seeding database...')
+  console.log('Starting seed...')
+
+  // Settings oluştur
+  const settings = [
+    // Telegram Bot Ayarları
+    { key: 'telegram_bot_token', value: '', description: 'Telegram Bot Token', category: 'telegram' },
+    { key: 'telegram_bot_username', value: '', description: 'Telegram Bot Kullanıcı Adı (@username)', category: 'telegram' },
+    { key: 'telegram_webhook_url', value: 'https://soft-fairy-c52849.netlify.app/api/telegram/webhook', description: 'Telegram Webhook URL', category: 'telegram' },
+
+    // Cloudinary Ayarları
+    { key: 'cloudinary_cloud_name', value: '', description: 'Cloudinary Cloud Name', category: 'cloudinary' },
+    { key: 'cloudinary_api_key', value: '', description: 'Cloudinary API Key', category: 'cloudinary' },
+    { key: 'cloudinary_api_secret', value: '', description: 'Cloudinary API Secret', category: 'cloudinary' },
+
+    // Puan ve XP Ayarları
+    { key: 'points_per_message', value: '10', description: 'Mesaj başına kazanılan puan', category: 'points' },
+    { key: 'xp_per_message', value: '5', description: 'Mesaj başına kazanılan XP', category: 'points' },
+    { key: 'messages_for_xp', value: '1', description: 'Kaç mesajda bir XP verilecek (1 = her mesajda)', category: 'points' },
+
+    // Mesaj Kısıtlamaları
+    { key: 'min_message_length', value: '3', description: 'Minimum mesaj karakter uzunluğu', category: 'limits' },
+    { key: 'message_cooldown_seconds', value: '5', description: 'Mesajlar arası minimum bekleme süresi (saniye)', category: 'limits' },
+
+    // Çark Ayarları
+    { key: 'wheel_spin_cost', value: '250', description: 'Çark çevirme maliyeti (puan)', category: 'wheel' },
+    { key: 'daily_wheel_spins', value: '3', description: 'Günlük ücretsiz çark hakkı', category: 'wheel' },
+    { key: 'wheel_reset_hour', value: '0', description: 'Günlük çark haklarının sıfırlanacağı saat (0-23)', category: 'wheel' },
+
+    // Referans Sistemi
+    { key: 'referral_bonus_inviter', value: '100', description: 'Davet eden kişinin kazandığı puan', category: 'referral' },
+    { key: 'referral_bonus_invited', value: '50', description: 'Davet edilen kişinin kazandığı puan', category: 'referral' },
+
+    // Genel Ayarlar
+    { key: 'maintenance_mode', value: 'false', description: 'Bakım modu aktif mi?', category: 'general' },
+    { key: 'allow_new_users', value: 'true', description: 'Yeni kullanıcı kayıtları açık mı?', category: 'general' },
+    { key: 'activity_group_id', value: '', description: 'Mesaj dinleme ve puan verme yapılacak grup ID', category: 'general' },
+  ]
 
   // Admin kullanıcısı oluştur
   const adminPasswordHash = await bcrypt.hash('admin123', 10)
@@ -57,41 +92,6 @@ async function main() {
   }
   console.log('✅ Wheel prizes created:', wheelPrizes.length)
 
-  // Sistem ayarları oluştur
-  const settings = [
-    // Telegram Bot Ayarları
-    { key: 'telegram_bot_token', value: '', description: 'Telegram Bot Token', category: 'telegram' },
-    { key: 'telegram_bot_username', value: '', description: 'Telegram Bot Kullanıcı Adı (@username)', category: 'telegram' },
-    { key: 'telegram_webhook_url', value: 'https://soft-fairy-c52849.netlify.app/api/telegram/webhook', description: 'Telegram Webhook URL', category: 'telegram' },
-
-    // Cloudinary Ayarları
-    { key: 'cloudinary_cloud_name', value: '', description: 'Cloudinary Cloud Name', category: 'cloudinary' },
-    { key: 'cloudinary_api_key', value: '', description: 'Cloudinary API Key', category: 'cloudinary' },
-    { key: 'cloudinary_api_secret', value: '', description: 'Cloudinary API Secret', category: 'cloudinary' },
-
-    // Puan ve XP Ayarları
-    { key: 'points_per_message', value: '10', description: 'Mesaj başına kazanılan puan', category: 'points' },
-    { key: 'xp_per_message', value: '5', description: 'Mesaj başına kazanılan XP', category: 'points' },
-    { key: 'messages_for_xp', value: '1', description: 'Kaç mesajda bir XP verilecek (1 = her mesajda)', category: 'points' },
-
-    // Mesaj Kısıtlamaları
-    { key: 'min_message_length', value: '3', description: 'Minimum mesaj karakter uzunluğu', category: 'limits' },
-    { key: 'message_cooldown_seconds', value: '5', description: 'Mesajlar arası minimum bekleme süresi (saniye)', category: 'limits' },
-
-    // Çark Ayarları
-    { key: 'wheel_spin_cost', value: '250', description: 'Çark çevirme maliyeti (puan)', category: 'wheel' },
-    { key: 'daily_wheel_spins', value: '3', description: 'Günlük ücretsiz çark hakkı', category: 'wheel' },
-
-    // Referans Sistemi
-    { key: 'referral_bonus_inviter', value: '100', description: 'Davet eden kişinin kazandığı puan', category: 'referral' },
-    { key: 'referral_bonus_invited', value: '50', description: 'Davet edilen kişinin kazandığı puan', category: 'referral' },
-
-    // Genel Ayarlar
-    { key: 'maintenance_mode', value: 'false', description: 'Bakım modu aktif mi?', category: 'general' },
-    { key: 'allow_new_users', value: 'true', description: 'Yeni kullanıcı kayıtları açık mı?', category: 'general' },
-    { key: 'activity_group_id', value: '', description: 'Mesaj dinleme ve puan verme yapılacak grup ID', category: 'general' },
-  ]
-
   for (const setting of settings) {
     await prisma.settings.upsert({
       where: { key: setting.key },
@@ -124,7 +124,7 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error('❌ Seeding error:', e)
+    console.error(e)
     process.exit(1)
   })
   .finally(async () => {
