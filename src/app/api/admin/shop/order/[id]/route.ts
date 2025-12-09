@@ -124,28 +124,82 @@ export async function PUT(
       return updatedOrder
     })
 
-    // Sipariş onaylandıysa ve bildirim aktifse kullanıcıya mesaj gönder
-    if (status === 'completed' && existingOrder.status !== 'completed') {
+    // Sipariş durumu değiştiyse ve bildirim aktifse kullanıcıya mesaj gönder
+    if (status && status !== existingOrder.status) {
       const notifySetting = await prisma.settings.findUnique({
         where: { key: 'notify_order_approved' }
       })
 
       if (notifySetting?.value === 'true' && order.user.telegramId) {
-        const message = `
-🎉 **Siparişiniz Onaylandı!**
+        let message = ''
+
+        // Duruma göre mesaj oluştur
+        switch (status) {
+          case 'completed':
+            message = `
+🎉 **Siparişiniz Tamamlandı!**
 
 ✅ Ürün: ${order.item.name}
 💰 Fiyat: ${order.pointsSpent.toLocaleString()} puan
 
-${deliveryInfo ? `📝 Teslimat Bilgisi:\n${deliveryInfo}\n\n` : ''}Siparişiniz hazırlanıyor. En kısa sürede size ulaşacak!
+${deliveryInfo ? `📝 Teslimat Bilgisi:\n${deliveryInfo}\n\n` : ''}Siparişiniz onaylandı ve teslim edildi!
 
 Yeni siparişler için marketi ziyaret edebilirsiniz! 🛍️
-        `.trim()
+            `.trim()
+            break
+
+          case 'processing':
+            message = `
+⏳ **Siparişiniz İşleme Alındı**
+
+📦 Ürün: ${order.item.name}
+💰 Fiyat: ${order.pointsSpent.toLocaleString()} puan
+
+${deliveryInfo ? `📝 Not:\n${deliveryInfo}\n\n` : ''}Siparişiniz hazırlanıyor. Lütfen bekleyiniz...
+            `.trim()
+            break
+
+          case 'cancelled':
+            message = `
+❌ **Siparişiniz İptal Edildi**
+
+📦 Ürün: ${order.item.name}
+💰 İade Edilen Puan: ${order.pointsSpent.toLocaleString()}
+
+${deliveryInfo ? `📝 İptal Nedeni:\n${deliveryInfo}\n\n` : ''}Puanlarınız hesabınıza iade edildi.
+
+Başka ürünler için marketi ziyaret edebilirsiniz.
+            `.trim()
+            break
+
+          case 'pending':
+            message = `
+🔔 **Sipariş Durumu Güncellendi**
+
+📦 Ürün: ${order.item.name}
+💰 Fiyat: ${order.pointsSpent.toLocaleString()} puan
+
+Siparişiniz beklemede. En kısa sürede işleme alınacak.
+            `.trim()
+            break
+
+          default:
+            message = `
+🔔 **Sipariş Durumu: ${status}**
+
+📦 Ürün: ${order.item.name}
+💰 Fiyat: ${order.pointsSpent.toLocaleString()} puan
+
+${deliveryInfo ? `📝 Not:\n${deliveryInfo}` : ''}
+            `.trim()
+        }
 
         // Asenkron olarak mesaj gönder
-        sendTelegramMessage(order.user.telegramId, message).catch(err =>
-          console.error('Failed to send order notification:', err)
-        )
+        if (message) {
+          sendTelegramMessage(order.user.telegramId, message).catch(err =>
+            console.error('Failed to send order notification:', err)
+          )
+        }
       }
     }
 
