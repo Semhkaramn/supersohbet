@@ -1,34 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getTurkeyDate } from '@/lib/utils'
-
-// Telegram mesaj gönderme fonksiyonu
-async function sendTelegramMessage(telegramId: string, text: string) {
-  try {
-    // Bot token'ı al
-    const botTokenSetting = await prisma.settings.findUnique({
-      where: { key: 'telegram_bot_token' }
-    })
-
-    if (!botTokenSetting?.value) {
-      console.error('Bot token not configured')
-      return
-    }
-
-    const url = `https://api.telegram.org/bot${botTokenSetting.value}/sendMessage`
-    await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: telegramId,
-        text,
-        parse_mode: 'Markdown'
-      })
-    })
-  } catch (error) {
-    console.error('Error sending telegram message:', error)
-  }
-}
+import { sendTelegramMessage } from '@/lib/telegram'
 
 export async function PUT(
   request: Request,
@@ -194,11 +167,15 @@ ${deliveryInfo ? `📝 Not:\n${deliveryInfo}` : ''}
             `.trim()
         }
 
-        // Asenkron olarak mesaj gönder
-        if (message) {
-          sendTelegramMessage(order.user.telegramId, message).catch(err =>
-            console.error('Failed to send order notification:', err)
-          )
+        // KRİTİK: Mesajı HEMEN gönder - await ile bekle!
+        if (message && order.user.telegramId) {
+          console.log(`🔔 [Order] Sipariş bildirimi gönderiliyor: userId=${order.user.id}, status=${status}`)
+          const sent = await sendTelegramMessage(order.user.telegramId, message)
+          if (sent) {
+            console.log(`✅ [Order] Bildirim başarıyla gönderildi: userId=${order.user.id}`)
+          } else {
+            console.error(`❌ [Order] Bildirim gönderilemedi: userId=${order.user.id}, telegramId=${order.user.telegramId}`)
+          }
         }
       }
     }
