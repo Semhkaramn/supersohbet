@@ -219,6 +219,7 @@ model Sponsor {
   description      String?
   logoUrl          String?
   websiteUrl       String?
+  category         String          @default("normal") // "vip" veya "normal"
   isActive         Boolean         @default(true)
   order            Int             @default(0)
   clicks           Int             @default(0)
@@ -226,6 +227,7 @@ model Sponsor {
   updatedAt        DateTime        @updatedAt
 
   @@index([isActive])
+  @@index([category])
 }
 
 // Görevler
