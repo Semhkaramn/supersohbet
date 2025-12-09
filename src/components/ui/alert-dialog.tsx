@@ -10,7 +10,7 @@ interface AlertDialogProps {
   children: React.ReactNode
 }
 
-export function AlertDialog({ open, onOpenChange, children }: AlertDialogProps) {
+export function AlertDialog({ open = false, onOpenChange = () => {}, children }: AlertDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {children}
