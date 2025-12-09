@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { ArrowLeft, Plus, Edit, Trash2, FileText, CheckCircle, XCircle, Users, MessageSquare, Target, Award, TrendingUp, Calendar, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
@@ -52,6 +53,8 @@ export default function AdminTasksPage() {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -164,10 +167,15 @@ export default function AdminTasksPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Bu görevi silmek istediğinizden emin misiniz?')) return
+    setDeleteId(id)
+    setConfirmOpen(true)
+  }
+
+  async function confirmDelete() {
+    if (!deleteId) return
 
     try {
-      const response = await fetch(`/api/admin/tasks/${id}`, {
+      const response = await fetch(`/api/admin/tasks/${deleteId}`, {
         method: 'DELETE'
       })
 
@@ -182,6 +190,9 @@ export default function AdminTasksPage() {
     } catch (error) {
       console.error('Delete error:', error)
       toast.error('Bir hata oluştu')
+    } finally {
+      setConfirmOpen(false)
+      setDeleteId(null)
     }
   }
 
@@ -519,6 +530,14 @@ export default function AdminTasksPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Görev Silme"
+        description={`Bu görevi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`}
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }
