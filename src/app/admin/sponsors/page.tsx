@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ArrowLeft, Plus, Edit, Trash2, Heart, Crown, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -31,6 +32,8 @@ export default function AdminSponsorsPage() {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingSponsor, setEditingSponsor] = useState<Sponsor | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -188,13 +191,18 @@ export default function AdminSponsorsPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Bu sponsoru silmek istediğinizden emin misiniz?')) return
+    setDeleteId(id)
+    setConfirmOpen(true)
+  }
+
+  async function confirmDelete() {
+    if (!deleteId) return
 
     try {
       // Önce sponsoru bul ve logosunun public_id'sini al
-      const sponsor = sponsors.find(s => s.id === id)
+      const sponsor = sponsors.find(s => s.id === deleteId)
 
-      const response = await fetch(`/api/admin/sponsors/${id}`, {
+      const response = await fetch(`/api/admin/sponsors/${deleteId}`, {
         method: 'DELETE'
       })
 
@@ -226,6 +234,9 @@ export default function AdminSponsorsPage() {
     } catch (error) {
       console.error('Delete error:', error)
       toast.error('Bir hata oluştu')
+    } finally {
+      setConfirmOpen(false)
+      setDeleteId(null)
     }
   }
 
@@ -507,6 +518,15 @@ export default function AdminSponsorsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Sponsor Silme"
+        description={`Bu sponsoru silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`}
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }
