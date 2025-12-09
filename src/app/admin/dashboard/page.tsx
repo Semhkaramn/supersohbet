@@ -70,13 +70,6 @@ export default function AdminDashboard() {
       color: 'from-cyan-500 to-cyan-600'
     },
     {
-      title: 'Kanal Yönetimi',
-      description: 'Zorunlu kanalları ekle/düzenle',
-      icon: MessageSquare,
-      href: '/admin/channels',
-      color: 'from-blue-500 to-blue-600'
-    },
-    {
       title: 'Görevler',
       description: 'Görevleri ekle/düzenle',
       icon: FileText,
