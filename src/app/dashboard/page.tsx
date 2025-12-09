@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import BottomNav from '@/components/BottomNav'
 import { BannedScreen } from '@/components/BannedScreen'
-import { Trophy, Star, ShoppingBag, TrendingUp, Ticket } from 'lucide-react'
+import { Trophy, Star, ShoppingBag, TrendingUp, Ticket, Target } from 'lucide-react'
 
 interface UserData {
   id: string
@@ -230,17 +230,12 @@ function DashboardContent() {
           </Card>
 
           <Card
-            onClick={() => router.push(`/wheel?userId=${userId}`)}
-            className="bg-gradient-to-br from-orange-500/20 to-red-500/20 border-orange-500/30 p-6 cursor-pointer hover:scale-105 transition-all shadow-lg relative overflow-hidden"
+            onClick={() => router.push(`/tasks?userId=${userId}`)}
+            className="bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border-purple-500/30 p-6 cursor-pointer hover:scale-105 transition-all shadow-lg"
           >
-            {userData.dailySpinsLeft > 0 && (
-              <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">
-                {userData.dailySpinsLeft}
-              </div>
-            )}
-            <Trophy className="w-10 h-10 text-orange-300 mb-3" />
-            <p className="font-bold text-white text-lg">Şans Çarkı</p>
-            <p className="text-sm text-orange-100/80 mt-1">Hemen çevir!</p>
+            <Target className="w-10 h-10 text-purple-300 mb-3" />
+            <p className="font-bold text-white text-lg">Görevler</p>
+            <p className="text-sm text-purple-100/80 mt-1">Başarıları tamamla</p>
           </Card>
         </div>
       </div>
