@@ -1,30 +1,7 @@
 import { PrismaClient } from '@prisma/client'
+import { notifyWheelReset } from '../src/lib/notifications'
 
 const prisma = new PrismaClient()
-
-async function sendTelegramMessage(telegramId: string, text: string, botToken: string) {
-  try {
-    const url = `https://api.telegram.org/bot${botToken}/sendMessage`
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: telegramId,
-        text,
-        parse_mode: 'Markdown'
-      })
-    })
-
-    const data = await response.json()
-    if (!data.ok) {
-      console.error(`Failed to send message to ${telegramId}:`, data.description)
-    }
-    return data.ok
-  } catch (error) {
-    console.error(`Error sending message to ${telegramId}:`, error)
-    return false
-  }
-}
 
 async function notifyWheelReset() {
   try {
@@ -40,21 +17,11 @@ async function notifyWheelReset() {
       return
     }
 
-    // Bot token'ı al
-    const botTokenSetting = await prisma.settings.findUnique({
-      where: { key: 'telegram_bot_token' }
-    })
-
-    if (!botTokenSetting?.value) {
-      console.error('❌ Bot token bulunamadı')
-      return
-    }
-
     // Günlük çark hakkı sayısını al
     const dailySpinsSetting = await prisma.settings.findUnique({
       where: { key: 'daily_wheel_spins' }
     })
-    const dailySpins = dailySpinsSetting?.value || '3'
+    const dailySpins = Number.parseInt(dailySpinsSetting?.value || '3')
 
     // Tüm aktif kullanıcıları al (banlı olmayanlar ve telegramId'si olanlar)
     const users = await prisma.user.findMany({
@@ -71,15 +38,6 @@ async function notifyWheelReset() {
 
     console.log(`📊 ${users.length} kullanıcıya bildirim gönderilecek`)
 
-    const message = `
-🎡 **Şans Çarkı Hakkın Yenilendi!**
-
-✨ Yeni günlük çark hakkın: **${dailySpins}**
-🎁 Hemen çevir, muhteşem ödüller kazan!
-
-Bot menüsünden "Şans Çarkı" seçeneğine tıklayarak şansını dene! 🍀
-    `.trim()
-
     let successCount = 0
     let failCount = 0
 
@@ -88,7 +46,7 @@ Bot menüsünden "Şans Çarkı" seçeneğine tıklayarak şansını dene! 🍀
       const user = users[i]
 
       if (user.telegramId) {
-        const success = await sendTelegramMessage(user.telegramId, message, botTokenSetting.value)
+        const success = await notifyWheelReset(user.telegramId, dailySpins)
 
         if (success) {
           successCount++
@@ -100,6 +58,9 @@ Bot menüsünden "Şans Çarkı" seçeneğine tıklayarak şansını dene! 🍀
         if ((i + 1) % 30 === 0) {
           console.log(`⏳ ${i + 1}/${users.length} mesaj gönderildi, kısa mola...`)
           await new Promise(resolve => setTimeout(resolve, 1000))
+        } else if (i < users.length - 1) {
+          // Normal delay - rate limit koruması
+          await new Promise(resolve => setTimeout(resolve, 35))
         }
       }
     }
