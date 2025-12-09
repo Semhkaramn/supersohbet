@@ -18,6 +18,7 @@ model Settings {
   updatedAt             DateTime @updatedAt
 
   @@index([category])
+  @@index([key]) // ✅ OPTIMIZASYON: key için index
 }
 
 // Kullanıcı modeli
@@ -65,6 +66,8 @@ model User {
   @@index([referralCode])
   @@index([referredById])
   @@index([isBanned])
+  @@index([points, xp]) // ✅ OPTIMIZASYON: Leaderboard sorguları için composite index
+  @@index([xp, points]) // ✅ OPTIMIZASYON: XP leaderboard için composite index
 }
 
 // Tüm mesajlar - istatistikler için (KURALLARDAN BAĞIMSIZ)
