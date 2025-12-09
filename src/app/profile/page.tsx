@@ -345,6 +345,12 @@ function ProfileContent() {
                     iconBorder = 'border-red-500/30'
                     iconColor = 'text-red-400'
                     break
+                  case 'task_reward':
+                    Icon = CheckCircle2
+                    iconBg = 'bg-emerald-500/20'
+                    iconBorder = 'border-emerald-500/30'
+                    iconColor = 'text-emerald-400'
+                    break
                   case 'admin_add':
                     Icon = TrendingUp
                     iconBg = 'bg-green-500/20'
