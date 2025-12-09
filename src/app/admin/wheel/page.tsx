@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { ArrowLeft, Plus, Edit, Trash2, Ticket } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
@@ -30,6 +31,8 @@ export default function AdminWheelPage() {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingPrize, setEditingPrize] = useState<WheelPrize | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -116,10 +119,15 @@ export default function AdminWheelPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Bu ödülü silmek istediğinizden emin misiniz?')) return
+    setDeleteId(id)
+    setConfirmOpen(true)
+  }
+
+  async function confirmDelete() {
+    if (!deleteId) return
 
     try {
-      const response = await fetch(`/api/admin/wheel/${id}`, {
+      const response = await fetch(`/api/admin/wheel/${deleteId}`, {
         method: 'DELETE'
       })
 
@@ -134,6 +142,9 @@ export default function AdminWheelPage() {
     } catch (error) {
       console.error('Delete error:', error)
       toast.error('Bir hata oluştu')
+    } finally {
+      setConfirmOpen(false)
+      setDeleteId(null)
     }
   }
 
@@ -370,6 +381,15 @@ export default function AdminWheelPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Ödülü Sil"
+        description="Bu ödülü silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }
