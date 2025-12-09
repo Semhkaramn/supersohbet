@@ -92,7 +92,8 @@ export default function AdminStatisticsPage() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [period, setPeriod] = useState('all')
+  const [sortBy, setSortBy] = useState('points')
+  const [sortOrder, setSortOrder] = useState('desc')
   const [bannedFilter, setBannedFilter] = useState<string>('all')
 
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
@@ -149,12 +150,12 @@ export default function AdminStatisticsPage() {
     }, 300) // 300ms debounce - kullanıcı yazmayı bitirdiğinde arama yapar
 
     return () => clearTimeout(delayDebounceFn)
-  }, [searchTerm, period, bannedFilter])
+  }, [searchTerm, sortBy, sortOrder, bannedFilter])
 
   async function loadStatistics() {
     try {
       const bannedParam = bannedFilter === 'all' ? '' : `&banned=${bannedFilter}`
-      const response = await fetch(`/api/admin/statistics?search=${searchTerm}&period=${period}${bannedParam}`)
+      const response = await fetch(`/api/admin/statistics?search=${searchTerm}&sortBy=${sortBy}&sortOrder=${sortOrder}${bannedParam}`)
       const data = await response.json()
       setUsers(data.users || [])
       setStats(data.stats)
@@ -375,15 +376,24 @@ export default function AdminStatisticsPage() {
             />
           </div>
 
-          <Select value={period} onValueChange={setPeriod}>
+          <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-full md:w-[200px] bg-white/5 border-white/10 text-white">
-              <SelectValue placeholder="Periyot seç" />
+              <SelectValue placeholder="Sırala" />
             </SelectTrigger>
             <SelectContent className="bg-slate-900 border-white/20">
-              <SelectItem value="all">Tüm Zamanlar</SelectItem>
-              <SelectItem value="daily">Günlük</SelectItem>
-              <SelectItem value="weekly">Haftalık</SelectItem>
-              <SelectItem value="monthly">Aylık</SelectItem>
+              <SelectItem value="points">Puana Göre</SelectItem>
+              <SelectItem value="messages">Mesaj Sayısına Göre</SelectItem>
+              <SelectItem value="rank">Rütbeye Göre</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={sortOrder} onValueChange={setSortOrder}>
+            <SelectTrigger className="w-full md:w-[200px] bg-white/5 border-white/10 text-white">
+              <SelectValue placeholder="Sıralama" />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-900 border-white/20">
+              <SelectItem value="desc">Yüksekten Düşüğe</SelectItem>
+              <SelectItem value="asc">Düşükten Yükseğe</SelectItem>
             </SelectContent>
           </Select>
 
