@@ -27,7 +27,7 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const { name, description, logoUrl, logoPublicId, websiteUrl, category, isActive, order } = body
+    const { name, description, logoUrl, logoPublicId, websiteUrl, category, identifierType, isActive, order } = body
 
     // Mevcut sponsor bilgisini al
     const existingSponsor = await prisma.sponsor.findUnique({
@@ -47,6 +47,7 @@ export async function PUT(
     if (logoPublicId !== undefined) updateData.logoPublicId = logoPublicId
     if (websiteUrl !== undefined) updateData.websiteUrl = websiteUrl
     if (category !== undefined) updateData.category = category
+    if (identifierType !== undefined) updateData.identifierType = identifierType
     if (typeof isActive === 'boolean') updateData.isActive = isActive
     if (typeof order === 'number') updateData.order = order
 
