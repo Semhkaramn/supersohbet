@@ -57,7 +57,6 @@ async function main() {
   }
   console.log('✅ Wheel prizes created:', wheelPrizes.length)
 
-
   // Sistem ayarları oluştur
   const settings = [
     // Telegram Bot Ayarları
@@ -90,6 +89,7 @@ async function main() {
     // Genel Ayarlar
     { key: 'maintenance_mode', value: 'false', description: 'Bakım modu aktif mi?', category: 'general' },
     { key: 'allow_new_users', value: 'true', description: 'Yeni kullanıcı kayıtları açık mı?', category: 'general' },
+    { key: 'activity_group_id', value: '', description: 'Mesaj dinleme ve puan verme yapılacak grup ID', category: 'general' },
   ]
 
   for (const setting of settings) {
