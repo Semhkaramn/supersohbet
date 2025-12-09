@@ -165,7 +165,10 @@ export default function AdminSponsorsPage() {
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          logoPublicId: imagePublicId
+        })
       })
 
       const data = await response.json()
