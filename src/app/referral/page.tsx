@@ -17,6 +17,7 @@ import {
   ArrowRight
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useUser } from '@/contexts/UserContext'
 
 interface ReferralData {
   referralCode: string
@@ -56,6 +57,7 @@ function ReferralContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const userId = searchParams.get('userId')
+  const { appData, loading: contextLoading } = useUser()
 
   const [referralData, setReferralData] = useState<ReferralData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -67,16 +69,17 @@ function ReferralContent() {
       return
     }
     loadReferralData()
-  }, [userId])
+  }, [userId, router])
 
   async function loadReferralData() {
+    setLoading(true)
     try {
       const response = await fetch(`/api/referral/info?userId=${userId}`)
       const data = await response.json()
       setReferralData(data)
     } catch (error) {
       console.error('Error loading referral data:', error)
-      toast.error('Referans bilgileri yüklenirken hata oluştu')
+      toast.error('Referans verileri yüklenemedi')
     } finally {
       setLoading(false)
     }
@@ -114,9 +117,9 @@ function ReferralContent() {
     }
   }
 
-  if (loading) {
+  if (loading || contextLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     )
