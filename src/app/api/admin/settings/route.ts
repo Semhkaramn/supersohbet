@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PUT - Ayarı güncelle
+// PUT - Ayarı güncelle veya oluştur (upsert)
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
@@ -34,9 +34,15 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const setting = await prisma.settings.update({
+    const setting = await prisma.settings.upsert({
       where: { key },
-      data: { value }
+      update: { value },
+      create: {
+        key,
+        value,
+        description: key === 'activity_group_id' ? 'Mesaj dinleme ve puan verme yapılacak grup ID' : '',
+        category: 'general'
+      }
     })
 
     // Eğer telegram_bot_token güncellendiyse webhook'u kur
