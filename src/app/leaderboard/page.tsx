@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import BottomNav from '@/components/BottomNav'
 import { Trophy, Crown, Medal, TrendingUp, Star } from 'lucide-react'
+import { useUser } from '@/contexts/UserContext'
 
 interface LeaderboardUser {
   id: string
@@ -28,12 +29,13 @@ function LeaderboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const userId = searchParams.get('userId')
+  const { appData, loading: contextLoading } = useUser()
 
   const [pointsLeaderboard, setPointsLeaderboard] = useState<LeaderboardUser[]>([])
   const [xpLeaderboard, setXpLeaderboard] = useState<LeaderboardUser[]>([])
   const [pointsCurrentUser, setPointsCurrentUser] = useState<LeaderboardUser | null>(null)
   const [xpCurrentUser, setXpCurrentUser] = useState<LeaderboardUser | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('points')
 
   useEffect(() => {
@@ -41,10 +43,23 @@ function LeaderboardContent() {
       router.push('/')
       return
     }
-    loadLeaderboards()
-  }, [userId])
+    // İlk yüklemede context'ten al
+    if (appData.leaderboard.length > 0 && pointsLeaderboard.length === 0) {
+      // Context'ten gelen veriyi LeaderboardUser formatına çevir
+      const formattedData = appData.leaderboard.map((entry, index) => ({
+        ...entry,
+        totalMessages: entry.totalMessages || 0,
+        position: entry.position || index + 1
+      }))
+      setPointsLeaderboard(formattedData as any)
+    } else {
+      // Detaylı veri için API çağrısı yap
+      loadLeaderboards()
+    }
+  }, [userId, appData.leaderboard, router])
 
   async function loadLeaderboards() {
+    setLoading(true)
     try {
       const [pointsRes, xpRes] = await Promise.all([
         fetch(`/api/leaderboard?userId=${userId}&sortBy=points`),
@@ -91,7 +106,7 @@ function LeaderboardContent() {
     }
   }
 
-  if (loading) {
+  if (loading || contextLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
