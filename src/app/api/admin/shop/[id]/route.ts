@@ -27,7 +27,7 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const { name, description, price, imageUrl, imagePublicId, category, stock, purchaseLimit, isActive, order } = body
+    const { name, description, price, imageUrl, imagePublicId, category, sponsorId, stock, purchaseLimit, isActive, order } = body
 
     // Mevcut ürün bilgisini al
     const existingItem = await prisma.shopItem.findUnique({
@@ -47,6 +47,7 @@ export async function PUT(
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl
     if (imagePublicId !== undefined) updateData.imagePublicId = imagePublicId
     if (category) updateData.category = category
+    if (sponsorId !== undefined) updateData.sponsorId = sponsorId
     if (stock !== undefined) updateData.stock = stock
     if (purchaseLimit !== undefined) updateData.purchaseLimit = purchaseLimit
     if (typeof isActive === 'boolean') updateData.isActive = isActive
