@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { MaintenanceScreen } from '@/components/MaintenanceScreen'
 import { BannedScreen } from '@/components/BannedScreen'
+import { useUser } from '@/contexts/UserContext'
 
 interface TelegramUser {
   id: number
@@ -37,6 +38,7 @@ declare global {
 function HomeContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { setTelegramUser, initializing } = useUser()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [debugInfo, setDebugInfo] = useState<string>('')
@@ -63,6 +65,8 @@ function HomeContent() {
             try {
               const userData: TelegramUser = JSON.parse(decodeURIComponent(telegramData))
               setCurrentUser(userData)
+              // Context'e kullanıcıyı set et - tüm veriler otomatik yüklenecek
+              setTelegramUser(userData)
               await checkUserChannels(userData)
               return
             } catch (err) {
@@ -76,6 +80,8 @@ function HomeContent() {
           if (initData.user) {
             setDebugInfo(`Kullanıcı bulundu: ${initData.user.first_name} (ID: ${initData.user.id})`)
             setCurrentUser(initData.user)
+            // Context'e kullanıcıyı set et - tüm veriler otomatik yüklenecek
+            setTelegramUser(initData.user)
             await checkUserChannels(initData.user)
           } else {
             // Biraz bekleyip tekrar dene
@@ -84,6 +90,8 @@ function HomeContent() {
               if (retryData.user) {
                 setDebugInfo(`İkinci denemede kullanıcı bulundu: ${retryData.user.first_name}`)
                 setCurrentUser(retryData.user)
+                // Context'e kullanıcıyı set et - tüm veriler otomatik yüklenecek
+                setTelegramUser(retryData.user)
                 checkUserChannels(retryData.user)
               } else {
                 setDebugInfo('Telegram kullanıcı verisi bulunamadı. InitData: ' + JSON.stringify(initData))
@@ -103,7 +111,7 @@ function HomeContent() {
     }
 
     initTelegramApp()
-  }, [searchParams])
+  }, [searchParams, setTelegramUser])
 
   async function checkUserChannels(user: TelegramUser) {
     try {
@@ -157,7 +165,7 @@ function HomeContent() {
     return <BannedScreen banReason={banInfo.reason} bannedAt={banInfo.date} bannedBy={banInfo.by} />
   }
 
-  if (loading) {
+  if (loading || initializing) {
     return (
       <div className="flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-slate-900 via-blue-900/20 to-purple-900/20">
         <div className="text-center max-w-md">
@@ -189,8 +197,8 @@ function HomeContent() {
               <div className="flex flex-col items-center space-y-4">
                 <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                 <div className="space-y-2">
-                  <p className="text-xl font-semibold text-white">Giriş yapılıyor...</p>
-                  <p className="text-sm text-gray-400">Hesabınız kontrol ediliyor</p>
+                  <p className="text-xl font-semibold text-white">Verileriniz yükleniyor...</p>
+                  <p className="text-sm text-gray-400">Tüm bilgileriniz hazırlanıyor</p>
                 </div>
               </div>
 
