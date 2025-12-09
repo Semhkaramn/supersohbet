@@ -4,8 +4,9 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import BottomNav from '@/components/BottomNav'
-import { Heart, TrendingUp, Crown, Sparkles } from 'lucide-react'
+import { Heart, TrendingUp, Crown, Sparkles, Search } from 'lucide-react'
 
 import Image from 'next/image'
 
@@ -26,6 +27,7 @@ function SponsorsContent() {
 
   const [sponsors, setSponsors] = useState<Sponsor[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
     if (!userId) {
@@ -78,25 +80,40 @@ function SponsorsContent() {
     )
   }
 
-  const vipSponsors = sponsors.filter(s => s.category === 'vip')
-  const normalSponsors = sponsors.filter(s => s.category !== 'vip')
+  // Filter sponsors based on search term
+  const filteredSponsors = sponsors.filter(s =>
+    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (s.description && s.description.toLowerCase().includes(searchTerm.toLowerCase()))
+  )
+
+  const vipSponsors = filteredSponsors.filter(s => s.category === 'vip')
+  const normalSponsors = filteredSponsors.filter(s => s.category !== 'vip')
 
   return (
     <div className="min-h-screen pb-24 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-pink-600 via-rose-600 to-pink-700 p-6 shadow-xl">
-        <div className="max-w-2xl mx-auto text-center">
-          <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
-            <Heart className="w-6 h-6 animate-pulse" fill="currentColor" />
-            Sponsorlar
-          </h1>
-          <p className="text-pink-100 text-sm mt-2">Değerli destekçilerimiz</p>
+      {/* Search Header */}
+      <div className="bg-gradient-to-br from-pink-600 via-rose-600 to-pink-700 p-6 shadow-xl sticky top-0 z-10">
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center gap-3 mb-3">
+            <Heart className="w-6 h-6 text-white animate-pulse" fill="currentColor" />
+            <h1 className="text-2xl font-bold text-white">Sponsorlar</h1>
+          </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-pink-200" />
+            <Input
+              type="text"
+              placeholder="Sponsor ara..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-white/20 border-white/30 text-white placeholder:text-pink-100 focus:bg-white/30 focus:border-white/50 transition-all"
+            />
+          </div>
         </div>
       </div>
 
       {/* Sponsors List */}
       <div className="max-w-2xl mx-auto px-4 py-6">
-        {sponsors.length === 0 ? (
+        {filteredSponsors.length === 0 ? (
           <div className="text-center py-12">
             <Heart className="w-16 h-16 text-gray-500 mx-auto mb-4" />
             <p className="text-gray-400">Henüz sponsor bulunmuyor</p>
