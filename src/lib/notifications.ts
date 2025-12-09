@@ -123,8 +123,6 @@ export async function notifyOrderStatusChange(
 💰 Fiyat: ${orderDetails.pointsSpent.toLocaleString()} puan
 
 ${orderDetails.deliveryInfo ? `📝 Teslimat Bilgisi:\n${orderDetails.deliveryInfo}\n\n` : ''}Siparişiniz onaylandı ve teslim edildi!
-
-Yeni siparişler için marketi ziyaret edebilirsiniz! 🛍️
       `.trim()
       break
 
@@ -147,8 +145,6 @@ ${orderDetails.deliveryInfo ? `📝 Not:\n${orderDetails.deliveryInfo}\n\n` : ''
 💰 İade Edilen Puan: ${orderDetails.pointsSpent.toLocaleString()}
 
 ${orderDetails.deliveryInfo ? `📝 İptal Nedeni:\n${orderDetails.deliveryInfo}\n\n` : ''}Puanlarınız hesabınıza iade edildi.
-
-Başka ürünler için marketi ziyaret edebilirsiniz.
       `.trim()
       break
 
@@ -209,14 +205,7 @@ export async function notifyLevelUp(
     return false
   }
 
-  const message = `
-🎊 **Tebrikler!**
-
-${rankDetails.icon} **${rankDetails.name}** rütbesine yükseldin!
-⭐ XP: ${rankDetails.xp.toLocaleString()}
-
-Harika performans! Böyle devam et! 🚀
-  `.trim()
+  const message = `🎊 Tebrikler! ${rankDetails.icon} **${rankDetails.name}** rütbesine yükseldin! (${rankDetails.xp.toLocaleString()} XP) 🚀`
 
   // Grupta mention ile bildirim gönder
   return await sendGroupNotification(
@@ -236,9 +225,7 @@ export async function notifyWheelReset(
 🎡 **Şans Çarkı Hakkın Yenilendi!**
 
 ✨ Yeni günlük çark hakkın: **${dailySpins}**
-🎁 Hemen çevir, muhteşem ödüller kazan!
-
-Bot menüsünden "Şans Çarkı" seçeneğine tıklayarak şansını dene! 🍀
+🎁 Hemen çevir, puanlarını kazan!
   `.trim()
 
   return await sendUserNotification(telegramId, message)
