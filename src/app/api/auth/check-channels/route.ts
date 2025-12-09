@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { checkChannelMembership } from '@/lib/telegram'
+import { checkChannelMembership, getUserProfilePhoto } from '@/lib/telegram'
 
 export async function POST(request: NextRequest) {
   try {
@@ -48,6 +48,38 @@ export async function POST(request: NextRequest) {
           lastName: telegramUser.last_name,
         }
       })
+    }
+
+    // ✨ PROFIL FOTOĞRAFINI ÇEK VE GÜNCELLE (Her giriş yaptığında)
+    console.log('📸 Profil fotoğrafı çekiliyor...')
+    try {
+      const photoUrl = await getUserProfilePhoto(telegramUser.id)
+      if (photoUrl) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            photoUrl,
+            username: telegramUser.username,
+            firstName: telegramUser.first_name,
+            lastName: telegramUser.last_name,
+          }
+        })
+        console.log('✅ Profil fotoğrafı güncellendi:', photoUrl.substring(0, 50) + '...')
+      } else {
+        // Fotoğraf yoksa sadece kullanıcı bilgilerini güncelle
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            username: telegramUser.username,
+            firstName: telegramUser.first_name,
+            lastName: telegramUser.last_name,
+          }
+        })
+        console.log('ℹ️ Profil fotoğrafı bulunamadı, kullanıcı bilgileri güncellendi')
+      }
+    } catch (photoError) {
+      console.error('❌ Profil fotoğrafı alınırken hata:', photoError)
+      // Hata olsa bile devam et
     }
 
     // Ban kontrolü
