@@ -9,6 +9,7 @@ export async function GET() {
           select: {
             firstName: true,
             username: true,
+            photoUrl: true,
           }
         },
         prize: {
