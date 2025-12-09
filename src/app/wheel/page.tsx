@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import BottomNav from '@/components/BottomNav'
 import { Ticket, Gift, TrendingUp, Trophy } from 'lucide-react'
 import { toast } from 'sonner'
@@ -26,6 +26,7 @@ interface RecentWinner {
   user: {
     firstName?: string
     username?: string
+    photoUrl?: string
   }
   prize: {
     name: string
@@ -289,6 +290,7 @@ function WheelContent() {
                 <Card key={winner.id} className="bg-slate-800/80 border-slate-700 p-3 hover:bg-slate-800 transition-colors">
                   <div className="flex items-center gap-3">
                     <Avatar className="w-10 h-10 border-2 border-yellow-400/50">
+                      {winner.user.photoUrl && <AvatarImage src={winner.user.photoUrl} alt={winner.user.firstName || winner.user.username || 'User'} />}
                       <AvatarFallback className="bg-gradient-to-br from-yellow-500 to-orange-500 text-white font-bold text-sm">
                         {winner.user.firstName?.[0] || winner.user.username?.[0] || '?'}
                       </AvatarFallback>
