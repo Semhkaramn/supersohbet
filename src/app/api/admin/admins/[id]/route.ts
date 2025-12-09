@@ -6,14 +6,16 @@ import { requirePermission } from '@/lib/admin-middleware'
 // GET - Tek admin bilgisi
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authCheck = await requirePermission(request, 'canAccessAdmins')
   if (authCheck.error) return authCheck.error
 
+  const { id } = await params
+
   try {
     const admin = await prisma.admin.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         username: true,
@@ -55,10 +57,12 @@ export async function GET(
 // PUT - Admin güncelle
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authCheck = await requirePermission(request, 'canAccessAdmins')
   if (authCheck.error) return authCheck.error
+
+  const { id } = await params
 
   try {
     const body = await request.json()
@@ -66,7 +70,7 @@ export async function PUT(
 
     // Super admin'i güncelleyemezsiniz
     const targetAdmin = await prisma.admin.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!targetAdmin) {
@@ -85,7 +89,7 @@ export async function PUT(
 
     // Sadece permissions'ı güncelle
     const updatedAdmin = await prisma.admin.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         canAccessDashboard: permissions.canAccessDashboard,
         canAccessBroadcast: permissions.canAccessBroadcast,
@@ -137,15 +141,17 @@ export async function PUT(
 // DELETE - Admin sil
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authCheck = await requirePermission(request, 'canAccessAdmins')
   if (authCheck.error) return authCheck.error
 
+  const { id } = await params
+
   try {
     // Super admin'i silemezsiniz
     const targetAdmin = await prisma.admin.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!targetAdmin) {
@@ -171,7 +177,7 @@ export async function DELETE(
     }
 
     await prisma.admin.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({
