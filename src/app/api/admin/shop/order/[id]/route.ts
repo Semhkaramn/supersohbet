@@ -1,34 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getTurkeyDate } from '@/lib/utils'
-
-// Telegram mesaj gönderme fonksiyonu
-async function sendTelegramMessage(telegramId: string, text: string) {
-  try {
-    // Bot token'ı al
-    const botTokenSetting = await prisma.settings.findUnique({
-      where: { key: 'telegram_bot_token' }
-    })
-
-    if (!botTokenSetting?.value) {
-      console.error('Bot token not configured')
-      return
-    }
-
-    const url = `https://api.telegram.org/bot${botTokenSetting.value}/sendMessage`
-    await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: telegramId,
-        text,
-        parse_mode: 'Markdown'
-      })
-    })
-  } catch (error) {
-    console.error('Error sending telegram message:', error)
-  }
-}
+import { notifyOrderStatusChange } from '@/lib/notifications'
 
 export async function PUT(
   request: Request,
@@ -124,82 +97,24 @@ export async function PUT(
       return updatedOrder
     })
 
-    // Sipariş durumu değiştiyse ve bildirim aktifse kullanıcıya mesaj gönder
-    if (status && status !== existingOrder.status) {
-      const notifySetting = await prisma.settings.findUnique({
-        where: { key: 'notify_order_approved' }
-      })
-
-      if (notifySetting?.value === 'true' && order.user.telegramId) {
-        let message = ''
-
-        // Duruma göre mesaj oluştur
-        switch (status) {
-          case 'completed':
-            message = `
-🎉 **Siparişiniz Tamamlandı!**
-
-✅ Ürün: ${order.item.name}
-💰 Fiyat: ${order.pointsSpent.toLocaleString()} puan
-
-${deliveryInfo ? `📝 Teslimat Bilgisi:\n${deliveryInfo}\n\n` : ''}Siparişiniz onaylandı ve teslim edildi!
-
-Yeni siparişler için marketi ziyaret edebilirsiniz! 🛍️
-            `.trim()
-            break
-
-          case 'processing':
-            message = `
-⏳ **Siparişiniz İşleme Alındı**
-
-📦 Ürün: ${order.item.name}
-💰 Fiyat: ${order.pointsSpent.toLocaleString()} puan
-
-${deliveryInfo ? `📝 Not:\n${deliveryInfo}\n\n` : ''}Siparişiniz hazırlanıyor. Lütfen bekleyiniz...
-            `.trim()
-            break
-
-          case 'cancelled':
-            message = `
-❌ **Siparişiniz İptal Edildi**
-
-📦 Ürün: ${order.item.name}
-💰 İade Edilen Puan: ${order.pointsSpent.toLocaleString()}
-
-${deliveryInfo ? `📝 İptal Nedeni:\n${deliveryInfo}\n\n` : ''}Puanlarınız hesabınıza iade edildi.
-
-Başka ürünler için marketi ziyaret edebilirsiniz.
-            `.trim()
-            break
-
-          case 'pending':
-            message = `
-🔔 **Sipariş Durumu Güncellendi**
-
-📦 Ürün: ${order.item.name}
-💰 Fiyat: ${order.pointsSpent.toLocaleString()} puan
-
-Siparişiniz beklemede. En kısa sürede işleme alınacak.
-            `.trim()
-            break
-
-          default:
-            message = `
-🔔 **Sipariş Durumu: ${status}**
-
-📦 Ürün: ${order.item.name}
-💰 Fiyat: ${order.pointsSpent.toLocaleString()} puan
-
-${deliveryInfo ? `📝 Not:\n${deliveryInfo}` : ''}
-            `.trim()
+    // Sipariş durumu değiştiyse kullanıcıya HEMEN bildirim gönder
+    if (status && status !== existingOrder.status && order.user.telegramId) {
+      // Bildirim gönder - AWAIT ile bekle ki hemen gönderilsin
+      const notificationSent = await notifyOrderStatusChange(
+        order.user.id,
+        order.user.telegramId,
+        {
+          itemName: order.item.name,
+          pointsSpent: order.pointsSpent,
+          status: status,
+          deliveryInfo: deliveryInfo
         }
+      )
 
-        // Asenkron olarak mesaj gönder
-        if (message) {
-          sendTelegramMessage(order.user.telegramId, message).catch(err =>
-            console.error('Failed to send order notification:', err)
-          )
-        }
+      if (notificationSent) {
+        console.log(`✅ Sipariş bildirimi gönderildi: ${order.user.telegramId}`)
+      } else {
+        console.log(`⚠️ Sipariş bildirimi gönderilemedi: ${order.user.telegramId}`)
       }
     }
 
