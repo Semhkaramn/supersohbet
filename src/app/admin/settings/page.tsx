@@ -601,8 +601,7 @@ export default function AdminSettingsPage() {
 
               <div>
                 <Label className="text-white text-base">XP için Mesaj Sayısı</Label>
-                <p className="text-xs text-gray-400 mb-1">1 = Her mesajda XP</p>
-                <div className="flex gap-2">
+                <div className="flex gap-2 mt-2">
                   <Input
                     value={messagesForXp?.value || ''}
                     onChange={(e) => handleInputChange('messages_for_xp', e.target.value)}
@@ -745,9 +744,6 @@ export default function AdminSettingsPage() {
         {/* Cloudinary Ayarları */}
         <Card className="bg-white/5 border-white/10 p-6">
           <h2 className="text-xl font-bold text-white mb-4">🖼️ Cloudinary Ayarları</h2>
-          <p className="text-gray-400 text-sm mb-4">
-            Sponsor ve market resimleri için gereklidir. <a href="https://cloudinary.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">cloudinary.com</a>'dan ücretsiz hesap oluşturabilirsiniz.
-          </p>
           <div className="space-y-4">
             <div>
               <Label className="text-white text-base">Cloud Name</Label>
@@ -819,12 +815,9 @@ export default function AdminSettingsPage() {
             <div className="flex-1">
               <h3 className="text-yellow-300 font-semibold mb-1">Önemli Notlar</h3>
               <ul className="text-yellow-200 text-sm space-y-1">
-                <li>• Telegram Bot Token'ı girip kaydettiğinizde bot otomatik olarak başlar ve webhook otomatik kurulur</li>
-                <li>• Kanal/Grup eklerken sadece username (@kanaladi) veya ID girin, isim otomatik çekilir</li>
-                <li>• "Aktif Grup Seçimi" ile sadece belirli bir grupta mesaj dinleme ve puan verme aktif olur</li>
-                <li>• Bakım modu aktifken kullanıcılar bota erişemez ve puan kazanamaz</li>
-                <li>• Cloudinary ayarları Shop ve Sponsor resimlerini yüklemek için gereklidir</li>
-                <li>• Ayarlar değiştirildikten sonra maksimum 1 dakika içinde aktif olur</li>
+                <li>• Ayarları değiştirdikten sonra mutlaka kaydet butonuna basın</li>
+                <li>• Yanlış yapılan ayarlar botun çalışmasını engelleyebilir</li>
+                <li>• Önemli değişiklikler yapmadan önce mevcut ayarları not alın</li>
               </ul>
             </div>
           </div>
