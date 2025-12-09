@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+async function deleteImage(imageUrl: string) {
+  if (!imageUrl) return
+
+  try {
+    await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/upload/delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: imageUrl })
+    })
+  } catch (error) {
+    console.error('Delete image error:', error)
+  }
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -9,6 +23,17 @@ export async function PUT(
     const { id } = await params
     const body = await request.json()
     const { name, description, logoUrl, websiteUrl, category, isActive, order } = body
+
+    // Eski sponsor'ı al
+    const oldSponsor = await prisma.sponsor.findUnique({
+      where: { id },
+      select: { logoUrl: true }
+    })
+
+    // Eğer logo değiştiyse, eski logoyu sil
+    if (logoUrl !== undefined && oldSponsor?.logoUrl && oldSponsor.logoUrl !== logoUrl) {
+      await deleteImage(oldSponsor.logoUrl)
+    }
 
     const updateData: any = {}
     if (name) updateData.name = name
@@ -41,6 +66,18 @@ export async function DELETE(
   try {
     const { id } = await params
 
+    // Önce sponsor'ı al (logoyu silmek için)
+    const sponsor = await prisma.sponsor.findUnique({
+      where: { id },
+      select: { logoUrl: true }
+    })
+
+    // Logoyu sil
+    if (sponsor?.logoUrl) {
+      await deleteImage(sponsor.logoUrl)
+    }
+
+    // Sponsor'ı sil
     await prisma.sponsor.delete({
       where: { id }
     })
