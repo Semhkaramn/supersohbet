@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Plus, Edit, Trash2, Heart, Crown, Upload, X } from 'lucide-react'
+import { ArrowLeft, Plus, Edit, Trash2, Heart, Crown, Upload, X, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
@@ -34,6 +34,10 @@ export default function AdminSponsorsPage() {
   const [editingSponsor, setEditingSponsor] = useState<Sponsor | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+
+  // Search and filter states
+  const [searchTerm, setSearchTerm] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState<string>('all')
 
   const [formData, setFormData] = useState({
     name: '',
@@ -270,6 +274,14 @@ export default function AdminSponsorsPage() {
     )
   }
 
+  // Filter sponsors based on search and category
+  const filteredSponsors = sponsors.filter(sponsor => {
+    const matchesSearch = sponsor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (sponsor.description && sponsor.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    const matchesCategory = categoryFilter === 'all' || sponsor.category === categoryFilter
+    return matchesSearch && matchesCategory
+  })
+
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-5xl mx-auto">
@@ -297,15 +309,41 @@ export default function AdminSponsorsPage() {
           </Button>
         </div>
 
+        {/* Search and Filter */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Sponsor ara (isim, açıklama)..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+            />
+          </div>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-full md:w-[200px] bg-white/5 border-white/10 text-white">
+              <SelectValue placeholder="Kategori" />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-900 border-white/20">
+              <SelectItem value="all">Tümü</SelectItem>
+              <SelectItem value="vip">VIP Sponsorlar</SelectItem>
+              <SelectItem value="normal">Normal Sponsorlar</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Sponsors Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {sponsors.length === 0 ? (
+          {filteredSponsors.length === 0 ? (
             <Card className="col-span-2 bg-white/5 border-white/10 p-12 text-center">
               <Heart className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-              <p className="text-gray-400">Henüz sponsor eklenmemiş</p>
+              <p className="text-gray-400">
+                {sponsors.length === 0 ? 'Henüz sponsor eklenmemiş' : 'Arama kriterlerine uygun sponsor bulunamadı'}
+              </p>
             </Card>
           ) : (
-            sponsors.map((sponsor) => (
+            filteredSponsors.map((sponsor) => (
               <Card key={sponsor.id} className="bg-white/5 border-white/10 p-4">
                 <div className="flex gap-4">
                   {sponsor.logoUrl && (
