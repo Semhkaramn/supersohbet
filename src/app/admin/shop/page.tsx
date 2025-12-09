@@ -895,7 +895,7 @@ export default function AdminShopPage() {
               </p>
             </div>
 
-            {formData.category === 'Sponsor' && (
+            {formData.category.toLowerCase() === 'sponsor' && (
               <div>
                 <Label htmlFor="sponsorId" className="text-white">Sponsor Seç</Label>
                 <Select
