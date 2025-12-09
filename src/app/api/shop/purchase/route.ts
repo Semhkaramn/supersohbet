@@ -5,7 +5,7 @@ import type { Prisma } from '@prisma/client'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, itemId } = body
+    const { userId, itemId, walletAddress, sponsorInfo } = body
 
     if (!userId || !itemId) {
       return NextResponse.json(
@@ -16,8 +16,14 @@ export async function POST(request: NextRequest) {
 
     // Kullanıcı ve ürünü getir
     const [user, item] = await Promise.all([
-      prisma.user.findUnique({ where: { id: userId } }),
-      prisma.shopItem.findUnique({ where: { id: itemId } })
+      prisma.user.findUnique({
+        where: { id: userId },
+        include: { sponsorInfos: true }
+      }),
+      prisma.shopItem.findUnique({
+        where: { id: itemId },
+        include: { sponsor: true }
+      })
     ])
 
     if (!user || !item) {
@@ -32,6 +38,36 @@ export async function POST(request: NextRequest) {
         { error: 'Item is not available' },
         { status: 400 }
       )
+    }
+
+    // Nakit kategorisi kontrolü
+    if (item.category === 'Nakit') {
+      if (!walletAddress && !user.trc20WalletAddress) {
+        return NextResponse.json(
+          { error: 'Nakit kategorisindeki ürünler için TRC20 cüzdan adresi gereklidir. Lütfen profilinizden cüzdan adresinizi ekleyin.' },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Sponsor kategorisi kontrolü
+    if (item.category === 'Sponsor' && item.sponsorId) {
+      const userHasSponsorInfo = user.sponsorInfos.some(
+        info => info.sponsorId === item.sponsorId
+      )
+
+      if (!sponsorInfo && !userHasSponsorInfo) {
+        return NextResponse.json(
+          {
+            error: 'Bu ürün için sponsor bilgisi gereklidir. Lütfen sponsor bilginizi ekleyin.',
+            requiresSponsorInfo: true,
+            sponsorId: item.sponsorId,
+            sponsorName: item.sponsor?.name,
+            identifierType: item.sponsor?.identifierType
+          },
+          { status: 400 }
+        )
+      }
     }
 
     if (user.points < item.price) {
@@ -81,12 +117,32 @@ export async function POST(request: NextRequest) {
         })
       }
 
+      // Cüzdan adresini belirle (parametre olarak gelmediyse kullanıcının kaydedilmiş adresini kullan)
+      const finalWalletAddress = item.category === 'Nakit'
+        ? (walletAddress || user.trc20WalletAddress)
+        : null
+
+      // Sponsor bilgisini belirle
+      let finalSponsorInfo = null
+      if (item.category === 'Sponsor' && item.sponsorId) {
+        if (sponsorInfo) {
+          finalSponsorInfo = sponsorInfo
+        } else {
+          const userSponsorInfo = user.sponsorInfos.find(
+            info => info.sponsorId === item.sponsorId
+          )
+          finalSponsorInfo = userSponsorInfo?.identifier || null
+        }
+      }
+
       // Satın alma kaydı oluştur
       const purchase = await tx.userPurchase.create({
         data: {
           userId,
           itemId,
-          pointsSpent: item.price
+          pointsSpent: item.price,
+          walletAddress: finalWalletAddress,
+          sponsorInfo: finalSponsorInfo
         }
       })
 
