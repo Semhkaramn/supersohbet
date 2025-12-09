@@ -24,6 +24,73 @@ export async function getTelegramBot(): Promise<TelegramBot> {
   return bot
 }
 
+/**
+ * Telegram mesaj gönderme fonksiyonu - TÜM UYGULAMA İÇİN ORTAK
+ * Bu fonksiyon AWAIT EDİLMELİDİR!
+ * @param chatId - Telegram chat ID (string veya number)
+ * @param text - Gönderilecek mesaj
+ * @param parseMode - Parse modu (varsayılan: Markdown)
+ * @param replyMarkup - Klavye veya inline keyboard (opsiyonel)
+ * @returns Başarılı ise true, değilse false
+ */
+export async function sendTelegramMessage(
+  chatId: string | number,
+  text: string,
+  parseMode: 'Markdown' | 'HTML' = 'Markdown',
+  replyMarkup?: any
+): Promise<boolean> {
+  try {
+    // Bot token'ı al
+    const botTokenSetting = await prisma.settings.findUnique({
+      where: { key: 'telegram_bot_token' }
+    })
+
+    if (!botTokenSetting?.value) {
+      console.error('❌ [Telegram] Bot token bulunamadı!')
+      return false
+    }
+
+    const url = `https://api.telegram.org/bot${botTokenSetting.value}/sendMessage`
+
+    const requestBody: any = {
+      chat_id: chatId,
+      text,
+      parse_mode: parseMode
+    }
+
+    if (replyMarkup) {
+      requestBody.reply_markup = replyMarkup
+    }
+
+    console.log(`📤 [Telegram] Mesaj gönderiliyor: chatId=${chatId}, uzunluk=${text.length}`)
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody)
+    })
+
+    const data = await response.json()
+
+    if (data.ok) {
+      console.log(`✅ [Telegram] Mesaj başarıyla gönderildi: chatId=${chatId}`)
+      return true
+    } else {
+      console.error(`❌ [Telegram] Mesaj gönderilemedi: chatId=${chatId}`, {
+        error_code: data.error_code,
+        description: data.description
+      })
+      return false
+    }
+  } catch (error: any) {
+    console.error(`❌ [Telegram] Mesaj gönderim hatası: chatId=${chatId}`, {
+      error: error?.message || error,
+      stack: error?.stack
+    })
+    return false
+  }
+}
+
 // Menu button'u ayarla (mesaj yazma alanının yanındaki buton)
 export async function setupMenuButton(webAppUrl: string): Promise<void> {
   try {
