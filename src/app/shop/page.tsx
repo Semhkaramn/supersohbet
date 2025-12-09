@@ -89,19 +89,28 @@ function ShopContent() {
     }
   }
 
-  async function loadPurchases() {
-    if (!userId || purchases.length > 0) return
+  async function loadPurchases(silent = false) {
+    if (!userId) return
 
-    setLoadingPurchases(true)
+    // Sessiz güncelleme değilse loading göster
+    if (!silent) {
+      setLoadingPurchases(true)
+    }
+
     try {
       const response = await fetch(`/api/user/${userId}/purchases`)
       const data = await response.json()
       setPurchases(data.purchases || [])
     } catch (error) {
       console.error('Error loading purchases:', error)
-      toast.error('Siparişler yüklenirken hata oluştu')
+      // Sessiz güncellemede hata mesajı gösterme
+      if (!silent) {
+        toast.error('Siparişler yüklenirken hata oluştu')
+      }
     } finally {
-      setLoadingPurchases(false)
+      if (!silent) {
+        setLoadingPurchases(false)
+      }
     }
   }
 
@@ -131,7 +140,7 @@ function ShopContent() {
       if (data.success) {
         toast.success('Satın alma başarılı! 🎉')
         loadData()
-        setPurchases([]) // Reset purchases to reload
+        loadPurchases(true) // Siparişleri sessizce güncelle
       } else {
         toast.error(data.error || 'Satın alma başarısız')
       }
@@ -219,7 +228,7 @@ function ShopContent() {
       <div className="max-w-2xl mx-auto px-4">
         <Tabs defaultValue="products" className="w-full" onValueChange={(value) => {
           if (value === 'orders') {
-            loadPurchases()
+            loadPurchases(true) // Sessizce güncelle
           }
         }}>
           <TabsList className="grid w-full grid-cols-2 bg-white/5 border-white/10 mb-4">
