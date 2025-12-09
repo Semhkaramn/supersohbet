@@ -186,6 +186,9 @@ export default function AdminSettingsPage() {
                 <li>• Ayarlar değiştirildikten sonra maksimum 1 dakika içinde aktif olur</li>
                 <li>• Bakım modu aktifken kullanıcılar puan kazanamaz</li>
                 <li>• messages_for_xp = 1 her mesajda, 2 her 2 mesajda bir XP verir</li>
+                <li className="text-blue-200 font-semibold mt-2">📤 Upload URL: Hostinger'deki upload.php dosyanızın tam URL'sini girin (örn: https://siteniz.com/uploads/upload.php)</li>
+                <li className="text-blue-200">• Boş bırakılırsa resimler yerel sunucuya yüklenir</li>
+                <li className="text-blue-200">• Upload URL girildiğinde tüm resimler otomatik olarak o sunucuya yüklenecektir</li>
               </ul>
             </div>
           </div>
