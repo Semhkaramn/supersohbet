@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getTurkeyDate } from '@/lib/utils'
+import { notifyLevelUp } from '@/lib/notifications'
 
 // Ayarları cache'e al (performans için)
 let settingsCache: Record<string, string> = {}
@@ -463,23 +464,21 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
             data: { rankId: currentRank.id }
           })
 
-          // Seviye atlama bildirimi - Ayar aktifse grupta bildirim gönder
-          const notifyLevelUp = getSetting('notify_level_up', 'false')
-          if (notifyLevelUp === 'true') {
-            const levelUpMessage = `
-🎊 **Tebrikler ${firstName || username || 'Kullanıcı'}!**
-
-${currentRank.icon} **${currentRank.name}** rütbesine yükseldin!
-⭐ XP: ${updatedUser.xp.toLocaleString()}
-
-Harika performans! Böyle devam et! 🚀
-            `.trim()
-
-            // Grupta bildirim gönder (activity_group_id'de)
-            const activityGroupId = getSetting('activity_group_id', '')
-            if (activityGroupId) {
-              await sendTelegramMessage(parseInt(activityGroupId), levelUpMessage)
+          // Seviye atlama bildirimi - SADECE GRUPTA, MENTION İLE
+          const notificationSent = await notifyLevelUp(
+            userId,
+            firstName || username || 'Kullanıcı',
+            {
+              icon: currentRank.icon,
+              name: currentRank.name,
+              xp: updatedUser.xp
             }
+          )
+
+          if (notificationSent) {
+            console.log(`✅ Rütbe atlaması bildirimi gönderildi: ${userId} -> ${currentRank.name}`)
+          } else {
+            console.log(`⚠️ Rütbe atlaması bildirimi gönderilemedi: ${userId}`)
           }
         }
       }
