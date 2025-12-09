@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ArrowLeft, Plus, Edit, Trash2, ShoppingCart, Package, Clock, CheckCircle, XCircle, AlertCircle, Upload, X } from 'lucide-react'
@@ -66,9 +67,13 @@ export default function AdminShopPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [orderDialogOpen, setOrderDialogOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<ShopItem | null>(null)
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
-  const [statusFilter, setStatusFilter] = useState('all')
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null)
+  const [statusFilter, setStatusFilter] = useState<string>('all')
   const [activeTab, setActiveTab] = useState('products')
+  const [confirmItemOpen, setConfirmItemOpen] = useState(false)
+  const [confirmOrderOpen, setConfirmOrderOpen] = useState(false)
+  const [deleteItemId, setDeleteItemId] = useState<string | null>(null)
+  const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -175,7 +180,7 @@ export default function AdminShopPage() {
   }
 
   function openOrderDialog(order: Order) {
-    setSelectedOrder(order)
+    setEditingOrder(order)
     setOrderFormData({
       status: order.status,
       deliveryInfo: order.deliveryInfo || ''
@@ -282,10 +287,10 @@ export default function AdminShopPage() {
   async function handleOrderUpdate(e: React.FormEvent) {
     e.preventDefault()
 
-    if (!selectedOrder) return
+    if (!editingOrder) return
 
     try {
-      const response = await fetch(`/api/admin/shop/order/${selectedOrder.id}`, {
+      const response = await fetch(`/api/admin/shop/order/${editingOrder.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -310,13 +315,18 @@ export default function AdminShopPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Bu ürünü silmek istediğinizden emin misiniz?')) return
+    setDeleteItemId(id)
+    setConfirmItemOpen(true)
+  }
+
+  async function confirmDeleteItem() {
+    if (!deleteItemId) return
 
     try {
       // Önce ürünü bul ve resminin public_id'sini al
-      const item = items.find(i => i.id === id)
+      const item = items.find(i => i.id === deleteItemId)
 
-      const response = await fetch(`/api/admin/shop/${id}`, {
+      const response = await fetch(`/api/admin/shop/${deleteItemId}`, {
         method: 'DELETE'
       })
 
@@ -348,14 +358,22 @@ export default function AdminShopPage() {
     } catch (error) {
       console.error('Delete error:', error)
       toast.error('Bir hata oluştu')
+    } finally {
+      setConfirmItemOpen(false)
+      setDeleteItemId(null)
     }
   }
 
   async function handleDeleteOrder(id: string) {
-    if (!confirm('Bu siparişi silmek istediğinizden emin misiniz?')) return
+    setDeleteOrderId(id)
+    setConfirmOrderOpen(true)
+  }
+
+  async function confirmDeleteOrder() {
+    if (!deleteOrderId) return
 
     try {
-      const response = await fetch(`/api/admin/shop/order/${id}`, {
+      const response = await fetch(`/api/admin/shop/order/${deleteOrderId}`, {
         method: 'DELETE'
       })
 
@@ -370,6 +388,9 @@ export default function AdminShopPage() {
     } catch (error) {
       console.error('Delete order error:', error)
       toast.error('Bir hata oluştu')
+    } finally {
+      setConfirmOrderOpen(false)
+      setDeleteOrderId(null)
     }
   }
 
@@ -878,13 +899,13 @@ export default function AdminShopPage() {
           <DialogHeader>
             <DialogTitle className="text-white">Sipariş Düzenle</DialogTitle>
           </DialogHeader>
-          {selectedOrder && (
+          {editingOrder && (
             <form onSubmit={handleOrderUpdate} className="space-y-4">
               <div className="bg-white/5 p-3 rounded">
                 <div className="text-sm text-gray-400">Ürün</div>
-                <div className="text-white font-semibold">{selectedOrder.item.name}</div>
+                <div className="text-white font-semibold">{editingOrder.item.name}</div>
                 <div className="text-sm text-gray-400 mt-1">
-                  Müşteri: {selectedOrder.user.firstName || selectedOrder.user.username}
+                  Müşteri: {editingOrder.user.firstName || editingOrder.user.username}
                 </div>
               </div>
 
@@ -935,6 +956,24 @@ export default function AdminShopPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Confirm Delete Item Dialog */}
+      <ConfirmDialog
+        open={confirmItemOpen}
+        onOpenChange={setConfirmItemOpen}
+        title="Ürün Silme"
+        description="Bu ürünü silmek istediğinize emin misiniz?"
+        onConfirm={confirmDeleteItem}
+      />
+
+      {/* Confirm Delete Order Dialog */}
+      <ConfirmDialog
+        open={confirmOrderOpen}
+        onOpenChange={setConfirmOrderOpen}
+        title="Sipariş Silme"
+        description="Bu siparişi silmek istediğinize emin misiniz?"
+        onConfirm={confirmDeleteOrder}
+      />
     </div>
   )
 }
