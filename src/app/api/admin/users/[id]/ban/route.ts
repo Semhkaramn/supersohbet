@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getTurkeyDate } from '@/lib/utils'
 
 export async function POST(
   request: NextRequest,
@@ -14,9 +15,9 @@ export async function POST(
         where: { id: userId },
         data: {
           isBanned: true,
-          banReason: reason || 'Belirtilmemiş',
-          bannedAt: new Date(),
-          bannedBy: adminUsername || 'Admin'
+          banReason: reason || null,
+          bannedAt: getTurkeyDate(), // Türkiye saati
+          bannedBy: adminUsername || null
         }
       })
 
