@@ -435,7 +435,7 @@ export default function AdminSponsorsPage() {
                     <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
                     <Input
                       type="file"
-                      accept="image/*,video/webm"
+                      accept="image/png,image/jpeg,image/jpg,image/gif,image/svg+xml,image/webp,video/webm"
                       onChange={handleImageUpload}
                       disabled={uploadingImage}
                       className="bg-white/5 border-white/10 text-white"
