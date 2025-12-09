@@ -103,6 +103,7 @@ export default function AdminSettingsPage() {
   const categories = [
     { key: 'general', label: 'Genel', icon: '⚙️' },
     { key: 'telegram', label: 'Telegram', icon: '📱' },
+    { key: 'cloudinary', label: 'Cloudinary', icon: '🖼️' },
     { key: 'points', label: 'Puan & XP', icon: '⭐' },
     { key: 'referral', label: 'Referans', icon: '👥' },
     { key: 'limits', label: 'Kısıtlamalar', icon: '🚫' },
@@ -128,7 +129,7 @@ export default function AdminSettingsPage() {
         </div>
 
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 bg-white/10">
+          <TabsList className="grid w-full grid-cols-7 bg-white/10">
             {categories.map(cat => (
               <TabsTrigger key={cat.key} value={cat.key} className="text-white">
                 {cat.icon} {cat.label}
@@ -183,6 +184,8 @@ export default function AdminSettingsPage() {
               <ul className="text-yellow-200 text-sm space-y-1">
                 <li>• Telegram Bot Token'ı girip kaydettiğinizde bot otomatik olarak başlar</li>
                 <li>• Webhook otomatik olarak kurulur, manuel ayar gerekmez</li>
+                <li>• Cloudinary hesabı cloudinary.com üzerinden ücretsiz oluşturabilirsiniz</li>
+                <li>• Cloudinary ayarları Shop ve Sponsor resimlerini yüklemek için gereklidir</li>
                 <li>• Ayarlar değiştirildikten sonra maksimum 1 dakika içinde aktif olur</li>
                 <li>• Bakım modu aktifken kullanıcılar puan kazanamaz</li>
                 <li>• messages_for_xp = 1 her mesajda, 2 her 2 mesajda bir XP verir</li>
