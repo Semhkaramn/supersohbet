@@ -70,6 +70,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Identifier'ı trim et
+    const trimmedIdentifier = identifier.trim();
+
+    if (!trimmedIdentifier) {
+      return NextResponse.json(
+        { error: "Bilgi boş olamaz" },
+        { status: 400 }
+      );
+    }
+
     const user = await prisma.user.findUnique({
       where: { telegramId },
       select: { id: true },
@@ -94,6 +104,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Identifier tipine göre validasyon
+    if (sponsor.identifierType === "id") {
+      // ID ise sadece sayı kabul et
+      if (!/^\d+$/.test(trimmedIdentifier)) {
+        return NextResponse.json(
+          { error: "ID sadece sayılardan oluşmalıdır" },
+          { status: 400 }
+        );
+      }
+    } else if (sponsor.identifierType === "email") {
+      // Email ise email formatı kontrol et
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(trimmedIdentifier)) {
+        return NextResponse.json(
+          { error: "Geçerli bir email adresi giriniz" },
+          { status: 400 }
+        );
+      }
+    }
+
     // Upsert: Varsa güncelle, yoksa oluştur
     const sponsorInfo = await prisma.userSponsorInfo.upsert({
       where: {
@@ -103,12 +133,12 @@ export async function POST(request: NextRequest) {
         },
       },
       update: {
-        identifier,
+        identifier: trimmedIdentifier,
       },
       create: {
         userId: user.id,
         sponsorId,
-        identifier,
+        identifier: trimmedIdentifier,
       },
       include: {
         sponsor: {
