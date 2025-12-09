@@ -51,6 +51,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // İzin verilen dosya türleri
+    const allowedTypes = [
+      'image/png',
+      'image/jpeg',
+      'image/jpg',
+      'image/gif',
+      'image/svg+xml',
+      'image/webp',
+      'video/webm'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json(
+        { error: `Desteklenmeyen dosya türü: ${file.type}. İzin verilen türler: PNG, JPG, GIF, SVG, WebP, WebM` },
+        { status: 400 }
+      );
+    }
+
+    // Dosya boyutu kontrolü (5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        { error: 'Dosya boyutu 5MB\'dan küçük olmalıdır' },
+        { status: 400 }
+      );
+    }
+
     // Dosyayı buffer'a çevir
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
@@ -58,10 +85,17 @@ export async function POST(request: NextRequest) {
     // Base64'e çevir
     const base64File = `data:${file.type};base64,${buffer.toString('base64')}`;
 
-    // Cloudinary'e yükle
+    // Cloudinary'e yükle - SVG ve video için doğru resource_type belirleme
+    let resourceType: 'image' | 'video' | 'auto' = 'auto';
+    if (file.type === 'video/webm') {
+      resourceType = 'video';
+    } else if (file.type.startsWith('image/')) {
+      resourceType = 'image';
+    }
+
     const result = await cloudinary.uploader.upload(base64File, {
       folder: folder,
-      resource_type: 'auto',
+      resource_type: resourceType,
     });
 
     return NextResponse.json({
