@@ -12,10 +12,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { message, imageUrl, buttons, sendToAll, userIds } = body
 
-    if (!message || !message.trim()) {
+    // At least one content should exist: message or image
+    if ((!message || !message.trim()) && !imageUrl) {
       return NextResponse.json({
         success: false,
-        error: 'Mesaj metni gerekli'
+        error: 'En az bir mesaj metni veya görsel gerekli'
       }, { status: 400 })
     }
 
@@ -93,24 +94,32 @@ export async function POST(request: NextRequest) {
     // Send messages to users
     for (const user of targetUsers) {
       try {
-        // Replace tags in message
-        let personalizedMessage = message
-          .replace(/{username}/g, user.username || user.firstName || 'Kullanıcı')
-          .replace(/{firstname}/g, user.firstName || user.username || 'Kullanıcı')
-          .replace(/{points}/g, user.points.toString())
-          .replace(/{rank}/g, user.rank?.name || 'Rütbesiz')
+        // Replace tags in message (with @ prefix for username)
+        let personalizedMessage = ''
+        if (message && message.trim()) {
+          personalizedMessage = message
+            .replace(/{username}/g, user.username ? `@${user.username}` : (user.firstName || 'Kullanıcı'))
+            .replace(/{firstname}/g, user.firstName || user.username || 'Kullanıcı')
+            .replace(/{points}/g, user.points.toString())
+            .replace(/{rank}/g, user.rank?.name || 'Rütbesiz')
+        }
 
         const chatId = parseInt(user.telegramId)
 
-        if (imageUrl) {
-          // Send photo with caption
+        if (imageUrl && personalizedMessage) {
+          // Send photo with caption (text + image)
           await bot.sendPhoto(chatId, imageUrl, {
             caption: personalizedMessage,
             parse_mode: 'HTML',
             reply_markup: replyMarkup
           })
-        } else {
-          // Send text message
+        } else if (imageUrl) {
+          // Send photo only (no caption)
+          await bot.sendPhoto(chatId, imageUrl, {
+            reply_markup: replyMarkup
+          })
+        } else if (personalizedMessage) {
+          // Send text message only
           await bot.sendMessage(chatId, personalizedMessage, {
             parse_mode: 'HTML',
             reply_markup: replyMarkup
