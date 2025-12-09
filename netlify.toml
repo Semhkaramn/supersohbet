@@ -2,11 +2,8 @@
   remote_images = ["https://source.unsplash.com/.*", "https://images.unsplash.com/.*", "https://ext.same-assets.com/.*", "https://ugc.same-assets.com/.*"]
 
 [build]
-  command = "bunx prisma generate && bunx prisma db push --accept-data-loss && bun run db:seed && bun run build"
+  command = "bunx prisma db push --accept-data-loss && bunx prisma generate && bun run build"
   publish = ".next"
-
-[build.environment]
-  NODE_VERSION = "20"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
