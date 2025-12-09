@@ -1,0 +1,345 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Sistem ayarları
+model Settings {
+  id                    String   @id @default(cuid())
+  key                   String   @unique
+  value                 String
+  description           String?
+  category              String   @default("general")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([category])
+  @@index([key]) // ✅ OPTIMIZASYON: key için index
+}
+
+// Kullanıcı modeli
+model User {
+  id               String          @id @default(cuid())
+  telegramId       String          @unique
+  username         String?
+  firstName        String?
+  lastName         String?
+  photoUrl         String?
+  points           Int             @default(0)
+  xp               Int             @default(0)
+  rankId           String?
+  rank             Rank?           @relation(fields: [rankId], references: [id])
+  dailySpinsLeft   Int             @default(1)
+  lastSpinReset    DateTime        @default(now())
+  lastMessageAt    DateTime?
+  messageCount     Int             @default(0)
+  totalMessages    Int             @default(0)
+
+  // Ban sistemi
+  isBanned         Boolean         @default(false)
+  banReason        String?
+  bannedAt         DateTime?
+  bannedBy         String?         // Admin kullanıcı adı
+
+  // Referans sistemi
+  referralCode     String?         @unique // Kullanıcının kendi referans kodu
+  referredById     String?         // Bu kullanıcıyı davet eden kişinin ID'si
+  referredBy       User?           @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals        User[]          @relation("UserReferrals") // Bu kullanıcının davet ettikleri
+  totalReferrals   Int             @default(0) // Toplam davet sayısı
+  referralPoints   Int             @default(0) // Referanslardan kazanılan puanlar
+
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  channelJoins     UserChannelJoin[]
+  purchases        UserPurchase[]
+  wheelSpins       WheelSpin[]
+  messages         MessageStats[]
+  pointHistory     PointHistory[]
+
+  @@index([telegramId])
+  @@index([referralCode])
+  @@index([referredById])
+  @@index([isBanned])
+  @@index([points, xp]) // ✅ OPTIMIZASYON: Leaderboard sorguları için composite index
+  @@index([xp, points]) // ✅ OPTIMIZASYON: XP leaderboard için composite index
+}
+
+// Tüm mesajlar - istatistikler için (KURALLARDAN BAĞIMSIZ)
+model MessageStats {
+  id               String          @id @default(cuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content          String?
+  messageLength    Int             @default(0)
+  earnedReward     Boolean         @default(false) // Bu mesaj ödül kazandırdı mı?
+  createdAt        DateTime        @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+}
+
+// Zorunlu kanallar
+model RequiredChannel {
+  id               String          @id @default(cuid())
+  channelId        String          @unique // @channel_username veya -100123456789
+  channelName      String
+  channelLink      String
+  channelType      String          @default("channel") // "channel" veya "group"
+  isActive         Boolean         @default(true)
+  order            Int             @default(0) // Gösterim sırası
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  userJoins        UserChannelJoin[]
+
+  @@index([isActive])
+  @@index([channelType])
+}
+
+// Kullanıcı kanal katılım takibi
+model UserChannelJoin {
+  id               String          @id @default(cuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channelId        String
+  channel          RequiredChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  joinedAt         DateTime        @default(now())
+
+  @@unique([userId, channelId])
+  @@index([userId])
+}
+
+// Rütbe sistemi
+model Rank {
+  id               String          @id @default(cuid())
+  name             String          @unique
+  minXp            Int             @unique
+  icon             String          @default("⭐")
+  color            String          @default("#FFD700")
+  order            Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  users            User[]
+
+  @@index([minXp])
+}
+
+// Market ürünleri
+model ShopItem {
+  id               String          @id @default(cuid())
+  name             String          @unique
+  description      String?
+  price            Int             // Puan cinsinden
+  imageUrl         String?
+  imagePublicId    String?         // Cloudinary public ID - resim silinirken kullanılacak
+  category         String          @default("Genel")
+  stock            Int?            // null = sınırsız
+  purchaseLimit    Int?            // Her kullanıcı kaç kez satın alabilir (null = sınırsız)
+  isActive         Boolean         @default(true)
+  order            Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  purchases        UserPurchase[]
+
+  @@index([isActive, category])
+}
+
+// Kullanıcı satın alımları
+model UserPurchase {
+  id               String          @id @default(cuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemId           String
+  item             ShopItem        @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  pointsSpent      Int
+  status           String          @default("pending") // pending, processing, completed, cancelled
+  deliveryInfo     String?         // Teslimat bilgileri, notlar
+  processedBy      String?         // İşlemi yapan admin
+  processedAt      DateTime?       // İşlenme tarihi
+  purchasedAt      DateTime        @default(now())
+
+  @@index([userId])
+  @@index([status])
+  @@index([purchasedAt])
+}
+
+// Çark ödülleri
+model WheelPrize {
+  id               String          @id @default(cuid())
+  name             String          @unique
+  points           Int
+  probability      Float           @default(1.0) // Çıkma olasılığı (1.0 = eşit)
+  color            String          @default("#FF6B6B")
+  isActive         Boolean         @default(true)
+  order            Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  wheelSpins       WheelSpin[]
+
+  @@index([isActive])
+}
+
+// Çark çevirme geçmişi
+model WheelSpin {
+  id               String          @id @default(cuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prizeId          String
+  prize            WheelPrize      @relation(fields: [prizeId], references: [id], onDelete: Cascade)
+  pointsWon        Int
+  spunAt           DateTime        @default(now())
+
+  @@index([userId])
+}
+
+// Puan geçmişi
+model PointHistory {
+  id               String          @id @default(cuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount           Int             // Pozitif = kazanç, Negatif = kayıp
+  type             String          // "admin_add", "admin_remove", "wheel_win", "shop_purchase", "referral_reward", "message_reward" vs
+  description      String          // Detaylı açıklama
+  relatedId        String?         // İlgili kaydın ID'si (wheelSpinId, purchaseId vs)
+  adminUsername    String?         // İşlemi yapan admin (varsa)
+  createdAt        DateTime        @default(now())
+
+  @@index([userId, createdAt])
+  @@index([type])
+}
+
+// Sponsorlar
+model Sponsor {
+  id               String          @id @default(cuid())
+  name             String
+  description      String?
+  logoUrl          String?
+  logoPublicId     String?         // Cloudinary public ID - resim silinirken kullanılacak
+  websiteUrl       String?
+  category         String          @default("normal") // "vip" veya "normal"
+  isActive         Boolean         @default(true)
+  order            Int             @default(0)
+  clicks           Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([isActive])
+  @@index([category])
+}
+
+// Görevler
+model Task {
+  id               String          @id @default(cuid())
+  title            String
+  description      String?
+
+  // Görev kategorisi
+  category         String          @default("daily") // "daily" (günlük), "weekly" (haftalık), "permanent" (kalıcı)
+
+  // Görev tipi
+  taskType         String          @default("send_messages") // "invite_users" (üye davet), "send_messages" (mesaj gönder), "spin_wheel" (çark çevir), "earn_points" (puan kazan), "reach_level" (seviye ulaş)
+
+  // Hedef ve gereksinimler
+  targetValue      Int             @default(1) // Hedef değer (örn: 5 mesaj, 3 davet)
+
+  // Ödüller
+  xpReward         Int             @default(0)
+  pointsReward     Int             @default(0)
+
+  // Süre ayarları (opsiyonel)
+  duration         Int?            // Süre (saat cinsinden, null = süresiz)
+  expiresAt        DateTime?       // Son geçerlilik tarihi
+
+  // Limit
+  completionLimit  Int?            // Her kullanıcı bu görevi kaç kez tamamlayabilir (null = sınırsız)
+
+  // Durum
+  isActive         Boolean         @default(true)
+  order            Int             @default(0)
+
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  completions      TaskCompletion[]
+
+  @@index([category, isActive])
+  @@index([taskType])
+}
+
+// Görev tamamlanma kayıtları
+model TaskCompletion {
+  id               String          @id @default(cuid())
+  userId           String
+  taskId           String
+  task             Task            @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  // İlerleme takibi
+  currentProgress  Int             @default(0) // Mevcut ilerleme
+  targetProgress   Int             @default(1) // Hedef ilerleme
+  isCompleted      Boolean         @default(false)
+
+  // Ödül bilgisi
+  rewardClaimed    Boolean         @default(false)
+  claimedAt        DateTime?
+
+  // Tarihler
+  startedAt        DateTime        @default(now())
+  completedAt      DateTime?
+  expiresAt        DateTime?       // Bu görevin kullanıcı için son geçerlilik tarihi
+
+  @@unique([userId, taskId])
+  @@index([userId])
+  @@index([userId, isCompleted])
+}
+
+// Referans milestone'ları
+model ReferralMilestone {
+  id               String          @id @default(cuid())
+  requiredCount    Int             @unique // Gerekli referans sayısı
+  rewardPoints     Int             // Ödül puanı
+  name             String          // Örn: "5 Üye"
+  description      String?         // Açıklama
+  order            Int             @default(0)
+  isActive         Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  completions      UserMilestoneCompletion[]
+
+  @@index([isActive, order])
+}
+
+// Kullanıcıların tamamladığı milestone'lar
+model UserMilestoneCompletion {
+  id               String          @id @default(cuid())
+  userId           String
+  milestoneId      String
+  milestone        ReferralMilestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  completedAt      DateTime        @default(now())
+  rewardClaimed    Boolean         @default(false)
+
+  @@unique([userId, milestoneId])
+  @@index([userId])
+}
+
+// Admin kullanıcılar
+model Admin {
+  id               String          @id @default(cuid())
+  username         String          @unique
+  passwordHash     String
+  telegramId       String?         @unique
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([username])
+}
