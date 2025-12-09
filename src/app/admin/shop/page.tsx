@@ -257,7 +257,10 @@ export default function AdminShopPage() {
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          imagePublicId: imagePublicId
+        })
       })
 
       const data = await response.json()
