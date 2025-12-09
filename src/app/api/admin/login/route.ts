@@ -42,7 +42,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       token,
-      adminId: admin.id
+      adminId: admin.id,
+      username: admin.username,
+      isSuperAdmin: admin.isSuperAdmin
     })
   } catch (error) {
     console.error('Admin login error:', error)
