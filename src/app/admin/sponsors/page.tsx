@@ -21,6 +21,7 @@ interface Sponsor {
   logoUrl?: string
   websiteUrl?: string
   category: string
+  identifierType: string
   isActive: boolean
   order: number
   clicks: number
@@ -45,6 +46,7 @@ export default function AdminSponsorsPage() {
     logoUrl: '',
     websiteUrl: '',
     category: 'normal',
+    identifierType: 'username',
     order: 0
   })
 
@@ -82,6 +84,7 @@ export default function AdminSponsorsPage() {
         logoUrl: sponsor.logoUrl || '',
         websiteUrl: sponsor.websiteUrl || '',
         category: sponsor.category,
+        identifierType: sponsor.identifierType || 'username',
         order: sponsor.order
       })
     } else {
@@ -92,6 +95,7 @@ export default function AdminSponsorsPage() {
         logoUrl: '',
         websiteUrl: '',
         category: 'normal',
+        identifierType: 'username',
         order: sponsors.length
       })
     }
@@ -522,6 +526,26 @@ export default function AdminSponsorsPage() {
                   <SelectItem value="vip" className="text-white">VIP</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="identifierType" className="text-white">Kullanıcıdan İstenecek Bilgi</Label>
+              <Select
+                value={formData.identifierType}
+                onValueChange={(value) => setFormData({ ...formData, identifierType: value })}
+              >
+                <SelectTrigger className="bg-white/5 border-white/10 text-white mt-1">
+                  <SelectValue placeholder="Bilgi tipi seçin" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-white/20">
+                  <SelectItem value="username" className="text-white">Kullanıcı Adı</SelectItem>
+                  <SelectItem value="id" className="text-white">ID</SelectItem>
+                  <SelectItem value="email" className="text-white">Email</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-white/40 mt-1">
+                Kullanıcılar bu sponsora ait ürünleri alırken hangi bilgiyi girecekler
+              </p>
             </div>
 
             <div>
