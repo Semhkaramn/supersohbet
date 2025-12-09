@@ -135,8 +135,9 @@ export async function DELETE(
         where: { id }
       })
 
-      // Eğer sipariş daha önce iptal edilmemişse puan iadesi yap
-      if (order.status !== 'cancelled') {
+      // Sadece pending veya processing durumundaysa puan iadesi yap
+      // Tamamlanmış (completed) veya iptal edilmiş (cancelled) siparişlerde iade yapma
+      if (order.status === 'pending' || order.status === 'processing') {
         await tx.user.update({
           where: { id: order.userId },
           data: {
