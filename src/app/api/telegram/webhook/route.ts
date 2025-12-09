@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getUserProfilePhoto } from '@/lib/telegram'
 import { getTurkeyDate } from '@/lib/utils'
 
 // Ayarları cache'e al (performans için)
@@ -64,18 +63,6 @@ async function answerCallbackQuery(callbackQueryId: string, text?: string) {
     })
   } catch (error) {
     console.error('Error answering callback:', error)
-  }
-}
-
-// Profil fotoğrafını al (helper)
-async function getPhotoUrl(userId: string): Promise<string | null> {
-  try {
-    const numericUserId = Number.parseInt(userId, 10)
-    if (Number.isNaN(numericUserId)) return null
-    return await getUserProfilePhoto(numericUserId)
-  } catch (error) {
-    console.error('Error fetching photo:', error)
-    return null
   }
 }
 
@@ -265,9 +252,6 @@ Başlamak için yanındaki menü butonuna tıkla! 👆
             where: { telegramId: userId }
           })
 
-          // Profil fotoğrafını çek
-          const photoUrl = await getPhotoUrl(userId)
-
           // Yeni kullanıcı ise ve referans kodu varsa
           if (!existingUser && (referrerTelegramId || legacyReferralCode)) {
             // Referans koduna sahip kullanıcıyı bul
@@ -292,14 +276,13 @@ Başlamak için yanındaki menü butonuna tıkla! 👆
               const referralBonusInvited = Number.parseInt(getSetting('referral_bonus_invited', '50'))
               const dailyWheelSpins = Number.parseInt(getSetting('daily_wheel_spins', '3'))
 
-              // Yeni kullanıcıyı oluştur
+              // Yeni kullanıcıyı oluştur (photoUrl yok - web'den giriş yaparken güncellenecek)
               const newUser = await prisma.user.create({
                 data: {
                   telegramId: userId,
                   username,
                   firstName,
                   lastName,
-                  photoUrl,
                   referredById: referrer.id,
                   points: referralBonusInvited, // Davet edilene bonus
                   dailySpinsLeft: dailyWheelSpins
@@ -363,7 +346,6 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
                   username,
                   firstName,
                   lastName,
-                  photoUrl,
                   dailySpinsLeft: dailyWheelSpins
                 }
               })
@@ -378,19 +360,18 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
                 username,
                 firstName,
                 lastName,
-                photoUrl,
                 dailySpinsLeft: dailyWheelSpins
               }
             })
           } else {
-            // Mevcut kullanıcı, sadece güncelle
+            // Mevcut kullanıcı, sadece temel bilgileri güncelle
+            // photoUrl web'den giriş yaparken güncellenecek
             await prisma.user.update({
               where: { telegramId: userId },
               data: {
                 username,
                 firstName,
-                lastName,
-                photoUrl
+                lastName
               }
             })
           }
@@ -423,7 +404,7 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
           return NextResponse.json({ ok: true, message: 'New users not allowed' })
         }
 
-        const photoUrl = await getPhotoUrl(userId)
+        // photoUrl web'den giriş yaparken güncellenecek
         const dailyWheelSpins = Number.parseInt(getSetting('daily_wheel_spins', '3'))
         user = await prisma.user.create({
           data: {
@@ -431,7 +412,6 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
             username,
             firstName,
             lastName,
-            photoUrl,
             dailySpinsLeft: dailyWheelSpins
           }
         })
