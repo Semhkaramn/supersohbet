@@ -69,10 +69,10 @@ export async function POST(request: NextRequest) {
       url: result.secure_url,
       publicId: result.public_id,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Upload hatası:', error);
     return NextResponse.json(
-      { error: 'Resim yüklenirken hata oluştu' },
+      { error: error?.message || 'Resim yüklenirken hata oluştu' },
       { status: 500 }
     );
   }
@@ -113,10 +113,10 @@ export async function DELETE(request: NextRequest) {
       success: true,
       message: 'Resim silindi',
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Silme hatası:', error);
     return NextResponse.json(
-      { error: 'Resim silinirken hata oluştu' },
+      { error: error?.message || 'Resim silinirken hata oluştu' },
       { status: 500 }
     );
   }
