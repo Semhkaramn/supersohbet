@@ -26,6 +26,12 @@ interface ShopItem {
   purchaseLimit?: number
   isActive: boolean
   order: number
+  sponsorId?: string
+  sponsor?: {
+    id: string
+    name: string
+    identifierType: string
+  }
   _count?: {
     purchases: number
   }
@@ -41,6 +47,8 @@ interface Order {
   processedBy?: string
   processedAt?: string
   purchasedAt: string
+  walletAddress?: string
+  sponsorInfo?: string
   user: {
     id: string
     telegramId: string
@@ -62,6 +70,7 @@ export default function AdminShopPage() {
   const router = useRouter()
   const [items, setItems] = useState<ShopItem[]>([])
   const [orders, setOrders] = useState<Order[]>([])
+  const [sponsors, setSponsors] = useState<{ id: string; name: string; identifierType: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [ordersLoading, setOrdersLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -83,6 +92,7 @@ export default function AdminShopPage() {
     category: 'Genel',
     stock: null as number | null,
     purchaseLimit: null as number | null,
+    sponsorId: null as string | null,
     order: 0
   })
 
@@ -102,6 +112,7 @@ export default function AdminShopPage() {
     }
     loadItems()
     loadOrders()
+    loadSponsors()
   }, [])
 
   // Auto-refresh orders when on orders tab
@@ -155,6 +166,16 @@ export default function AdminShopPage() {
     }
   }
 
+  async function loadSponsors() {
+    try {
+      const response = await fetch('/api/admin/sponsors')
+      const data = await response.json()
+      setSponsors(data.sponsors || [])
+    } catch (error) {
+      console.error('Error loading sponsors:', error)
+    }
+  }
+
   function openDialog(item?: ShopItem) {
     if (item) {
       setEditingItem(item)
@@ -166,6 +187,7 @@ export default function AdminShopPage() {
         category: item.category,
         stock: item.stock ?? null,
         purchaseLimit: item.purchaseLimit ?? null,
+        sponsorId: item.sponsorId ?? null,
         order: item.order
       })
 
@@ -193,6 +215,7 @@ export default function AdminShopPage() {
         category: 'Genel',
         stock: null,
         purchaseLimit: null,
+        sponsorId: null,
         order: items.length
       })
       setImagePublicId(null)
@@ -729,6 +752,20 @@ export default function AdminShopPage() {
                           </div>
                         )}
 
+                        {order.walletAddress && (
+                          <div className="mt-2 p-2 bg-green-500/10 border border-green-500/30 rounded text-sm">
+                            <span className="text-green-400 font-semibold">TRC20 Cüzdan: </span>
+                            <span className="text-white font-mono">{order.walletAddress}</span>
+                          </div>
+                        )}
+
+                        {order.sponsorInfo && (
+                          <div className="mt-2 p-2 bg-purple-500/10 border border-purple-500/30 rounded text-sm">
+                            <span className="text-purple-400 font-semibold">Sponsor Bilgisi: </span>
+                            <span className="text-white">{order.sponsorInfo}</span>
+                          </div>
+                        )}
+
                         <div className="flex gap-2 mt-3">
                           <Button
                             size="sm"
@@ -853,7 +890,35 @@ export default function AdminShopPage() {
                 placeholder="Genel"
                 required
               />
+              <p className="text-xs text-white/40 mt-1">
+                Önerilen: Genel, Nakit, Sponsor
+              </p>
             </div>
+
+            {formData.category === 'Sponsor' && (
+              <div>
+                <Label htmlFor="sponsorId" className="text-white">Sponsor Seç</Label>
+                <Select
+                  value={formData.sponsorId || 'none'}
+                  onValueChange={(value) => setFormData({ ...formData, sponsorId: value === 'none' ? null : value })}
+                >
+                  <SelectTrigger className="bg-white/5 border-white/10 text-white mt-1">
+                    <SelectValue placeholder="Sponsor seçin" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-white/20">
+                    <SelectItem value="none" className="text-white">Sponsor Yok</SelectItem>
+                    {sponsors.map((sponsor) => (
+                      <SelectItem key={sponsor.id} value={sponsor.id} className="text-white">
+                        {sponsor.name} ({sponsor.identifierType === 'username' ? 'Kullanıcı Adı' : sponsor.identifierType === 'id' ? 'ID' : 'Email'})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-white/40 mt-1">
+                  Kullanıcılar bu ürünü alırken seçilen sponsor bilgisini girecekler
+                </p>
+              </div>
+            )}
 
             <div>
               <Label htmlFor="stock" className="text-white">Stok (Boş = Sınırsız)</Label>
