@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserProfilePhoto } from '@/lib/telegram'
-import { checkAndResetWheelSpins } from '@/lib/utils'
+import { checkAndResetWheelSpins, getTurkeyToday, getTurkeyDateAgo } from '@/lib/utils'
 
 export async function GET(
   request: NextRequest,
@@ -119,10 +119,9 @@ export async function GET(
     const leaderboardRank = higherRankedCount + 1
 
     // Mesaj istatistiklerini hesapla
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
-    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+    const today = getTurkeyToday() // Türkiye saatine göre bugün
+    const weekAgo = getTurkeyDateAgo(7) // 7 gün önce
+    const monthAgo = getTurkeyDateAgo(30) // 30 gün önce
 
     const [dailyMessages, weeklyMessages, monthlyMessages, totalAllMessages] = await Promise.all([
       prisma.messageStats.count({
