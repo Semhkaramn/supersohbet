@@ -8,10 +8,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Settings, Save, MessageSquare, Plus, Edit, Trash2, ArrowLeft, Power, PowerOff } from 'lucide-react'
+import { Settings, Save, MessageSquare, Plus, Edit, Trash2, ArrowLeft, Power, PowerOff, Bell } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { Switch } from '@/components/ui/switch'
 
 interface Setting {
   id: string
@@ -38,6 +39,11 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [maintenanceMode, setMaintenanceMode] = useState(false)
+
+  // Bildirim ayarları
+  const [notifyWheelReset, setNotifyWheelReset] = useState(false)
+  const [notifyOrderApproved, setNotifyOrderApproved] = useState(false)
+  const [notifyLevelUp, setNotifyLevelUp] = useState(false)
 
   const [channelDialogOpen, setChannelDialogOpen] = useState(false)
   const [editingChannel, setEditingChannel] = useState<Channel | null>(null)
@@ -76,6 +82,16 @@ export default function AdminSettingsPage() {
       // Bakım modunu ayarla
       const maintenanceSetting = data.settings.find((s: Setting) => s.key === 'maintenance_mode')
       setMaintenanceMode(maintenanceSetting?.value === 'true')
+
+      // Bildirim ayarlarını yükle
+      const wheelResetNotify = data.settings.find((s: Setting) => s.key === 'notify_wheel_reset')
+      setNotifyWheelReset(wheelResetNotify?.value === 'true')
+
+      const orderApprovedNotify = data.settings.find((s: Setting) => s.key === 'notify_order_approved')
+      setNotifyOrderApproved(orderApprovedNotify?.value === 'true')
+
+      const levelUpNotify = data.settings.find((s: Setting) => s.key === 'notify_level_up')
+      setNotifyLevelUp(levelUpNotify?.value === 'true')
     } catch (error) {
       console.error('Error loading settings:', error)
       toast.error('Ayarlar yüklenemedi')
@@ -139,6 +155,33 @@ export default function AdminSettingsPage() {
       if (data.success) {
         setMaintenanceMode(newValue)
         toast.success(newValue ? 'Bakım modu aktif edildi' : 'Bakım modu kapatıldı')
+        loadSettings()
+      } else {
+        toast.error(data.error || 'Ayar kaydedilemedi')
+      }
+    } catch (error) {
+      console.error('Save error:', error)
+      toast.error('Bir hata oluştu')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function toggleNotificationSetting(key: string, currentValue: boolean, setterFunction: (value: boolean) => void) {
+    const newValue = !currentValue
+    setSaving(true)
+    try {
+      const response = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, value: newValue.toString() })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setterFunction(newValue)
+        toast.success('Bildirim ayarı güncellendi')
         loadSettings()
       } else {
         toast.error(data.error || 'Ayar kaydedilemedi')
@@ -376,6 +419,60 @@ export default function AdminSettingsPage() {
             </div>
           </Card>
         )}
+
+        {/* Bildirim Ayarları - YENİ */}
+        <Card className="bg-white/5 border-white/10 p-6">
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <Bell className="w-6 h-6" />
+            Bildirim Ayarları
+          </h2>
+          <p className="text-gray-400 text-sm mb-4">
+            Bota start yapmış kullanıcılara gönderilecek otomatik bildirimler
+          </p>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
+              <div className="flex-1">
+                <h3 className="text-white font-medium">Çark Hakkı Yenilenme Bildirimi</h3>
+                <p className="text-gray-400 text-sm mt-1">
+                  Günlük çark hakları yenilendiğinde kullanıcılara özelden mesaj gönderilsin
+                </p>
+              </div>
+              <Switch
+                checked={notifyWheelReset}
+                onCheckedChange={() => toggleNotificationSetting('notify_wheel_reset', notifyWheelReset, setNotifyWheelReset)}
+                disabled={saving}
+              />
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
+              <div className="flex-1">
+                <h3 className="text-white font-medium">Sipariş Onay Bildirimi</h3>
+                <p className="text-gray-400 text-sm mt-1">
+                  Market siparişleri onaylandığında kullanıcılara özelden mesaj gönderilsin
+                </p>
+              </div>
+              <Switch
+                checked={notifyOrderApproved}
+                onCheckedChange={() => toggleNotificationSetting('notify_order_approved', notifyOrderApproved, setNotifyOrderApproved)}
+                disabled={saving}
+              />
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
+              <div className="flex-1">
+                <h3 className="text-white font-medium">Seviye Atlama Bildirimi</h3>
+                <p className="text-gray-400 text-sm mt-1">
+                  Kullanıcı seviye atladığında grupta bildirim mesajı gönderilsin
+                </p>
+              </div>
+              <Switch
+                checked={notifyLevelUp}
+                onCheckedChange={() => toggleNotificationSetting('notify_level_up', notifyLevelUp, setNotifyLevelUp)}
+                disabled={saving}
+              />
+            </div>
+          </div>
+        </Card>
 
         {/* Telegram Bot Ayarları */}
         <Card className="bg-white/5 border-white/10 p-6">
