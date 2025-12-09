@@ -114,8 +114,16 @@ export function MenuDrawer({ open, onOpenChange, userId }: MenuDrawerProps) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent onClose={() => onOpenChange(false)}>
-        <div className="flex flex-col h-full">
+      <SheetContent
+        onClose={() => onOpenChange(false)}
+        className="will-change-transform"
+        style={{
+          transform: 'translate3d(0, 0, 0)',
+          backfaceVisibility: 'hidden',
+          perspective: 1000
+        }}
+      >
+        <div className="flex flex-col h-full" style={{ transform: 'translate3d(0, 0, 0)' }}>
           {/* Header */}
           <div className="p-6 pb-4">
             <div className="flex items-center gap-3 mb-2">
@@ -130,22 +138,29 @@ export function MenuDrawer({ open, onOpenChange, userId }: MenuDrawerProps) {
           </div>
 
           {/* Menu Items */}
-          <div className="flex-1 px-4 pb-6 space-y-2 overflow-y-auto">
+          <div
+            className="flex-1 px-4 pb-6 space-y-2 overflow-y-auto"
+            style={{ transform: 'translate3d(0, 0, 0)' }}
+          >
             {menuItems.map((item) => (
               <button
                 key={item.title}
                 onClick={() => handleNavigate(item.href)}
-                className={`w-full bg-gradient-to-br ${item.gradient} border ${item.borderColor} rounded-xl p-4 hover:scale-[1.02] active:scale-[0.98] transition-all backdrop-blur-sm text-left group shadow-lg hover:shadow-xl`}
+                className={`w-full bg-gradient-to-br ${item.gradient} border ${item.borderColor} rounded-xl p-4 hover:scale-[1.02] active:scale-[0.98] transition-transform duration-150 ease-out backdrop-blur-sm text-left group shadow-lg hover:shadow-xl will-change-transform`}
+                style={{ transform: 'translate3d(0, 0, 0)' }}
               >
                 <div className="flex items-center gap-4">
-                  <div className={`w-14 h-14 rounded-xl ${item.iconBg} flex items-center justify-center border ${item.borderColor} shadow-inner group-hover:scale-110 transition-transform`}>
+                  <div
+                    className={`w-14 h-14 rounded-xl ${item.iconBg} flex items-center justify-center border ${item.borderColor} shadow-inner group-hover:scale-110 transition-transform duration-200 ease-out will-change-transform`}
+                    style={{ transform: 'translate3d(0, 0, 0)' }}
+                  >
                     <item.icon className={`w-7 h-7 ${item.iconColor}`} />
                   </div>
                   <div className="flex-1">
                     <h4 className="font-bold text-white mb-1 text-base">{item.title}</h4>
                     <p className="text-xs text-slate-300">{item.description}</p>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-white/40 group-hover:text-white/70 group-hover:translate-x-1 transition-all" />
+                  <ChevronRight className="w-5 h-5 text-white/40 group-hover:text-white/70 group-hover:translate-x-1 transition-transform duration-150 ease-out" />
                 </div>
               </button>
             ))}
