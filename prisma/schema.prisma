@@ -396,10 +396,55 @@ model Admin {
   canAccessChannels     Boolean     @default(false)
   canAccessUsers        Boolean     @default(false)
   canAccessAdmins       Boolean     @default(false)
+  canAccessRandy        Boolean     @default(false)
 
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
   @@index([username])
   @@index([isSuperAdmin])
+}
+
+// Randy Schedule - Rastgele ödül dağıtım planlaması
+model RandySchedule {
+  id                   String          @id @default(cuid())
+  winnerCount          Int             // Toplam kazanan sayısı
+  distributionHours    Int             // Dağıtım süresi (saat)
+  prizeText            String          // Ödül açıklaması
+  sendAnnouncement     Boolean         @default(true) // Kazananı duyur
+  pinMessage           Boolean         @default(true) // Kazanan mesajını sabitle
+  onePerUser           Boolean         @default(true) // Kullanıcı başına bir kez
+  minMessages          Int             @default(0) // Minimum mesaj sayısı
+  messagePeriod        String          @default("none") // "none", "today", "week", "all"
+  status               String          @default("active") // "active", "completed", "cancelled"
+  startTime            DateTime        @default(now())
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  slots                RandySlot[]
+
+  @@index([status])
+  @@index([startTime])
+}
+
+// Randy Slots - Zaman dilimi slotları
+model RandySlot {
+  id                   String          @id @default(cuid())
+  scheduleId           String
+  schedule             RandySchedule   @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  schedTime            DateTime        // Planlanan zaman
+  assigned             Boolean         @default(false) // Atandı mı
+  assignedUser         String?         // Kazanan kullanıcı telegram ID
+  assignedUsername     String?         // Kazanan kullanıcı adı
+  assignedFirstName    String?         // Kazanan kullanıcı ismi
+  assignedAt           DateTime?       // Atanma zamanı
+  randomKey            String?         // Rastgele anahtar (opsiyonel)
+  dmSent               Boolean         @default(false) // DM gönderildi mi
+  groupAnnounced       Boolean         @default(false) // Grupta duyuruldu mu
+  createdAt            DateTime        @default(now())
+
+  @@index([scheduleId])
+  @@index([schedTime])
+  @@index([assigned])
+  @@index([assignedUser])
 }
