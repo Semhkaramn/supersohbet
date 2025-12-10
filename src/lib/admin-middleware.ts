@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from './prisma'
 
 export interface AdminPermissions {
-  canAccessDashboard: boolean
   canAccessBroadcast: boolean
   canAccessStatistics: boolean
   canAccessTasks: boolean
@@ -10,9 +9,8 @@ export interface AdminPermissions {
   canAccessWheel: boolean
   canAccessSponsors: boolean
   canAccessRanks: boolean
+  canAccessRandy: boolean
   canAccessSettings: boolean
-  canAccessChannels: boolean
-  canAccessUsers: boolean
   canAccessAdmins: boolean
   isSuperAdmin: boolean
 }
