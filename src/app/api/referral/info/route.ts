@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserProfilePhoto } from '@/lib/telegram'
+import { requireAuth } from '@/lib/auth'
 
 // Profil fotoğrafını güncelle
 async function updateUserPhoto(userId: string, telegramId: string): Promise<string | null> {
@@ -27,12 +28,9 @@ async function updateUserPhoto(userId: string, telegramId: string): Promise<stri
 
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams
-    const userId = searchParams.get('userId')
-
-    if (!userId) {
-      return NextResponse.json({ error: 'userId gerekli' }, { status: 400 })
-    }
+    // Session kontrolü - artık query parametresi yerine session kullanıyoruz
+    const session = await requireAuth(request)
+    const userId = session.userId
 
     // Kullanıcıyı bul
     const user = await prisma.user.findUnique({
@@ -136,6 +134,12 @@ export async function GET(request: NextRequest) {
       bonusInvited: Number.parseInt(settingsMap.referral_bonus_invited || '50')
     })
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Oturum geçersiz. Lütfen tekrar giriş yapın.' },
+        { status: 401 }
+      )
+    }
     console.error('Referral info error:', error)
     return NextResponse.json({ error: 'Sunucu hatası' }, { status: 500 })
   }
