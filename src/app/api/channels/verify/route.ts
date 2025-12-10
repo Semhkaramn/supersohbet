@@ -72,8 +72,32 @@ export async function POST(request: NextRequest) {
         update: {}
       })
 
+      // Tüm aktif kanallara katılma kontrolü
+      const activeChannels = await prisma.requiredChannel.findMany({
+        where: { isActive: true }
+      })
+
+      const userChannelJoins = await prisma.userChannelJoin.findMany({
+        where: { userId: user.id }
+      })
+
+      const joinedChannelIds = new Set(userChannelJoins.map(join => join.channelId))
+      const allChannelsJoined = activeChannels.every(ch => joinedChannelIds.has(ch.id))
+
+      // Eğer tüm kanallara katıldıysa channelsVerified'ı true yap
+      if (allChannelsJoined && !user.channelsVerified) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { channelsVerified: true }
+        })
+        console.log('✅ Tüm kanallara katıldı - channelsVerified = true')
+      }
+
       console.log('✅ Üyelik veritabanına kaydedildi')
-      return NextResponse.json({ joined: true })
+      return NextResponse.json({
+        joined: true,
+        allChannelsJoined
+      })
     }
 
     console.log('❌ Kullanıcı kanala üye değil')
