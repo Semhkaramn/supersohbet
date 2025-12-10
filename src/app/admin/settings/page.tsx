@@ -41,7 +41,6 @@ export default function AdminSettingsPage() {
   const [maintenanceMode, setMaintenanceMode] = useState(false)
 
   // Bildirim ayarları
-  const [notifyWheelReset, setNotifyWheelReset] = useState(false)
   const [notifyOrderApproved, setNotifyOrderApproved] = useState(false)
   const [notifyLevelUp, setNotifyLevelUp] = useState(false)
 
@@ -84,9 +83,6 @@ export default function AdminSettingsPage() {
       setMaintenanceMode(maintenanceSetting?.value === 'true')
 
       // Bildirim ayarlarını yükle
-      const wheelResetNotify = data.settings.find((s: Setting) => s.key === 'notify_wheel_reset')
-      setNotifyWheelReset(wheelResetNotify?.value === 'true')
-
       const orderApprovedNotify = data.settings.find((s: Setting) => s.key === 'notify_order_approved')
       setNotifyOrderApproved(orderApprovedNotify?.value === 'true')
 
@@ -357,8 +353,7 @@ export default function AdminSettingsPage() {
   const minMessageLength = getSetting('min_message_length')
   const messageCooldown = getSetting('message_cooldown_seconds')
   const dailyWheelSpins = getSetting('daily_wheel_spins')
-  const wheelResetHour = getSetting('wheel_reset_hour')
-  const wheelResetMinute = getSetting('wheel_reset_minute')
+  const wheelResetTime = getSetting('wheel_reset_time')
   const referralBonusInviter = getSetting('referral_bonus_inviter')
   const referralBonusInvited = getSetting('referral_bonus_invited')
   const cloudinaryCloudName = getSetting('cloudinary_cloud_name')
@@ -431,20 +426,6 @@ export default function AdminSettingsPage() {
             Bota start yapmış kullanıcılara gönderilecek otomatik bildirimler
           </p>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
-              <div className="flex-1">
-                <h3 className="text-white font-medium">Çark Hakkı Yenilenme Bildirimi</h3>
-                <p className="text-gray-400 text-sm mt-1">
-                  Günlük çark hakları yenilendiğinde kullanıcılara özelden mesaj gönderilsin
-                </p>
-              </div>
-              <Switch
-                checked={notifyWheelReset}
-                onCheckedChange={() => toggleNotificationSetting('notify_wheel_reset', notifyWheelReset, setNotifyWheelReset)}
-                disabled={saving}
-              />
-            </div>
-
             <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
               <div className="flex-1">
                 <h3 className="text-white font-medium">Sipariş Onay Bildirimi</h3>
@@ -811,56 +792,27 @@ export default function AdminSettingsPage() {
             <div>
               <Label className="text-white text-base">Günlük Sıfırlama Zamanı</Label>
               <p className="text-xs text-gray-400 mt-1 mb-2">
-                Çark haklarının her gün sıfırlanacağı saat ve dakika
+                Çark haklarının her gün sıfırlanacağı saat (HH:mm formatında)
               </p>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-white text-sm mb-1 block">Saat (0-23)</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={wheelResetHour?.value || '0'}
-                      onChange={(e) => handleInputChange('wheel_reset_hour', e.target.value)}
-                      className="bg-white/10 border-white/20 text-white"
-                      type="number"
-                      min="0"
-                      max="23"
-                      placeholder="0"
-                    />
-                    <Button
-                      onClick={() => saveSetting('wheel_reset_hour', wheelResetHour?.value || '0')}
-                      disabled={saving}
-                      size="sm"
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      <Save className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-white text-sm mb-1 block">Dakika (0-59)</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={wheelResetMinute?.value || '0'}
-                      onChange={(e) => handleInputChange('wheel_reset_minute', e.target.value)}
-                      className="bg-white/10 border-white/20 text-white"
-                      type="number"
-                      min="0"
-                      max="59"
-                      placeholder="0"
-                    />
-                    <Button
-                      onClick={() => saveSetting('wheel_reset_minute', wheelResetMinute?.value || '0')}
-                      disabled={saving}
-                      size="sm"
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      <Save className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
+              <div className="flex gap-2">
+                <Input
+                  value={wheelResetTime?.value || '00:00'}
+                  onChange={(e) => handleInputChange('wheel_reset_time', e.target.value)}
+                  className="bg-white/10 border-white/20 text-white"
+                  type="time"
+                  placeholder="19:30"
+                />
+                <Button
+                  onClick={() => saveSetting('wheel_reset_time', wheelResetTime?.value || '00:00')}
+                  disabled={saving}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Save className="w-4 h-4" />
+                </Button>
               </div>
               <p className="text-xs text-gray-400 mt-2">
-                Örnek: Saat=0, Dakika=0 → Gece Yarısı | Saat=12, Dakika=30 → Öğlen 12:30
+                Örnek: 00:00 → Gece Yarısı | 12:30 → Öğlen 12:30 | 19:30 → Akşam 19:30
               </p>
             </div>
           </div>
