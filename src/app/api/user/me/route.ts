@@ -142,6 +142,9 @@ export async function GET(request: NextRequest) {
       totalReferrals: user.totalReferrals,
       referralPoints: user.referralPoints,
       trc20WalletAddress: user.trc20WalletAddress,
+      telegramId: user.telegramId,
+      hadStart: user.hadStart,
+      channelsVerified: user.channelsVerified,
       createdAt: user.createdAt
     })
 
