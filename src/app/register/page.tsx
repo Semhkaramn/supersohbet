@@ -18,10 +18,9 @@ function RegisterForm() {
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
-    username: '',
+    siteUsername: '',
     password: '',
     confirmPassword: '',
-    firstName: '',
     referralCode: referralCodeParam || ''
   })
 
@@ -29,7 +28,7 @@ function RegisterForm() {
     e.preventDefault()
 
     // Validation
-    if (!formData.email || !formData.username || !formData.password) {
+    if (!formData.email || !formData.siteUsername || !formData.password) {
       toast.error('Lütfen zorunlu alanları doldurun')
       return
     }
@@ -52,9 +51,8 @@ function RegisterForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: formData.email,
-          username: formData.username,
+          siteUsername: formData.siteUsername,
           password: formData.password,
-          firstName: formData.firstName || formData.username,
           referralCode: formData.referralCode || undefined
         })
       })
@@ -115,17 +113,17 @@ function RegisterForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-gray-300">
+              <Label htmlFor="siteUsername" className="text-gray-300">
                 Kullanıcı Adı <span className="text-red-500">*</span>
               </Label>
               <div className="relative">
                 <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
-                  id="username"
+                  id="siteUsername"
                   type="text"
                   placeholder="kullaniciadi"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+                  value={formData.siteUsername}
+                  onChange={(e) => setFormData({ ...formData, siteUsername: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
                   className="pl-10 bg-gray-700/50 border-gray-600 text-white placeholder:text-gray-400"
                   disabled={loading}
                   required
@@ -134,24 +132,6 @@ function RegisterForm() {
                 />
               </div>
               <p className="text-xs text-gray-500">Sadece küçük harf, rakam ve alt çizgi kullanılabilir</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="firstName" className="text-gray-300">
-                İsim (İsteğe bağlı)
-              </Label>
-              <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="firstName"
-                  type="text"
-                  placeholder="Adınız"
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                  className="pl-10 bg-gray-700/50 border-gray-600 text-white placeholder:text-gray-400"
-                  disabled={loading}
-                />
-              </div>
             </div>
 
             <div className="space-y-2">
