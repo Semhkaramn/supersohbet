@@ -19,7 +19,8 @@ import {
   UserCog,
   Radio,
   User,
-  Sparkles
+  Sparkles,
+  UserCheck
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -28,6 +29,7 @@ interface Stats {
   totalPoints: number
   totalPurchases: number
   totalSpins: number
+  hadStartUsers: number
   messages: {
     total: number
     daily: number
@@ -252,10 +254,33 @@ export default function AdminDashboard() {
 
           <Card className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 border-emerald-500/30 p-6">
             <div className="flex items-center gap-3">
-              <BarChart3 className="w-10 h-10 text-emerald-400" />
+              <MessageSquare className="w-10 h-10 text-emerald-400" />
               <div>
-                <p className="text-3xl font-bold text-white">{stats?.totalPoints || 0}</p>
-                <p className="text-emerald-200 text-sm">Toplam Puan</p>
+                <p className="text-3xl font-bold text-white">{stats?.messages.total || 0}</p>
+                <p className="text-emerald-200 text-sm">Toplam Mesaj</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Secondary Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <Card className="bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 border-cyan-500/30 p-6">
+            <div className="flex items-center gap-3">
+              <Users className="w-10 h-10 text-cyan-400" />
+              <div>
+                <p className="text-3xl font-bold text-white">{stats?.totalUsers || 0}</p>
+                <p className="text-cyan-200 text-sm">Toplam Kullanıcı</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-green-500/20 to-green-600/20 border-green-500/30 p-6">
+            <div className="flex items-center gap-3">
+              <UserCheck className="w-10 h-10 text-green-400" />
+              <div>
+                <p className="text-3xl font-bold text-white">{stats?.hadStartUsers || 0}</p>
+                <p className="text-green-200 text-sm">Hadstart Yapanlar</p>
               </div>
             </div>
           </Card>
