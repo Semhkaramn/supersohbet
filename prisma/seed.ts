@@ -16,6 +16,9 @@ async function main() {
     { key: 'randy_send_announcement', value: 'true', description: 'Randy kazananını grupta duyur', category: 'randy' },
     { key: 'randy_pin_start_message', value: 'true', description: 'Randy başlangıç duyurusunu sabitle', category: 'randy' },
     { key: 'randy_pin_winner_message', value: 'true', description: 'Randy kazanan duyurusunu sabitle', category: 'randy' },
+
+    // Roll Sistemi
+    { key: 'roll_enabled', value: 'true', description: 'Roll sistemi komutlarını aktifleştir (/başlat, /kaydet, /durum vs.)', category: 'roll' },
   ]
 
 
@@ -39,3 +42,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect()
   })
+
