@@ -16,7 +16,8 @@ export async function GET(request: Request) {
               telegramId: true,
               username: true,
               firstName: true,
-              lastName: true
+              lastName: true,
+              trc20WalletAddress: true
             }
           },
           sponsor: {
