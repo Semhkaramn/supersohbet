@@ -216,15 +216,7 @@ export async function notifyLevelUp(
   )
 }
 
-// Çark sıfırlanması bildirimi
-export async function notifyWheelReset(
-  telegramId: string,
-  dailySpins: number
-): Promise<boolean> {
-  const message = `🎡 **Çark Hakkın Yenilendi!**\n\n✨ Günlük hakkın: **${dailySpins}**\n🎁 Hemen çevir, kazan!`
 
-  return await sendUserNotification(telegramId, message)
-}
 
 // Toplu bildirim gönder (rate limit ile)
 export async function sendBulkNotifications(
