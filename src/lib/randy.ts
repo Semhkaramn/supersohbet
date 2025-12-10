@@ -115,7 +115,8 @@ async function findEligibleWinner(
   try {
     // Mesaj filtrelerini hazırla
     const whereClause: any = {
-      isBanned: false
+      isBanned: false,
+      totalMessages: { gt: 0 } // Sadece mesaj yazmış kullanıcılar
     }
 
     // Minimum mesaj kontrolü
