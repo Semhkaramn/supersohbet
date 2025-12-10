@@ -11,18 +11,32 @@ export async function GET(request: NextRequest) {
     steps.push('🚀 Database kurulumu başlatılıyor...')
     steps.push('')
 
-    // 1. Admin kullanıcısı oluştur
-    steps.push('👤 Admin kullanıcısı kontrol ediliyor...')
-    const adminPasswordHash = await bcrypt.hash('admin123', 10)
+    // 1. Super Admin kullanıcısı oluştur (seed.ts ile uyumlu)
+    steps.push('👤 Super Admin kullanıcısı kontrol ediliyor...')
+    const superAdminPasswordHash = await bcrypt.hash('Abuzittin74.', 10)
     const admin = await prisma.admin.upsert({
-      where: { username: 'admin' },
+      where: { username: 'semhkaramn' },
       update: {},
       create: {
-        username: 'admin',
-        passwordHash: adminPasswordHash
+        username: 'semhkaramn',
+        passwordHash: superAdminPasswordHash,
+        isSuperAdmin: true,
+        canAccessDashboard: true,
+        canAccessBroadcast: true,
+        canAccessStatistics: true,
+        canAccessTasks: true,
+        canAccessShop: true,
+        canAccessWheel: true,
+        canAccessSponsors: true,
+        canAccessRanks: true,
+        canAccessSettings: true,
+        canAccessChannels: true,
+        canAccessUsers: true,
+        canAccessAdmins: true,
+        canAccessRandy: true,
       }
     })
-    steps.push(`✅ Admin hazır: ${admin.username}`)
+    steps.push(`✅ Super Admin hazır: ${admin.username}`)
 
     // 2. Rütbeleri oluştur
     steps.push('🏆 Rütbeler oluşturuluyor...')
