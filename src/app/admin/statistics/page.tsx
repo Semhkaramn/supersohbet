@@ -61,7 +61,8 @@ interface User {
 interface Stats {
   totalUsers: number
   bannedUsers: number
-  activeUsers: number
+  hadStartUsers: number
+  usersWithMessages: number
   messages: {
     total: number
     daily: number
@@ -298,8 +299,8 @@ export default function AdminStatisticsPage() {
             <div className="flex items-center gap-3">
               <UserCheck className="w-10 h-10 text-green-400" />
               <div>
-                <p className="text-3xl font-bold text-white">{stats?.activeUsers || 0}</p>
-                <p className="text-green-200 text-sm">Aktif Kullanıcı</p>
+                <p className="text-3xl font-bold text-white">{stats?.hadStartUsers || 0}</p>
+                <p className="text-green-200 text-sm">Hadstart Yapanlar</p>
               </div>
             </div>
           </Card>
@@ -318,8 +319,8 @@ export default function AdminStatisticsPage() {
             <div className="flex items-center gap-3">
               <MessageSquare className="w-10 h-10 text-purple-400" />
               <div>
-                <p className="text-3xl font-bold text-white">{stats?.messages?.total || 0}</p>
-                <p className="text-purple-200 text-sm">Toplam Mesaj</p>
+                <p className="text-3xl font-bold text-white">{stats?.usersWithMessages || 0}</p>
+                <p className="text-purple-200 text-sm">Gruptaki Kullanıcılar</p>
               </div>
             </div>
           </Card>
