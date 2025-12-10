@@ -18,7 +18,8 @@ import {
   Shield,
   UserCog,
   Radio,
-  User
+  User,
+  Sparkles
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -143,6 +144,14 @@ export default function AdminDashboard() {
       href: '/admin/ranks',
       color: 'from-yellow-500 to-yellow-600',
       permission: 'canAccessRanks'
+    },
+    {
+      title: 'Randy Sistemi',
+      description: 'Rastgele ödül dağıtımı',
+      icon: Sparkles,
+      href: '/admin/randy',
+      color: 'from-purple-500 to-pink-600',
+      permission: 'canAccessRandy'
     },
     {
       title: 'Admin Yönetimi',
