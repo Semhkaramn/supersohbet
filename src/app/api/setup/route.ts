@@ -21,7 +21,6 @@ export async function GET(request: NextRequest) {
         username: 'semhkaramn',
         passwordHash: superAdminPasswordHash,
         isSuperAdmin: true,
-        canAccessDashboard: true,
         canAccessBroadcast: true,
         canAccessStatistics: true,
         canAccessTasks: true,
@@ -29,11 +28,9 @@ export async function GET(request: NextRequest) {
         canAccessWheel: true,
         canAccessSponsors: true,
         canAccessRanks: true,
-        canAccessSettings: true,
-        canAccessChannels: true,
-        canAccessUsers: true,
-        canAccessAdmins: true,
         canAccessRandy: true,
+        canAccessSettings: true,
+        canAccessAdmins: true,
       }
     })
     steps.push(`✅ Super Admin hazır: ${admin.username}`)
