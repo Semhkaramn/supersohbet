@@ -269,6 +269,12 @@ Bot özelliklerini kullanmanız engellenmiştir.
 
         // "liste" komutu - Herkes kullanabilir
         if (text.toLowerCase() === 'liste') {
+          // Roll sistemi aktif mi kontrol et
+          const rollEnabled = getSetting('roll_enabled', 'true') === 'true'
+          if (!rollEnabled) {
+            return NextResponse.json({ ok: true })
+          }
+
           const statusMsg = getStatusList(groupId)
           await sendTelegramMessage(chatId, statusMsg)
           return NextResponse.json({ ok: true })
@@ -276,6 +282,12 @@ Bot özelliklerini kullanmanız engellenmiştir.
 
         // Roll komutları - Sadece adminler
         if (text.startsWith('roll ') || text === 'roll') {
+          // Roll sistemi aktif mi kontrol et
+          const rollEnabled = getSetting('roll_enabled', 'true') === 'true'
+          if (!rollEnabled) {
+            return NextResponse.json({ ok: true })
+          }
+
           const isAdmin = await checkAdmin(chatId, Number(userId))
 
           const parts = text.split(' ')
@@ -580,6 +592,25 @@ Başlamak için yanındaki menü butonuna tıkla! 👆
                   totalReferrals: { increment: 1 },
                   referralPoints: { increment: referralBonusInviter },
                   points: { increment: referralBonusInviter }
+                }
+              })
+
+              // Point history kayıtlarını oluştur
+              await prisma.pointHistory.create({
+                data: {
+                  userId: newUser.id,
+                  amount: referralBonusInvited,
+                  type: 'referral_reward',
+                  description: `${referrer.firstName || referrer.username || 'Bir kullanıcı'} tarafından davet edildin`
+                }
+              })
+
+              await prisma.pointHistory.create({
+                data: {
+                  userId: referrer.id,
+                  amount: referralBonusInviter,
+                  type: 'referral_reward',
+                  description: `${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı`
                 }
               })
 
