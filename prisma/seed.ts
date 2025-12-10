@@ -22,6 +22,31 @@ async function main() {
     { key: 'roll_enabled', value: 'true', description: 'Roll sistemi komutlarını aktifleştir (/başlat, /kaydet, /durum vs.)', category: 'roll' },
   ]
 
+   // Ana admin kullanıcısı oluştur (semhkaramn)
+  const superAdminPasswordHash = await bcrypt.hash('Abuzittin74.', 10)
+  const superAdmin = await prisma.admin.upsert({
+    where: { username: 'semhkaramn' },
+    update: {},
+    create: {
+      username: 'semhkaramn',
+      passwordHash: superAdminPasswordHash,
+      isSuperAdmin: true,
+      canAccessDashboard: true,
+      canAccessBroadcast: true,
+      canAccessStatistics: true,
+      canAccessTasks: true,
+      canAccessShop: true,
+      canAccessWheel: true,
+      canAccessSponsors: true,
+      canAccessRanks: true,
+      canAccessSettings: true,
+      canAccessChannels: true,
+      canAccessUsers: true,
+      canAccessAdmins: true,
+    }
+  })
+  console.log('✅ Super Admin created:', superAdmin.username)
+
 
   for (const setting of settings) {
     await prisma.settings.upsert({
@@ -43,3 +68,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect()
   })
+
