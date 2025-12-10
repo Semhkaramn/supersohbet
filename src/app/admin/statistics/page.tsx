@@ -32,7 +32,7 @@ import Link from 'next/link'
 
 interface User {
   id: string
-  telegramId: string
+  telegramId?: string | null // ✅ Opsiyonel
   username?: string
   firstName?: string
   lastName?: string
@@ -443,7 +443,7 @@ export default function AdminStatisticsPage() {
                             </span>
                           )}
                         </h3>
-                        <p className="text-gray-400 text-sm">@{user.username || user.telegramId}</p>
+                        <p className="text-gray-400 text-sm">@{user.username || user.telegramId || 'Yok'}</p>
                         {user.isBanned && user.banReason && (
                           <p className="text-red-400 text-xs mt-1">Ban Nedeni: {user.banReason}</p>
                         )}
