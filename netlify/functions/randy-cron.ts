@@ -1,5 +1,3 @@
-import type { Config } from "@netlify/functions"
-
 export default async (req: Request) => {
   try {
     const cronSecret = process.env.CRON_SECRET || 'default-secret'
@@ -31,6 +29,6 @@ export default async (req: Request) => {
   }
 }
 
-export const config: Config = {
+export const config = {
   schedule: "*/5 * * * *" // Her 5 dakikada bir çalış
 }
