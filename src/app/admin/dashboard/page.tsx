@@ -105,14 +105,6 @@ export default function AdminDashboard() {
       permission: 'canAccessStatistics'
     },
     {
-      title: 'Kullanıcı Yönetimi',
-      description: 'Kullanıcıları yönet',
-      icon: Users,
-      href: '/admin/users',
-      color: 'from-purple-500 to-purple-600',
-      permission: 'canAccessUsers'
-    },
-    {
       title: 'Görevler',
       description: 'Görevleri ekle/düzenle',
       icon: FileText,
@@ -151,14 +143,6 @@ export default function AdminDashboard() {
       href: '/admin/ranks',
       color: 'from-yellow-500 to-yellow-600',
       permission: 'canAccessRanks'
-    },
-    {
-      title: 'Kanallar',
-      description: 'Zorunlu kanalları yönet',
-      icon: Radio,
-      href: '/admin/channels',
-      color: 'from-teal-500 to-teal-600',
-      permission: 'canAccessChannels'
     },
     {
       title: 'Admin Yönetimi',
