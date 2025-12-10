@@ -138,7 +138,7 @@ export default function AdminRandyPage() {
           newSettings[key] = setting.value
         }
       }
-      setRandySettings({ ...randySettings, ...newSettings })
+      setRandySettings(prev => ({ ...prev, ...newSettings }))
     } catch (error) {
       console.error('Error loading randy settings:', error)
     }
@@ -223,27 +223,67 @@ export default function AdminRandyPage() {
     loadAdmins()
   }
 
-  async function saveRandySettings() {
+  // Randy şablonlarını kaydet
+  async function saveRandyTemplates() {
     setSavingSettings(true)
     try {
-      // Her ayarı ayrı ayrı kaydet
-      const settingsToSave = Object.entries(randySettings)
+      // Sadece şablonları kaydet
+      const templateKeys = ['randy_dm_template', 'randy_group_template', 'randy_start_template']
 
-      for (const [key, value] of settingsToSave) {
-        await fetch('/api/admin/settings', {
+      for (const key of templateKeys) {
+        const response = await fetch('/api/admin/settings', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ key, value })
+          body: JSON.stringify({ key, value: randySettings[key as keyof typeof randySettings] })
         })
+
+        const data = await response.json()
+        if (!data.success) {
+          throw new Error(data.error || 'Kaydetme başarısız')
+        }
       }
 
-      toast.success('Randy ayarları kaydedildi')
-      loadRandySettings() // Ayarları yeniden yükle
+      toast.success('Randy şablonları kaydedildi')
+      await loadRandySettings()
     } catch (error) {
-      console.error('Error saving randy settings:', error)
+      console.error('Error saving randy templates:', error)
       toast.error('Bir hata oluştu')
     } finally {
       setSavingSettings(false)
+    }
+  }
+
+  // Randy ayarını direkt kaydet (switch değiştiğinde)
+  async function toggleRandySetting(key: string, checked: boolean) {
+    const newValue = checked ? 'true' : 'false'
+
+    // Mevcut değeri kaydet (hata durumunda geri almak için)
+    const previousValue = randySettings[key as keyof typeof randySettings]
+
+    // Optimistic update - önce UI'ı güncelle
+    setRandySettings(prev => ({ ...prev, [key]: newValue }))
+
+    try {
+      const response = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, value: newValue })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success('Ayar güncellendi')
+      } else {
+        // Hata varsa geri al
+        setRandySettings(prev => ({ ...prev, [key]: previousValue }))
+        toast.error(data.error || 'Ayar kaydedilemedi')
+      }
+    } catch (error) {
+      // Hata varsa geri al
+      setRandySettings(prev => ({ ...prev, [key]: previousValue }))
+      console.error('Save error:', error)
+      toast.error('Bir hata oluştu')
     }
   }
 
@@ -787,7 +827,7 @@ export default function AdminRandyPage() {
                   <Textarea
                     id="randy_dm_template"
                     value={randySettings.randy_dm_template}
-                    onChange={(e) => setRandySettings({ ...randySettings, randy_dm_template: e.target.value })}
+                    onChange={(e) => setRandySettings(prev => ({ ...prev, randy_dm_template: e.target.value }))}
                     className="bg-white/5 border-white/10 text-white font-mono text-sm"
                     rows={8}
                     placeholder="🎉 Tebrikler! Randy Kazandınız!..."
@@ -804,7 +844,7 @@ export default function AdminRandyPage() {
                   <Textarea
                     id="randy_group_template"
                     value={randySettings.randy_group_template}
-                    onChange={(e) => setRandySettings({ ...randySettings, randy_group_template: e.target.value })}
+                    onChange={(e) => setRandySettings(prev => ({ ...prev, randy_group_template: e.target.value }))}
                     className="bg-white/5 border-white/10 text-white font-mono text-sm"
                     rows={6}
                     placeholder="🎉 Randy Kazananı! {mention} tebrikler!..."
@@ -821,7 +861,7 @@ export default function AdminRandyPage() {
                   <Textarea
                     id="randy_start_template"
                     value={randySettings.randy_start_template}
-                    onChange={(e) => setRandySettings({ ...randySettings, randy_start_template: e.target.value })}
+                    onChange={(e) => setRandySettings(prev => ({ ...prev, randy_start_template: e.target.value }))}
                     className="bg-white/5 border-white/10 text-white font-mono text-sm"
                     rows={8}
                     placeholder="🎊 Randy Başladı!..."
@@ -841,7 +881,7 @@ export default function AdminRandyPage() {
                   </div>
                   <Switch
                     checked={randySettings.randy_send_dm === 'true'}
-                    onCheckedChange={(checked) => setRandySettings({ ...randySettings, randy_send_dm: checked ? 'true' : 'false' })}
+                    onCheckedChange={(checked) => toggleRandySetting('randy_send_dm', checked)}
                   />
                 </div>
 
@@ -852,7 +892,7 @@ export default function AdminRandyPage() {
                   </div>
                   <Switch
                     checked={randySettings.randy_send_announcement === 'true'}
-                    onCheckedChange={(checked) => setRandySettings({ ...randySettings, randy_send_announcement: checked ? 'true' : 'false' })}
+                    onCheckedChange={(checked) => toggleRandySetting('randy_send_announcement', checked)}
                   />
                 </div>
 
@@ -863,7 +903,7 @@ export default function AdminRandyPage() {
                   </div>
                   <Switch
                     checked={randySettings.randy_pin_start_message === 'true'}
-                    onCheckedChange={(checked) => setRandySettings({ ...randySettings, randy_pin_start_message: checked ? 'true' : 'false' })}
+                    onCheckedChange={(checked) => toggleRandySetting('randy_pin_start_message', checked)}
                   />
                 </div>
 
@@ -874,7 +914,7 @@ export default function AdminRandyPage() {
                   </div>
                   <Switch
                     checked={randySettings.randy_pin_winner_message === 'true'}
-                    onCheckedChange={(checked) => setRandySettings({ ...randySettings, randy_pin_winner_message: checked ? 'true' : 'false' })}
+                    onCheckedChange={(checked) => toggleRandySetting('randy_pin_winner_message', checked)}
                   />
                 </div>
 
@@ -885,17 +925,24 @@ export default function AdminRandyPage() {
                   </div>
                   <Switch
                     checked={randySettings.randy_one_per_user === 'true'}
-                    onCheckedChange={(checked) => setRandySettings({ ...randySettings, randy_one_per_user: checked ? 'true' : 'false' })}
+                    onCheckedChange={(checked) => toggleRandySetting('randy_one_per_user', checked)}
                   />
                 </div>
               </div>
 
+            </Card>
+
+            {/* Mesaj Şablonlarını Kaydet Butonu */}
+            <Card className="bg-white/5 border-white/10 p-4">
+              <p className="text-xs text-gray-400 mb-3">
+                💡 Yukarıdaki switch ayarları otomatik olarak kaydedilir. Mesaj şablonlarını güncellediyseniz aşağıdaki butona tıklayın.
+              </p>
               <Button
-                onClick={saveRandySettings}
+                onClick={saveRandyTemplates}
                 disabled={savingSettings}
-                className="w-full mt-6 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-semibold py-6"
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-semibold py-4"
               >
-                {savingSettings ? 'Kaydediliyor...' : 'Ayarları Kaydet'}
+                {savingSettings ? 'Kaydediliyor...' : 'Mesaj Şablonlarını Kaydet'}
               </Button>
             </Card>
 
