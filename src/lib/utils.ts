@@ -69,15 +69,13 @@ async function sendTelegramNotification(telegramId: string, message: string) {
 /**
  * Kullanıcının çark haklarını kontrol eder ve gerekirse sıfırlar
  * @param userId Kullanıcı ID'si
- * @param wheelResetHour Sıfırlama saati (0-23), varsayılan 0 (gece yarısı)
- * @param wheelResetMinute Sıfırlama dakikası (0-59), varsayılan 0
+ * @param wheelResetTime Sıfırlama zamanı (HH:mm formatında), varsayılan "00:00"
  * @param dailyWheelSpins Günlük çark hakkı, varsayılan 3
  * @returns Güncellenmiş kullanıcı verisi veya null
  */
 export async function checkAndResetWheelSpins(
   userId: string,
-  wheelResetHour: number = 0,
-  wheelResetMinute: number = 0,
+  wheelResetTime: string = "00:00",
   dailyWheelSpins: number = 3
 ) {
   try {
@@ -94,6 +92,9 @@ export async function checkAndResetWheelSpins(
     });
 
     if (!user) return null;
+
+    // wheelResetTime'ı parse et (HH:mm formatında)
+    const [wheelResetHour, wheelResetMinute] = wheelResetTime.split(':').map(num => parseInt(num) || 0);
 
     const now = getTurkeyDate(); // Türkiye saatini kullan
     const lastReset = user.lastSpinReset;
@@ -134,10 +135,7 @@ export async function checkAndResetWheelSpins(
         },
       });
 
-      console.log(`🔄 Çark hakları sıfırlandı: User ${userId} - ${dailyWheelSpins} hak (Sıfırlama zamanı: ${wheelResetHour}:${wheelResetMinute.toString().padStart(2, '0')})`);
-
-      // NOT: Bildirim artık otomatik gönderilmiyor
-      // Bildirimler sadece belirlenen saatte toplu olarak gönderilir (scripts/wheel-reset-notification.ts)
+      console.log(`🔄 Çark hakları sıfırlandı: User ${userId} - ${dailyWheelSpins} hak (Sıfırlama zamanı: ${wheelResetTime})`);
 
       return updatedUser;
     }
