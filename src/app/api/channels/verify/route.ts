@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkChannelMembership } from '@/lib/telegram'
+import { requireAuth } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { userId, channelId } = body
+    // Session kontrolü - artık body'den userId yerine session kullanıyoruz
+    const session = await requireAuth(request)
+    const userId = session.userId
 
-    if (!userId || !channelId) {
+    const body = await request.json()
+    const { channelId } = body
+
+    if (!channelId) {
       return NextResponse.json(
-        { error: 'User ID and Channel ID required' },
+        { error: 'Channel ID required' },
         { status: 400 }
       )
     }
@@ -74,6 +79,12 @@ export async function POST(request: NextRequest) {
     console.log('❌ Kullanıcı kanala üye değil')
     return NextResponse.json({ joined: false })
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Oturum geçersiz. Lütfen tekrar giriş yapın.' },
+        { status: 401 }
+      )
+    }
     console.error('Verify channel error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
