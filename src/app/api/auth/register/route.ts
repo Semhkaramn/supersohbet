@@ -7,9 +7,8 @@ import { createToken, createAuthResponse } from '@/lib/auth'
 // Validation schema
 const registerSchema = z.object({
   email: z.string().email('Geçerli bir email adresi giriniz'),
-  username: z.string().min(3, 'Kullanıcı adı en az 3 karakter olmalıdır').max(20, 'Kullanıcı adı en fazla 20 karakter olabilir'),
+  siteUsername: z.string().min(3, 'Kullanıcı adı en az 3 karakter olmalıdır').max(20, 'Kullanıcı adı en fazla 20 karakter olabilir'),
   password: z.string().min(6, 'Şifre en az 6 karakter olmalıdır'),
-  firstName: z.string().min(2, 'İsim en az 2 karakter olmalıdır').optional(),
   referralCode: z.string().optional()
 })
 
@@ -29,7 +28,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { email, username, password, firstName, referralCode } = validation.data
+    const { email, siteUsername, password, referralCode } = validation.data
 
     // Email kontrolü
     const existingEmail = await prisma.user.findUnique({
@@ -43,12 +42,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Username kontrolü
-    const existingUsername = await prisma.user.findFirst({
-      where: { username }
+    // SiteUsername kontrolü
+    const existingSiteUsername = await prisma.user.findFirst({
+      where: { siteUsername }
     })
 
-    if (existingUsername) {
+    if (existingSiteUsername) {
       return NextResponse.json(
         { error: 'Bu kullanıcı adı zaten kullanılıyor' },
         { status: 400 }
@@ -70,15 +69,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Kullanıcının kendi referral code'unu oluştur
-    const userReferralCode = `${username.toLowerCase()}-${Math.random().toString(36).substring(2, 8)}`
+    const userReferralCode = `${siteUsername.toLowerCase()}-${Math.random().toString(36).substring(2, 8)}`
 
     // Yeni kullanıcı oluştur
     const user = await prisma.user.create({
       data: {
         email,
-        username,
+        siteUsername,
         password: passwordHash,
-        firstName: firstName || username,
         loginMethod: 'email',
         referralCode: userReferralCode,
         referredById
@@ -86,8 +84,7 @@ export async function POST(request: NextRequest) {
       select: {
         id: true,
         email: true,
-        username: true,
-        firstName: true,
+        siteUsername: true,
         points: true,
         xp: true
       }
@@ -111,7 +108,7 @@ export async function POST(request: NextRequest) {
             userId: referredById,
             amount: 100,
             type: 'referral_reward',
-            description: `${username} referansınızla katıldı!`
+            description: `${siteUsername} referansınızla katıldı!`
           }
         })
       ])
@@ -121,12 +118,12 @@ export async function POST(request: NextRequest) {
     const token = await createToken({
       userId: user.id,
       email: user.email!,
-      username: user.username!
+      username: user.siteUsername!
     })
 
     console.log('✅ Yeni kullanıcı kaydedildi:', {
       email: user.email,
-      username: user.username
+      siteUsername: user.siteUsername
     })
 
     return createAuthResponse({
@@ -135,8 +132,10 @@ export async function POST(request: NextRequest) {
       user: {
         id: user.id,
         email: user.email,
-        username: user.username,
-        firstName: user.firstName,
+        siteUsername: user.siteUsername,
+        username: null,
+        firstName: null,
+        lastName: null,
         points: user.points,
         xp: user.xp,
         referralCode: userReferralCode,
