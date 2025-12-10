@@ -162,6 +162,10 @@ export default function AdminSettingsPage() {
 
       if (data.success) {
         toast.success(newValue ? 'Bakım modu aktif edildi' : 'Bakım modu kapatıldı')
+        // Settings state'ini de güncelle - önemli!
+        setSettings(prev =>
+          prev.map(s => s.key === 'maintenance_mode' ? { ...s, value: newValue.toString() } : s)
+        )
       } else {
         // Hata varsa geri al
         setMaintenanceMode(!newValue)
@@ -195,6 +199,10 @@ export default function AdminSettingsPage() {
 
       if (data.success) {
         toast.success('Ayar güncellendi')
+        // Settings state'ini de güncelle - önemli!
+        setSettings(prev =>
+          prev.map(s => s.key === key ? { ...s, value: newValue.toString() } : s)
+        )
       } else {
         // Hata varsa geri al
         setterFunction(currentValue)
