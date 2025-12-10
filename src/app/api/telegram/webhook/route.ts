@@ -742,6 +742,14 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
         }
       })
 
+      // Toplam mesaj sayısını artır (tüm mesajlar için - görevler için kullanılır)
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          totalMessages: { increment: 1 }
+        }
+      })
+
       // Puan kazanamayanlar için buradan çık
       if (!canEarnPoints) {
         console.log(`⚠️ Kullanıcı /start yapmamış - sadece mesaj kaydedildi, puan verilmedi (userId: ${userId})`)
@@ -774,7 +782,6 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
           points: { increment: pointsPerMessage },
           xp: shouldGiveXp ? { increment: xpPerMessage } : undefined,
           messageCount: newMessageCount,
-          totalMessages: { increment: 1 }, // Sadece ödül kazanan mesajlar
           lastMessageAt: getTurkeyDate() // Türkiye saati
         }
       })
