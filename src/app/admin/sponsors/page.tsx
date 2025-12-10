@@ -10,7 +10,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Plus, Edit, Trash2, Heart, Crown, Upload, X, Search } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ArrowLeft, Plus, Edit, Trash2, Heart, Crown, Upload, X, Search, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
@@ -27,18 +28,44 @@ interface Sponsor {
   clicks: number
 }
 
+interface UserSponsorInfo {
+  id: string
+  identifier: string
+  createdAt: string
+  user: {
+    id: string
+    telegramId: string
+    username?: string
+    firstName?: string
+    lastName?: string
+  }
+  sponsor: {
+    id: string
+    name: string
+    identifierType: string
+    category: string
+  }
+}
+
 export default function AdminSponsorsPage() {
   const router = useRouter()
   const [sponsors, setSponsors] = useState<Sponsor[]>([])
+  const [userSponsorInfos, setUserSponsorInfos] = useState<UserSponsorInfo[]>([])
   const [loading, setLoading] = useState(true)
+  const [userDataLoading, setUserDataLoading] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingSponsor, setEditingSponsor] = useState<Sponsor | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState('sponsors')
 
-  // Search and filter states
+  // Search and filter states for sponsors
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
+
+  // Search and filter states for user data
+  const [userSearchTerm, setUserSearchTerm] = useState('')
+  const [sponsorFilter, setSponsorFilter] = useState<string>('all')
 
   const [formData, setFormData] = useState({
     name: '',
@@ -62,6 +89,12 @@ export default function AdminSponsorsPage() {
     loadSponsors()
   }, [])
 
+  useEffect(() => {
+    if (activeTab === 'userdata') {
+      loadUserSponsorData()
+    }
+  }, [activeTab])
+
   async function loadSponsors() {
     try {
       const response = await fetch('/api/admin/sponsors')
@@ -72,6 +105,20 @@ export default function AdminSponsorsPage() {
       toast.error('Sponsorlar yüklenemedi')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function loadUserSponsorData() {
+    setUserDataLoading(true)
+    try {
+      const response = await fetch('/api/admin/sponsors?includeUserData=true')
+      const data = await response.json()
+      setUserSponsorInfos(data.userSponsorInfos || [])
+    } catch (error) {
+      console.error('Error loading user sponsor data:', error)
+      toast.error('Kullanıcı verileri yüklenemedi')
+    } finally {
+      setUserDataLoading(false)
     }
   }
 
@@ -115,13 +162,13 @@ export default function AdminSponsorsPage() {
     setUploadingImage(true)
 
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('folder', 'supersohbet/sponsors')
+      const formDataUpload = new FormData()
+      formDataUpload.append('file', file)
+      formDataUpload.append('folder', 'supersohbet/sponsors')
 
       const response = await fetch('/api/upload', {
         method: 'POST',
-        body: formData
+        body: formDataUpload
       })
 
       const data = await response.json()
@@ -286,6 +333,16 @@ export default function AdminSponsorsPage() {
     return matchesSearch && matchesCategory
   })
 
+  // Filter user sponsor info based on search and sponsor
+  const filteredUserSponsorInfos = userSponsorInfos.filter(info => {
+    const userName = info.user.firstName || info.user.username || info.user.telegramId
+    const matchesSearch = userName.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+      info.identifier.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+      info.sponsor.name.toLowerCase().includes(userSearchTerm.toLowerCase())
+    const matchesSponsor = sponsorFilter === 'all' || info.sponsor.id === sponsorFilter
+    return matchesSearch && matchesSponsor
+  })
+
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-5xl mx-auto">
@@ -304,130 +361,166 @@ export default function AdminSponsorsPage() {
             </h1>
             <p className="text-gray-400 mt-1">Sponsorları yönetin</p>
           </div>
-          <Button
-            onClick={() => openDialog()}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Yeni Sponsor Ekle
-          </Button>
         </div>
 
-        {/* Search and Filter */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Sponsor ara (isim, açıklama)..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-            />
-          </div>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-full md:w-[200px] bg-white/5 border-white/10 text-white">
-              <SelectValue placeholder="Kategori" />
-            </SelectTrigger>
-            <SelectContent className="bg-slate-900 border-white/20">
-              <SelectItem value="all">Tümü</SelectItem>
-              <SelectItem value="vip">VIP Sponsorlar</SelectItem>
-              <SelectItem value="normal">Normal Sponsorlar</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Main Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="bg-white/5 border border-white/10">
+            <TabsTrigger value="sponsors" className="data-[state=active]:bg-blue-600">
+              <Heart className="w-4 h-4 mr-2" />
+              Sponsorlar
+            </TabsTrigger>
+            <TabsTrigger value="userdata" className="data-[state=active]:bg-blue-600">
+              <Users className="w-4 h-4 mr-2" />
+              Kullanıcı Verileri
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Sponsors Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredSponsors.length === 0 ? (
-            <Card className="col-span-2 bg-white/5 border-white/10 p-12 text-center">
-              <Heart className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-              <p className="text-gray-400">
-                {sponsors.length === 0 ? 'Henüz sponsor eklenmemiş' : 'Arama kriterlerine uygun sponsor bulunamadı'}
-              </p>
-            </Card>
-          ) : (
-            filteredSponsors.map((sponsor) => (
-              <Card key={sponsor.id} className="bg-white/5 border-white/10 p-4">
-                <div className="flex gap-4">
-                  {sponsor.logoUrl && (
-                    <img
-                      src={sponsor.logoUrl}
-                      alt={sponsor.name}
-                      className="w-16 h-16 object-contain rounded-lg bg-white/5 p-2"
-                    />
-                  )}
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-lg font-semibold text-white">{sponsor.name}</h3>
-                          {sponsor.category === 'vip' && (
-                            <Crown className="w-4 h-4 text-yellow-400" />
-                          )}
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            sponsor.isActive
-                              ? 'bg-green-500/20 text-green-400'
-                              : 'bg-gray-500/20 text-gray-400'
-                          }`}>
-                            {sponsor.isActive ? 'Aktif' : 'Pasif'}
-                          </span>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            sponsor.category === 'vip'
-                              ? 'bg-yellow-500/20 text-yellow-400'
-                              : 'bg-blue-500/20 text-blue-400'
-                          }`}>
-                            {sponsor.category === 'vip' ? 'VIP' : 'Normal'}
-                          </span>
+          {/* Sponsors Tab */}
+          <TabsContent value="sponsors" className="space-y-6">
+            <div className="flex items-center justify-between">
+              {/* Search and Filter */}
+              <div className="flex flex-col md:flex-row gap-4 flex-1 mr-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Sponsor ara (isim, açıklama)..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                  />
+                </div>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-full md:w-[200px] bg-white/5 border-white/10 text-white">
+                    <SelectValue placeholder="Kategori" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-white/20">
+                    <SelectItem value="all">Tümü</SelectItem>
+                    <SelectItem value="vip">VIP Sponsorlar</SelectItem>
+                    <SelectItem value="normal">Normal Sponsorlar</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                onClick={() => openDialog()}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Yeni Sponsor Ekle
+              </Button>
+            </div>
+
+            {/* Sponsors Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredSponsors.length === 0 ? (
+                <Card className="col-span-2 bg-white/5 border-white/10 p-12 text-center">
+                  <Heart className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                  <p className="text-gray-400">
+                    {sponsors.length === 0 ? 'Henüz sponsor eklenmemiş' : 'Arama kriterlerine uygun sponsor bulunamadı'}
+                  </p>
+                </Card>
+              ) : (
+                filteredSponsors.map((sponsor) => (
+                  <SponsorCard
+                    key={sponsor.id}
+                    sponsor={sponsor}
+                    onEdit={() => openDialog(sponsor)}
+                    onDelete={() => handleDelete(sponsor.id)}
+                    onToggleActive={() => toggleActive(sponsor.id, sponsor.isActive)}
+                  />
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          {/* User Data Tab */}
+          <TabsContent value="userdata" className="space-y-6">
+            {/* Search and Filter for User Data */}
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Kullanıcı veya sponsor bilgisi ara..."
+                  value={userSearchTerm}
+                  onChange={(e) => setUserSearchTerm(e.target.value)}
+                  className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+                />
+              </div>
+              <Select value={sponsorFilter} onValueChange={setSponsorFilter}>
+                <SelectTrigger className="w-full md:w-[250px] bg-white/5 border-white/10 text-white">
+                  <SelectValue placeholder="Sponsor Filtrele" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-white/20">
+                  <SelectItem value="all">Tüm Sponsorlar</SelectItem>
+                  {sponsors.map((sponsor) => (
+                    <SelectItem key={sponsor.id} value={sponsor.id}>
+                      {sponsor.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* User Data List */}
+            {userDataLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : filteredUserSponsorInfos.length === 0 ? (
+              <Card className="bg-white/5 border-white/10 p-12 text-center">
+                <Users className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                <p className="text-gray-400">
+                  {userSponsorInfos.length === 0 ? 'Henüz kullanıcı verisi yok' : 'Arama kriterlerine uygun veri bulunamadı'}
+                </p>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {filteredUserSponsorInfos.map((info) => (
+                  <Card key={info.id} className="bg-white/5 border-white/10 p-4 hover:bg-white/10 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <h3 className="text-white font-semibold">
+                              {info.user.firstName || info.user.username || 'Kullanıcı'}
+                            </h3>
+                            <p className="text-sm text-gray-400">
+                              @{info.user.username || info.user.telegramId}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 ml-4">
+                            <span className="text-gray-400 text-sm">→</span>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-white font-medium">{info.sponsor.name}</span>
+                                {info.sponsor.category === 'vip' && (
+                                  <Crown className="w-4 h-4 text-yellow-400" />
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-400">
+                                {info.sponsor.identifierType === 'username' ? 'Kullanıcı Adı' :
+                                 info.sponsor.identifierType === 'id' ? 'ID' : 'Email'}
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-gray-400 text-sm mt-1">{sponsor.description}</p>
-                        {sponsor.websiteUrl && (
-                          <a
-                            href={sponsor.websiteUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-400 text-sm hover:underline block mt-1"
-                          >
-                            {sponsor.websiteUrl}
-                          </a>
-                        )}
-                        <div className="flex gap-3 mt-2">
-                          <span className="text-green-400 text-sm">{sponsor.clicks} tıklama</span>
+                        <div className="mt-3 p-2 bg-blue-500/10 border border-blue-500/30 rounded">
+                          <span className="text-blue-400 font-semibold text-sm">Kayıtlı Bilgi: </span>
+                          <span className="text-white font-mono text-sm">{info.identifier}</span>
+                        </div>
+                        <div className="mt-2 text-xs text-gray-500">
+                          Kayıt: {new Date(info.createdAt).toLocaleString('tr-TR')}
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-2 mt-3">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => toggleActive(sponsor.id, sponsor.isActive)}
-                        className="border-white/20 hover:bg-white/10"
-                      >
-                        {sponsor.isActive ? 'Devre Dışı' : 'Aktif Et'}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openDialog(sponsor)}
-                        className="border-white/20 hover:bg-white/10"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDelete(sponsor.id)}
-                        className="border-red-500/20 hover:bg-red-500/10 text-red-400"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))
-          )}
-        </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Add/Edit Dialog */}
@@ -590,5 +683,98 @@ export default function AdminSponsorsPage() {
         onConfirm={confirmDelete}
       />
     </div>
+  )
+}
+
+// Sponsor Card Component
+function SponsorCard({
+  sponsor,
+  onEdit,
+  onDelete,
+  onToggleActive
+}: {
+  sponsor: Sponsor
+  onEdit: () => void
+  onDelete: () => void
+  onToggleActive: () => void
+}) {
+  return (
+    <Card className="bg-white/5 border-white/10 p-4">
+      <div className="flex gap-4">
+        {sponsor.logoUrl && (
+          <img
+            src={sponsor.logoUrl}
+            alt={sponsor.name}
+            className="w-16 h-16 object-contain rounded-lg bg-white/5 p-2"
+          />
+        )}
+        <div className="flex-1">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-white">{sponsor.name}</h3>
+                {sponsor.category === 'vip' && (
+                  <Crown className="w-4 h-4 text-yellow-400" />
+                )}
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  sponsor.isActive
+                    ? 'bg-green-500/20 text-green-400'
+                    : 'bg-gray-500/20 text-gray-400'
+                }`}>
+                  {sponsor.isActive ? 'Aktif' : 'Pasif'}
+                </span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  sponsor.category === 'vip'
+                    ? 'bg-yellow-500/20 text-yellow-400'
+                    : 'bg-blue-500/20 text-blue-400'
+                }`}>
+                  {sponsor.category === 'vip' ? 'VIP' : 'Normal'}
+                </span>
+              </div>
+              <p className="text-gray-400 text-sm mt-1">{sponsor.description}</p>
+              {sponsor.websiteUrl && (
+                <a
+                  href={sponsor.websiteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 text-sm hover:underline block mt-1"
+                >
+                  {sponsor.websiteUrl}
+                </a>
+              )}
+              <div className="flex gap-3 mt-2">
+                <span className="text-green-400 text-sm">{sponsor.clicks} tıklama</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2 mt-3">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onToggleActive}
+              className="border-white/20 hover:bg-white/10"
+            >
+              {sponsor.isActive ? 'Devre Dışı' : 'Aktif Et'}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onEdit}
+              className="border-white/20 hover:bg-white/10"
+            >
+              <Edit className="w-4 h-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onDelete}
+              className="border-red-500/20 hover:bg-red-500/10 text-red-400"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Card>
   )
 }
