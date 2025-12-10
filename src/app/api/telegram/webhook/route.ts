@@ -439,18 +439,52 @@ Bot özelliklerini kullanmanız engellenmiştir.
           const randyResults = await checkRandySlots()
           const botToken = getSetting('telegram_bot_token', '')
           const sendAnnouncement = getSetting('randy_send_announcement', 'true') === 'true'
-          const pinMessage = getSetting('randy_pin_message', 'true') === 'true'
+          const sendDM = getSetting('randy_send_dm', 'true') === 'true'
+          const pinWinnerMessage = getSetting('randy_pin_winner_message', 'true') === 'true'
+          const groupTemplate = getSetting('randy_group_template', '')
+          const dmTemplate = getSetting('randy_dm_template', '')
 
-          // Kazananları duyur
+          // Kazananları duyur ve DM gönder
           for (const result of randyResults) {
-            if (result.assigned && result.winner && result.prizeText && sendAnnouncement && botToken) {
-              await announceRandyWinner(
-                botToken,
-                chatId,
-                result.winner,
-                result.prizeText,
-                pinMessage
-              )
+            if (result.assigned && result.winner && result.prizeText && botToken) {
+              // Grup duyurusu gönder
+              if (sendAnnouncement) {
+                const success = await announceRandyWinner(
+                  botToken,
+                  chatId,
+                  result.winner,
+                  result.prizeText,
+                  pinWinnerMessage,
+                  groupTemplate || undefined
+                )
+
+                if (success && result.slotId) {
+                  // Slot'u güncelle - duyuruldu olarak işaretle
+                  await prisma.randySlot.update({
+                    where: { id: result.slotId },
+                    data: { groupAnnounced: true }
+                  })
+                }
+              }
+
+              // DM gönder (sadece /start yapmış kullanıcılara)
+              if (sendDM) {
+                const { sendRandyDM } = await import('@/lib/randy')
+                const dmSuccess = await sendRandyDM(
+                  botToken,
+                  result.winner,
+                  result.prizeText,
+                  dmTemplate || undefined
+                )
+
+                if (dmSuccess && result.slotId) {
+                  // Slot'u güncelle - DM gönderildi olarak işaretle
+                  await prisma.randySlot.update({
+                    where: { id: result.slotId },
+                    data: { dmSent: true }
+                  })
+                }
+              }
             }
           }
         } catch (error) {
@@ -534,7 +568,8 @@ Başlamak için yanındaki menü butonuna tıkla! 👆
                   lastName,
                   referredById: referrer.id,
                   points: referralBonusInvited, // Davet edilene bonus
-                  dailySpinsLeft: dailyWheelSpins
+                  dailySpinsLeft: dailyWheelSpins,
+                  hadStart: true // Kullanıcı /start yaptı
                 }
               })
 
@@ -576,7 +611,8 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
                   username,
                   firstName,
                   lastName,
-                  dailySpinsLeft: dailyWheelSpins
+                  dailySpinsLeft: dailyWheelSpins,
+                  hadStart: true // Kullanıcı /start yaptı
                 }
               })
             }
@@ -590,7 +626,8 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
                 username,
                 firstName,
                 lastName,
-                dailySpinsLeft: dailyWheelSpins
+                dailySpinsLeft: dailyWheelSpins,
+                hadStart: true // Kullanıcı /start yaptı
               }
             })
           } else {
@@ -601,7 +638,8 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
               data: {
                 username,
                 firstName,
-                lastName
+                lastName,
+                hadStart: true // Kullanıcı /start yaptı
               }
             })
           }
