@@ -8,37 +8,6 @@ async function main() {
 
   // Settings oluştur
   const settings = [
-    // Telegram Bot Ayarları
-    { key: 'telegram_bot_token', value: '', description: 'Telegram Bot Token', category: 'telegram' },
-    { key: 'telegram_bot_username', value: '', description: 'Telegram Bot Kullanıcı Adı (@username)', category: 'telegram' },
-    { key: 'telegram_webhook_url', value: 'https://soft-fairy-c52849.netlify.app/api/telegram/webhook', description: 'Telegram Webhook URL', category: 'telegram' },
-
-    // Cloudinary Ayarları
-    { key: 'cloudinary_cloud_name', value: '', description: 'Cloudinary Cloud Name', category: 'cloudinary' },
-    { key: 'cloudinary_api_key', value: '', description: 'Cloudinary API Key', category: 'cloudinary' },
-    { key: 'cloudinary_api_secret', value: '', description: 'Cloudinary API Secret', category: 'cloudinary' },
-
-    // Puan ve XP Ayarları
-    { key: 'points_per_message', value: '10', description: 'Mesaj başına kazanılan puan', category: 'points' },
-    { key: 'xp_per_message', value: '1', description: 'Mesaj başına kazanılan XP', category: 'points' },
-    { key: 'messages_for_xp', value: '1', description: 'Kaç mesajda bir XP verilecek (1 = her mesajda)', category: 'points' },
-
-    // Mesaj Kısıtlamaları
-    { key: 'min_message_length', value: '5', description: 'Minimum mesaj karakter uzunluğu', category: 'limits' },
-    { key: 'message_cooldown_seconds', value: '30', description: 'Mesajlar arası minimum bekleme süresi (saniye)', category: 'limits' },
-
-    // Çark Ayarları
-    { key: 'daily_wheel_spins', value: '1', description: 'Günlük ücretsiz çark hakkı', category: 'wheel' },
-    { key: 'wheel_reset_time', value: '00:00', description: 'Günlük çark haklarının sıfırlanacağı saat (HH:mm formatında)', category: 'wheel' },
-
-    // Bildirim Ayarları
-    { key: 'notify_order_approved', value: 'true', description: 'Sipariş onaylandığında bildirim gönder', category: 'notifications' },
-    { key: 'notify_level_up', value: 'true', description: 'Seviye atlandığında bildirim gönder', category: 'notifications' },
-
-    // Referans Sistemi
-    { key: 'referral_bonus_inviter', value: '100', description: 'Davet eden kişinin kazandığı puan', category: 'referral' },
-    { key: 'referral_bonus_invited', value: '50', description: 'Davet edilen kişinin kazandığı puan', category: 'referral' },
-
     // Randy Sistemi
     { key: 'randy_dm_template', value: '🎉 **Tebrikler! Randy Kazandınız!**\n\nMerhaba {firstname},\n\nRandy çekilişinde kazanan siz oldunuz!\n\n🎁 **Ödülünüz:** {prize}\n\nÖdülünüzü almak için lütfen grup yöneticileriyle iletişime geçin.\n\nTebrikler! 🎊', description: 'Randy kazananına gönderilecek DM şablonu ({firstname}, {username}, {prize} kullanılabilir)', category: 'randy' },
     { key: 'randy_group_template', value: '🎉 **Randy Kazananı!**\n\n{mention} tebrikler!\n\n🎁 **Ödül:** {prize}\n\nÖdülünüzü almak için lütfen yöneticilerle iletişime geçin.', description: 'Randy kazananı grup duyurusu şablonu ({mention}, {username}, {firstname}, {prize} kullanılabilir)', category: 'randy' },
@@ -47,75 +16,8 @@ async function main() {
     { key: 'randy_send_announcement', value: 'true', description: 'Randy kazananını grupta duyur', category: 'randy' },
     { key: 'randy_pin_start_message', value: 'true', description: 'Randy başlangıç duyurusunu sabitle', category: 'randy' },
     { key: 'randy_pin_winner_message', value: 'true', description: 'Randy kazanan duyurusunu sabitle', category: 'randy' },
-
-    // Genel Ayarlar
-    { key: 'maintenance_mode', value: 'false', description: 'Bakım modu aktif mi?', category: 'general' },
-    { key: 'allow_new_users', value: 'true', description: 'Yeni kullanıcı kayıtları açık mı?', category: 'general' },
-    { key: 'activity_group_id', value: '', description: 'Mesaj dinleme ve puan verme yapılacak grup ID', category: 'general' },
   ]
 
-  // Ana admin kullanıcısı oluştur (semhkaramn)
-  const superAdminPasswordHash = await bcrypt.hash('Abuzittin74.', 10)
-  const superAdmin = await prisma.admin.upsert({
-    where: { username: 'semhkaramn' },
-    update: {},
-    create: {
-      username: 'semhkaramn',
-      passwordHash: superAdminPasswordHash,
-      isSuperAdmin: true,
-      canAccessDashboard: true,
-      canAccessBroadcast: true,
-      canAccessStatistics: true,
-      canAccessTasks: true,
-      canAccessShop: true,
-      canAccessWheel: true,
-      canAccessSponsors: true,
-      canAccessRanks: true,
-      canAccessSettings: true,
-      canAccessChannels: true,
-      canAccessUsers: true,
-      canAccessAdmins: true,
-    }
-  })
-  console.log('✅ Super Admin created:', superAdmin.username)
-
-  // Rütbeleri oluştur
-  const ranks = [
-    { name: 'Bronz', minXp: 500, icon: '🥉', color: '#CD7F32', order: 1 },
-    { name: 'Gümüş', minXp: 100, icon: '🥈', color: '#C0C0C0', order: 2 },
-    { name: 'Altın', minXp: 2500, icon: '🥇', color: '#FFD700', order: 3 },
-    { name: 'Platin', minXp: 5000, icon: '💎', color: '#E5E4E2', order: 4 },
-    { name: 'Elmas', minXp: 10000, icon: '💠', color: '#B9F2FF', order: 5 },
-    { name: 'Ejderha', minXp: 20000, icon: '🐉', color: '#FF0000', order: 6 },
-  ]
-
-  for (const rank of ranks) {
-    await prisma.rank.upsert({
-      where: { name: rank.name },
-      update: rank,
-      create: rank
-    })
-  }
-  console.log('✅ Ranks created:', ranks.length)
-
-  // Çark ödülleri oluştur
-  const wheelPrizes = [
-    { name: '50', points: 50, color: '#60A5FA', probability: 3.0, order: 0 },
-    { name: '100', points: 100, color: '#34D399', probability: 2.5, order: 1 },
-    { name: '250', points: 250, color: '#FBBF24', probability: 2.0, order: 2 },
-    { name: '500', points: 500, color: '#F87171', probability: 1.5, order: 3 },
-    { name: '1,000', points: 1000, color: '#A78BFA', probability: 0.8, order: 4 },
-    { name: 'JACKPOT', points: 5000, color: '#EC4899', probability: 0.2, order: 5 },
-  ]
-
-  for (const prize of wheelPrizes) {
-    await prisma.wheelPrize.upsert({
-      where: { name: prize.name },
-      update: prize,
-      create: prize
-    })
-  }
-  console.log('✅ Wheel prizes created:', wheelPrizes.length)
 
   for (const setting of settings) {
     await prisma.settings.upsert({
