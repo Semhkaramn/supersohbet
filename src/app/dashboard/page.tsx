@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
@@ -46,27 +46,29 @@ interface UserData {
 
 function DashboardContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const userId = searchParams.get('userId')
 
   const [userData, setUserData] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!userId) {
-      router.push('/')
-      return
-    }
     loadUserData()
-  }, [userId])
+  }, [])
 
   async function loadUserData() {
     try {
-      const response = await fetch(`/api/user/${userId}`)
+      const response = await fetch('/api/user/me')
+
+      if (response.status === 401) {
+        // Session expired, redirect to login
+        router.push('/login')
+        return
+      }
+
       const data = await response.json()
       setUserData(data)
     } catch (error) {
       console.error('Error loading user data:', error)
+      router.push('/login')
     } finally {
       setLoading(false)
     }
@@ -114,7 +116,7 @@ function DashboardContent() {
           <div className="flex items-center gap-4">
             <Avatar
               className="w-20 h-20 border-3 border-white/20 cursor-pointer shadow-xl hover:scale-105 transition-transform"
-              onClick={() => router.push(`/profile?userId=${userId}`)}
+              onClick={() => router.push(`/profile`)}
             >
               {userData.photoUrl && <AvatarImage src={userData.photoUrl} alt={userData.firstName || userData.username || 'User'} />}
               <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-2xl font-bold">
@@ -157,7 +159,7 @@ function DashboardContent() {
 
         {/* Daily Spin Alert - More Prominent */}
         {userData.dailySpinsLeft > 0 && (
-          <Card className="bg-gradient-to-br from-purple-600/30 via-pink-600/30 to-purple-700/30 border-2 border-purple-400/50 p-5 mb-6 shadow-xl hover:scale-[1.02] transition-transform cursor-pointer animate-pulse-subtle" onClick={() => router.push(`/wheel?userId=${userId}`)}>
+          <Card className="bg-gradient-to-br from-purple-600/30 via-pink-600/30 to-purple-700/30 border-2 border-purple-400/50 p-5 mb-6 shadow-xl hover:scale-[1.02] transition-transform cursor-pointer animate-pulse-subtle" onClick={() => router.push(`/wheel`)}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg animate-spin-slow">
@@ -193,7 +195,7 @@ function DashboardContent() {
 
           <Card
             className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 backdrop-blur-sm border-yellow-500/30 p-5 cursor-pointer hover:scale-105 transition-transform shadow-lg"
-            onClick={() => router.push(`/leaderboard?userId=${userId}`)}
+            onClick={() => router.push(`/leaderboard`)}
           >
             <div className="flex items-center gap-3">
               <div className="w-14 h-14 rounded-full bg-yellow-500/30 flex items-center justify-center shadow-inner">
@@ -210,7 +212,7 @@ function DashboardContent() {
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-4">
           <Card
-            onClick={() => router.push(`/shop?userId=${userId}`)}
+            onClick={() => router.push(`/shop`)}
             className="bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border-emerald-500/30 p-6 cursor-pointer hover:scale-105 transition-all shadow-lg"
           >
             <ShoppingBag className="w-10 h-10 text-emerald-300 mb-3" />
@@ -219,7 +221,7 @@ function DashboardContent() {
           </Card>
 
           <Card
-            onClick={() => router.push(`/tasks?userId=${userId}`)}
+            onClick={() => router.push(`/tasks`)}
             className="bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border-purple-500/30 p-6 cursor-pointer hover:scale-105 transition-all shadow-lg"
           >
             <Target className="w-10 h-10 text-purple-300 mb-3" />
@@ -229,7 +231,7 @@ function DashboardContent() {
         </div>
       </div>
 
-      <BottomNav userId={userId!} />
+      <BottomNav userId={userData.id} />
 
       <style jsx>{`
         @keyframes pulse-subtle {
