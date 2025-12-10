@@ -35,6 +35,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Telegram ID yoksa kanal kontrolü yapılamaz
+    if (!user.telegramId) {
+      return NextResponse.json(
+        { error: 'Telegram hesabınızı bağlamanız gerekiyor', joined: false },
+        { status: 400 }
+      )
+    }
+
     console.log('🔍 Üyelik kontrolü başlıyor:', {
       userTelegramId: user.telegramId,
       userUsername: user.username,
@@ -45,8 +53,9 @@ export async function POST(request: NextRequest) {
     })
 
     // Telegram API ile kanal üyeliğini kontrol et
+    // Not: Bu noktada telegramId kesinlikle var (Telegram bağlama zorunlu)
     const isMember = await checkChannelMembership(
-      user.telegramId,
+      user.telegramId!,
       channel.channelId
     )
 
