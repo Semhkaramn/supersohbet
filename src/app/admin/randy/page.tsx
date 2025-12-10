@@ -757,7 +757,6 @@ export default function AdminRandyPage() {
                       </div>
                     )
                   })
-                )
                 )}
               </div>
             </Card>
