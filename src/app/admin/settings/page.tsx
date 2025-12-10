@@ -358,6 +358,7 @@ export default function AdminSettingsPage() {
   const messageCooldown = getSetting('message_cooldown_seconds')
   const dailyWheelSpins = getSetting('daily_wheel_spins')
   const wheelResetHour = getSetting('wheel_reset_hour')
+  const wheelResetMinute = getSetting('wheel_reset_minute')
   const referralBonusInviter = getSetting('referral_bonus_inviter')
   const referralBonusInvited = getSetting('referral_bonus_invited')
   const cloudinaryCloudName = getSetting('cloudinary_cloud_name')
@@ -808,27 +809,58 @@ export default function AdminSettingsPage() {
             </div>
 
             <div>
-              <Label className="text-white text-base">Günlük Sıfırlama Saati</Label>
-              <div className="flex gap-2 mt-2">
-                <Input
-                  value={wheelResetHour?.value || '0'}
-                  onChange={(e) => handleInputChange('wheel_reset_hour', e.target.value)}
-                  className="bg-white/10 border-white/20 text-white"
-                  type="number"
-                  min="0"
-                  max="23"
-                />
-                <Button
-                  onClick={() => saveSetting('wheel_reset_hour', wheelResetHour?.value || '0')}
-                  disabled={saving}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Save className="w-4 h-4" />
-                </Button>
+              <Label className="text-white text-base">Günlük Sıfırlama Zamanı</Label>
+              <p className="text-xs text-gray-400 mt-1 mb-2">
+                Çark haklarının her gün sıfırlanacağı saat ve dakika
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-white text-sm mb-1 block">Saat (0-23)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={wheelResetHour?.value || '0'}
+                      onChange={(e) => handleInputChange('wheel_reset_hour', e.target.value)}
+                      className="bg-white/10 border-white/20 text-white"
+                      type="number"
+                      min="0"
+                      max="23"
+                      placeholder="0"
+                    />
+                    <Button
+                      onClick={() => saveSetting('wheel_reset_hour', wheelResetHour?.value || '0')}
+                      disabled={saving}
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Save className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-white text-sm mb-1 block">Dakika (0-59)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={wheelResetMinute?.value || '0'}
+                      onChange={(e) => handleInputChange('wheel_reset_minute', e.target.value)}
+                      className="bg-white/10 border-white/20 text-white"
+                      type="number"
+                      min="0"
+                      max="59"
+                      placeholder="0"
+                    />
+                    <Button
+                      onClick={() => saveSetting('wheel_reset_minute', wheelResetMinute?.value || '0')}
+                      disabled={saving}
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Save className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
               </div>
               <p className="text-xs text-gray-400 mt-2">
-                Çark haklarının her gün sıfırlanacağı saat (0-23). Örnek: 0 = Gece Yarısı, 12 = Öğlen
+                Örnek: Saat=0, Dakika=0 → Gece Yarısı | Saat=12, Dakika=30 → Öğlen 12:30
               </p>
             </div>
           </div>
