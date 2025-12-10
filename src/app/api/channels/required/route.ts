@@ -67,9 +67,9 @@ export async function GET(request: NextRequest) {
       requiredChannels.map(async (channel) => {
         try {
           // Telegram API ile gerçek üyelik durumunu kontrol et
-          // Not: Bu noktada telegramId kesinlikle var (Telegram bağlama zorunlu)
+          // Not: Bu noktada telegramId kesinlikle var (yukarıda null check yapıldı)
           const isMemberNow = await checkChannelMembership(
-            user.telegramId,
+            user.telegramId!,
             channel.channelId
           )
 
