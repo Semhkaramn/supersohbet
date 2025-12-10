@@ -22,6 +22,11 @@ function ChannelsContent() {
   const [channels, setChannels] = useState<Channel[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Telegram bağlantı kontrolü
+  useEffect(() => {
+    checkTelegramConnection()
+  }, [])
+
   useEffect(() => {
     loadChannels()
   }, [])
@@ -38,6 +43,27 @@ function ChannelsContent() {
 
     return () => clearInterval(interval)
   }, [channels])
+
+  async function checkTelegramConnection() {
+    try {
+      const response = await fetch('/api/user/telegram-status')
+
+      if (response.status === 401) {
+        router.push('/login')
+        return
+      }
+
+      const data = await response.json()
+
+      // Telegram bağlı değilse yönlendir
+      if (!data.connected || !data.telegramId || !data.hadStart) {
+        router.push('/telegram-connect')
+        return
+      }
+    } catch (error) {
+      console.error('Error checking Telegram connection:', error)
+    }
+  }
 
   async function loadChannels() {
     try {
@@ -92,6 +118,16 @@ function ChannelsContent() {
           toast.success(`${channel.channelName} kanalına katıldınız! ✓`, {
             duration: 3000
           })
+
+          // Tüm kanallara katıldıysa dashboard'a yönlendir
+          if (data.allChannelsJoined) {
+            toast.success('Tüm kanallara katıldınız! Dashboard\'a yönlendiriliyorsunuz...', {
+              duration: 2000
+            })
+            setTimeout(() => {
+              router.push('/dashboard')
+            }, 2000)
+          }
         } else if (data.error) {
           console.error('❌ Kanal kontrolünde hata:', data.error)
         }
