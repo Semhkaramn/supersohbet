@@ -16,7 +16,8 @@ export async function GET(request: NextRequest) {
       totalMessages,
       dailyMessages,
       weeklyMessages,
-      monthlyMessages
+      monthlyMessages,
+      hadStartUsers
     ] = await Promise.all([
       prisma.user.count(),
       prisma.userPurchase.count(),
@@ -33,6 +34,9 @@ export async function GET(request: NextRequest) {
       }),
       prisma.messageStats.count({
         where: { createdAt: { gte: monthAgo } }
+      }),
+      prisma.user.count({
+        where: { hadStart: true }
       })
     ])
 
@@ -41,6 +45,7 @@ export async function GET(request: NextRequest) {
       totalPurchases,
       totalSpins,
       totalPoints: pointsSum._sum.points || 0,
+      hadStartUsers,
       messages: {
         total: totalMessages,
         daily: dailyMessages,
