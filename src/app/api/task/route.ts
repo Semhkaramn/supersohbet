@@ -1,18 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getTurkeyDate } from '@/lib/utils'
+import { requireAuth } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams
-    const userId = searchParams.get('userId')
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'userId required' },
-        { status: 400 }
-      )
-    }
+    // Session kontrolü - artık query parametresi yerine session kullanıyoruz
+    const session = await requireAuth(request)
+    const userId = session.userId
 
     // Kullanıcıyı getir (referral sayısı ve diğer istatistikler için)
     const user = await prisma.user.findUnique({
@@ -210,6 +205,12 @@ export async function GET(request: NextRequest) {
       taskHistory: formattedHistory
     })
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Oturum geçersiz. Lütfen tekrar giriş yapın.' },
+        { status: 401 }
+      )
+    }
     console.error('Get tasks error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -221,12 +222,16 @@ export async function GET(request: NextRequest) {
 // POST - Görev ödülünü talep et
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { userId, taskId } = body
+    // Session kontrolü - artık body'den userId yerine session kullanıyoruz
+    const session = await requireAuth(request)
+    const userId = session.userId
 
-    if (!userId || !taskId) {
+    const body = await request.json()
+    const { taskId } = body
+
+    if (!taskId) {
       return NextResponse.json(
-        { error: 'userId and taskId required' },
+        { error: 'taskId required' },
         { status: 400 }
       )
     }
@@ -394,6 +399,12 @@ export async function POST(request: NextRequest) {
       }
     })
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Oturum geçersiz. Lütfen tekrar giriş yapın.' },
+        { status: 401 }
+      )
+    }
     console.error('Claim task reward error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
