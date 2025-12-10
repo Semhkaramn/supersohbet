@@ -152,6 +152,18 @@ export async function getUserProfilePhoto(userId: number): Promise<string | null
   }
 }
 
+// Telegram mesajı gönder
+export async function sendTelegramMessage(chatId: number, message: string): Promise<void> {
+  try {
+    const bot = await getTelegramBot()
+    await bot.sendMessage(chatId, message, { parse_mode: 'HTML' })
+    console.log(`✅ Telegram mesajı gönderildi: ${chatId}`)
+  } catch (error) {
+    console.error('❌ Telegram mesajı gönderilemedi:', error)
+    throw error
+  }
+}
+
 // Telegram Login Widget doğrulama
 export async function verifyTelegramAuth(data: Record<string, string>): Promise<boolean> {
   try {
