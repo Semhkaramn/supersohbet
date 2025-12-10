@@ -310,6 +310,124 @@ export default function AdminSettingsPage() {
     }
   }
 
+  async function saveWheelSettings() {
+    setSaving(true)
+    try {
+      const settingsToSave = [
+        { key: 'daily_wheel_spins', value: dailyWheelSpins?.value || '' },
+        { key: 'wheel_reset_time', value: wheelResetTime?.value || '00:00' }
+      ]
+
+      const promises = settingsToSave.map(setting =>
+        fetch('/api/admin/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(setting)
+        }).then(res => res.json())
+      )
+
+      const results = await Promise.all(promises)
+
+      const allSuccess = results.every(r => r.success)
+
+      if (allSuccess) {
+        toast.success('Tüm ayarlar kaydedildi!')
+        setSettings(prev =>
+          prev.map(s => {
+            const updatedSetting = settingsToSave.find(setting => setting.key === s.key)
+            return updatedSetting ? { ...s, value: updatedSetting.value } : s
+          })
+        )
+      } else {
+        toast.error('Bazı ayarlar kaydedilemedi')
+      }
+    } catch (error) {
+      console.error('Save error:', error)
+      toast.error('Bir hata oluştu')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function saveReferralSettings() {
+    setSaving(true)
+    try {
+      const settingsToSave = [
+        { key: 'referral_bonus_inviter', value: referralBonusInviter?.value || '' },
+        { key: 'referral_bonus_invited', value: referralBonusInvited?.value || '' }
+      ]
+
+      const promises = settingsToSave.map(setting =>
+        fetch('/api/admin/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(setting)
+        }).then(res => res.json())
+      )
+
+      const results = await Promise.all(promises)
+
+      const allSuccess = results.every(r => r.success)
+
+      if (allSuccess) {
+        toast.success('Tüm ayarlar kaydedildi!')
+        setSettings(prev =>
+          prev.map(s => {
+            const updatedSetting = settingsToSave.find(setting => setting.key === s.key)
+            return updatedSetting ? { ...s, value: updatedSetting.value } : s
+          })
+        )
+      } else {
+        toast.error('Bazı ayarlar kaydedilemedi')
+      }
+    } catch (error) {
+      console.error('Save error:', error)
+      toast.error('Bir hata oluştu')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function saveCloudinarySettings() {
+    setSaving(true)
+    try {
+      const settingsToSave = [
+        { key: 'cloudinary_cloud_name', value: cloudinaryCloudName?.value || '' },
+        { key: 'cloudinary_api_key', value: cloudinaryApiKey?.value || '' },
+        { key: 'cloudinary_api_secret', value: cloudinaryApiSecret?.value || '' }
+      ]
+
+      const promises = settingsToSave.map(setting =>
+        fetch('/api/admin/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(setting)
+        }).then(res => res.json())
+      )
+
+      const results = await Promise.all(promises)
+
+      const allSuccess = results.every(r => r.success)
+
+      if (allSuccess) {
+        toast.success('Tüm ayarlar kaydedildi!')
+        setSettings(prev =>
+          prev.map(s => {
+            const updatedSetting = settingsToSave.find(setting => setting.key === s.key)
+            return updatedSetting ? { ...s, value: updatedSetting.value } : s
+          })
+        )
+      } else {
+        toast.error('Bazı ayarlar kaydedilemedi')
+      }
+    } catch (error) {
+      console.error('Save error:', error)
+      toast.error('Bir hata oluştu')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   // Kanal dialog fonksiyonları
   function openChannelDialog(channel?: Channel) {
     if (channel) {
@@ -875,22 +993,12 @@ export default function AdminSettingsPage() {
           <div className="space-y-4">
             <div>
               <Label className="text-white text-base">Günlük Ücretsiz Çark Hakkı</Label>
-              <div className="flex gap-2 mt-2">
-                <Input
-                  value={dailyWheelSpins?.value || ''}
-                  onChange={(e) => handleInputChange('daily_wheel_spins', e.target.value)}
-                  className="bg-white/10 border-white/20 text-white"
-                  type="number"
-                />
-                <Button
-                  onClick={() => saveSetting('daily_wheel_spins', dailyWheelSpins?.value || '')}
-                  disabled={saving}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Save className="w-4 h-4" />
-                </Button>
-              </div>
+              <Input
+                value={dailyWheelSpins?.value || ''}
+                onChange={(e) => handleInputChange('daily_wheel_spins', e.target.value)}
+                className="bg-white/10 border-white/20 text-white mt-2"
+                type="number"
+              />
               <p className="text-xs text-gray-400 mt-2">
                 Şans çarkı tamamen ücretsizdir, sadece günlük çevirme hakkı sınırlaması vardır.
               </p>
@@ -901,26 +1009,27 @@ export default function AdminSettingsPage() {
               <p className="text-xs text-gray-400 mt-1 mb-2">
                 Çark haklarının her gün sıfırlanacağı saat (HH:mm formatında)
               </p>
-              <div className="flex gap-2">
-                <Input
-                  value={wheelResetTime?.value || '00:00'}
-                  onChange={(e) => handleInputChange('wheel_reset_time', e.target.value)}
-                  className="bg-white/10 border-white/20 text-white"
-                  type="time"
-                  placeholder="19:30"
-                />
-                <Button
-                  onClick={() => saveSetting('wheel_reset_time', wheelResetTime?.value || '00:00')}
-                  disabled={saving}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Save className="w-4 h-4" />
-                </Button>
-              </div>
+              <Input
+                value={wheelResetTime?.value || '00:00'}
+                onChange={(e) => handleInputChange('wheel_reset_time', e.target.value)}
+                className="bg-white/10 border-white/20 text-white"
+                type="time"
+                placeholder="19:30"
+              />
               <p className="text-xs text-gray-400 mt-2">
                 Örnek: 00:00 → Gece Yarısı | 12:30 → Öğlen 12:30 | 19:30 → Akşam 19:30
               </p>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button
+                onClick={saveWheelSettings}
+                disabled={saving}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Tüm Ayarları Kaydet
+              </Button>
             </div>
           </div>
         </Card>
@@ -928,45 +1037,38 @@ export default function AdminSettingsPage() {
         {/* Referans Sistemi */}
         <Card className="bg-white/5 border-white/10 p-6">
           <h2 className="text-xl font-bold text-white mb-4">👥 Referans Sistemi</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label className="text-white text-base">Davet Eden Kişi Bonusu</Label>
-              <div className="flex gap-2 mt-2">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-white text-base">Davet Eden Kişi Bonusu</Label>
                 <Input
                   value={referralBonusInviter?.value || ''}
                   onChange={(e) => handleInputChange('referral_bonus_inviter', e.target.value)}
-                  className="bg-white/10 border-white/20 text-white"
+                  className="bg-white/10 border-white/20 text-white mt-2"
                   type="number"
                 />
-                <Button
-                  onClick={() => saveSetting('referral_bonus_inviter', referralBonusInviter?.value || '')}
-                  disabled={saving}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Save className="w-4 h-4" />
-                </Button>
               </div>
-            </div>
 
-            <div>
-              <Label className="text-white text-base">Davet Edilen Kişi Bonusu</Label>
-              <div className="flex gap-2 mt-2">
+              <div>
+                <Label className="text-white text-base">Davet Edilen Kişi Bonusu</Label>
                 <Input
                   value={referralBonusInvited?.value || ''}
                   onChange={(e) => handleInputChange('referral_bonus_invited', e.target.value)}
-                  className="bg-white/10 border-white/20 text-white"
+                  className="bg-white/10 border-white/20 text-white mt-2"
                   type="number"
                 />
-                <Button
-                  onClick={() => saveSetting('referral_bonus_invited', referralBonusInvited?.value || '')}
-                  disabled={saving}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Save className="w-4 h-4" />
-                </Button>
               </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button
+                onClick={saveReferralSettings}
+                disabled={saving}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Tüm Ayarları Kaydet
+              </Button>
             </div>
           </div>
         </Card>
@@ -977,63 +1079,44 @@ export default function AdminSettingsPage() {
           <div className="space-y-4">
             <div>
               <Label className="text-white text-base">Cloud Name</Label>
-              <div className="flex gap-2 mt-2">
-                <Input
-                  value={cloudinaryCloudName?.value || ''}
-                  onChange={(e) => handleInputChange('cloudinary_cloud_name', e.target.value)}
-                  className="bg-white/10 border-white/20 text-white flex-1"
-                  placeholder="your-cloud-name"
-                />
-                <Button
-                  onClick={() => saveSetting('cloudinary_cloud_name', cloudinaryCloudName?.value || '')}
-                  disabled={saving}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Save className="w-4 h-4" />
-                </Button>
-              </div>
+              <Input
+                value={cloudinaryCloudName?.value || ''}
+                onChange={(e) => handleInputChange('cloudinary_cloud_name', e.target.value)}
+                className="bg-white/10 border-white/20 text-white mt-2"
+                placeholder="your-cloud-name"
+              />
             </div>
 
             <div>
               <Label className="text-white text-base">API Key</Label>
-              <div className="flex gap-2 mt-2">
-                <Input
-                  value={cloudinaryApiKey?.value || ''}
-                  onChange={(e) => handleInputChange('cloudinary_api_key', e.target.value)}
-                  className="bg-white/10 border-white/20 text-white flex-1"
-                  placeholder="123456789012345"
-                />
-                <Button
-                  onClick={() => saveSetting('cloudinary_api_key', cloudinaryApiKey?.value || '')}
-                  disabled={saving}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Save className="w-4 h-4" />
-                </Button>
-              </div>
+              <Input
+                value={cloudinaryApiKey?.value || ''}
+                onChange={(e) => handleInputChange('cloudinary_api_key', e.target.value)}
+                className="bg-white/10 border-white/20 text-white mt-2"
+                placeholder="123456789012345"
+              />
             </div>
 
             <div>
               <Label className="text-white text-base">API Secret</Label>
-              <div className="flex gap-2 mt-2">
-                <Input
-                  value={cloudinaryApiSecret?.value || ''}
-                  onChange={(e) => handleInputChange('cloudinary_api_secret', e.target.value)}
-                  className="bg-white/10 border-white/20 text-white flex-1"
-                  placeholder="your-api-secret"
-                  type="password"
-                />
-                <Button
-                  onClick={() => saveSetting('cloudinary_api_secret', cloudinaryApiSecret?.value || '')}
-                  disabled={saving}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Save className="w-4 h-4" />
-                </Button>
-              </div>
+              <Input
+                value={cloudinaryApiSecret?.value || ''}
+                onChange={(e) => handleInputChange('cloudinary_api_secret', e.target.value)}
+                className="bg-white/10 border-white/20 text-white mt-2"
+                placeholder="your-api-secret"
+                type="password"
+              />
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button
+                onClick={saveCloudinarySettings}
+                disabled={saving}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Tüm Ayarları Kaydet
+              </Button>
             </div>
           </div>
         </Card>
