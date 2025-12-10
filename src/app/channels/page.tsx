@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense, useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { CheckCircle2 } from 'lucide-react'
@@ -18,19 +18,13 @@ interface Channel {
 
 function ChannelsContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const userId = searchParams.get('userId')
 
   const [channels, setChannels] = useState<Channel[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!userId) {
-      router.push('/')
-      return
-    }
     loadChannels()
-  }, [userId])
+  }, [])
 
   // Otomatik kontrol - Her 3 saniyede bir
   useEffect(() => {
@@ -43,11 +37,17 @@ function ChannelsContent() {
     }, 3000)
 
     return () => clearInterval(interval)
-  }, [channels, userId])
+  }, [channels])
 
   async function loadChannels() {
     try {
-      const response = await fetch(`/api/channels/required?userId=${userId}`)
+      const response = await fetch('/api/channels/required')
+
+      if (response.status === 401) {
+        router.push('/login')
+        return
+      }
+
       const data = await response.json()
       setChannels(data.channels || [])
     } catch (error) {
@@ -66,14 +66,13 @@ function ChannelsContent() {
         console.log('🔍 Kanal kontrolü yapılıyor:', {
           channelId: channel.id,
           channelTelegramId: channel.channelId,
-          channelName: channel.channelName,
-          userId: userId
+          channelName: channel.channelName
         })
 
         const response = await fetch('/api/channels/verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, channelId: channel.id })
+          body: JSON.stringify({ channelId: channel.id })
         })
 
         const data = await response.json()
@@ -120,10 +119,10 @@ function ChannelsContent() {
   useEffect(() => {
     if (allJoined && channels.length > 0) {
       setTimeout(() => {
-        router.push(`/dashboard?userId=${userId}`)
+        router.push('/dashboard')
       }, 1500)
     }
-  }, [allJoined, channels.length, userId, router])
+  }, [allJoined, channels.length, router])
 
   if (loading) {
     return (
