@@ -119,9 +119,14 @@ export async function GET(request: NextRequest) {
 
     const settingsMap = settings.reduce((acc, s) => ({ ...acc, [s.key]: s.value }), {} as Record<string, string>)
 
-    const botUsername = process.env.TELEGRAM_BOT_USERNAME || settingsMap.telegram_bot_username || 'supersohbet_bot'
+    const botUsername = settingsMap.telegram_bot_username || process.env.TELEGRAM_BOT_USERNAME
+
+    if (!botUsername) {
+      return NextResponse.json({ error: 'Bot username ayarlanmamış' }, { status: 500 })
+    }
+
     // Telegram ID'yi direk kullan - daha basit ve güvenli
-    const referralLink = `https://t.me/${botUsername}?start=ref_${updatedUser.telegramId}`
+    const referralLink = `https://t.me/${botUsername.replace('@', '')}?start=ref_${updatedUser.telegramId}`
 
     return NextResponse.json({
       referralCode: updatedUser.telegramId, // Telegram ID kullanıyoruz artık
