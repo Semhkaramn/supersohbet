@@ -40,17 +40,17 @@ export async function GET(
 
     // Çark haklarını kontrol et ve gerekirse sıfırla
     try {
-      const wheelResetHourSetting = await prisma.settings.findUnique({
-        where: { key: 'wheel_reset_hour' }
-      })
-      const dailyWheelSpinsSetting = await prisma.settings.findUnique({
-        where: { key: 'daily_wheel_spins' }
-      })
+      const [wheelResetHourSetting, wheelResetMinuteSetting, dailyWheelSpinsSetting] = await Promise.all([
+        prisma.settings.findUnique({ where: { key: 'wheel_reset_hour' } }),
+        prisma.settings.findUnique({ where: { key: 'wheel_reset_minute' } }),
+        prisma.settings.findUnique({ where: { key: 'daily_wheel_spins' } })
+      ])
 
       const wheelResetHour = Number.parseInt(wheelResetHourSetting?.value || '0')
+      const wheelResetMinute = Number.parseInt(wheelResetMinuteSetting?.value || '0')
       const dailyWheelSpins = Number.parseInt(dailyWheelSpinsSetting?.value || '3')
 
-      await checkAndResetWheelSpins(userId, wheelResetHour, dailyWheelSpins)
+      await checkAndResetWheelSpins(userId, wheelResetHour, wheelResetMinute, dailyWheelSpins)
 
       // Güncellenmiş kullanıcıyı tekrar al
       const updatedUser = await prisma.user.findUnique({
