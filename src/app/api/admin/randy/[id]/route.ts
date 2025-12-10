@@ -4,10 +4,10 @@ import { prisma } from '@/lib/prisma'
 // PUT - Randy schedule'ı güncelle (durum değiştir)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
     const { status } = body
 
@@ -35,10 +35,10 @@ export async function PUT(
 // DELETE - Randy schedule'ı sil
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
     // Slotlar CASCADE olduğu için otomatik silinir
     await prisma.randySchedule.delete({
