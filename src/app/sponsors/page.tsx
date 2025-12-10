@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,20 +22,30 @@ interface Sponsor {
 
 function SponsorsContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const userId = searchParams.get('userId')
 
   const [sponsors, setSponsors] = useState<Sponsor[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
-    if (!userId) {
-      router.push('/')
-      return
+    checkAuthAndLoadSponsors()
+  }, [])
+
+  async function checkAuthAndLoadSponsors() {
+    try {
+      // Check if user is authenticated
+      const userRes = await fetch('/api/user/me')
+      if (userRes.status === 401) {
+        router.push('/login')
+        return
+      }
+
+      await loadSponsors()
+    } catch (error) {
+      console.error('Error checking auth:', error)
+      router.push('/login')
     }
-    loadSponsors()
-  }, [userId])
+  }
 
   async function loadSponsors() {
     try {
@@ -251,7 +261,7 @@ function SponsorsContent() {
         )}
       </div>
 
-      <BottomNav userId={userId!} />
+      <BottomNav />
 
       <style jsx>{`
         @keyframes float {
