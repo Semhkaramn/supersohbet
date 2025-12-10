@@ -29,11 +29,9 @@ async function main() {
 
     // Çark Ayarları
     { key: 'daily_wheel_spins', value: '1', description: 'Günlük ücretsiz çark hakkı', category: 'wheel' },
-    { key: 'wheel_reset_hour', value: '0', description: 'Günlük çark haklarının sıfırlanacağı saat (0-23)', category: 'wheel' },
-    { key: 'wheel_reset_minute', value: '0', description: 'Günlük çark haklarının sıfırlanacağı dakika (0-59)', category: 'wheel' },
+    { key: 'wheel_reset_time', value: '00:00', description: 'Günlük çark haklarının sıfırlanacağı saat (HH:mm formatında)', category: 'wheel' },
 
     // Bildirim Ayarları
-    { key: 'notify_wheel_reset', value: 'true', description: 'Çark hakkı yenilendiğinde bildirim gönder', category: 'notifications' },
     { key: 'notify_order_approved', value: 'true', description: 'Sipariş onaylandığında bildirim gönder', category: 'notifications' },
     { key: 'notify_level_up', value: 'true', description: 'Seviye atlandığında bildirim gönder', category: 'notifications' },
 
