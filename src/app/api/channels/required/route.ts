@@ -1,18 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkChannelMembership } from '@/lib/telegram'
+import { requireAuth } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID required' },
-        { status: 400 }
-      )
-    }
+    // Session'dan kullanıcı ID'sini al
+    const session = await requireAuth(request)
+    const userId = session.userId
 
     // Kullanıcı bilgisini getir
     const user = await prisma.user.findUnique({
@@ -146,6 +141,14 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ channels })
   } catch (error) {
+    // Unauthorized hatası için 401 döndür
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     console.error('Get required channels error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
