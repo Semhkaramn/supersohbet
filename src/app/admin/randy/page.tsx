@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { ArrowLeft, Sparkles, Plus, Clock, Users, Gift, CheckCircle, XCircle, Trash2, Settings } from 'lucide-react'
 import { toast } from 'sonner'
@@ -49,12 +50,20 @@ export default function AdminRandyPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
 
+  // Kazananları gönderme için state
+  const [sendWinnersDialogOpen, setSendWinnersDialogOpen] = useState(false)
+  const [selectedScheduleForSend, setSelectedScheduleForSend] = useState<RandySchedule | null>(null)
+  const [selectedAdminTelegramId, setSelectedAdminTelegramId] = useState<string>('')
+  const [sendingWinners, setSendingWinners] = useState(false)
+  const [admins, setAdmins] = useState<any[]>([])
+
+  // Geçmiş planlar için expanded state
+  const [expandedScheduleId, setExpandedScheduleId] = useState<string | null>(null)
+
   const [formData, setFormData] = useState({
     winnerCount: 10,
     distributionHours: 24,
     prizeText: '',
-    sendAnnouncement: true,
-    pinMessage: true,
     onePerUser: true,
     minMessages: 0,
     messagePeriod: 'none'
@@ -125,6 +134,78 @@ export default function AdminRandyPage() {
     } catch (error) {
       console.error('Error loading randy settings:', error)
     }
+  }
+
+  async function loadAdmins() {
+    try {
+      const response = await fetch('/api/admin/admins')
+      const data = await response.json()
+      setAdmins(data.admins || [])
+    } catch (error) {
+      console.error('Error loading admins:', error)
+    }
+  }
+
+  async function sendWinnersToAdmin(schedule: RandySchedule) {
+    if (!selectedAdminTelegramId) {
+      toast.error('Lütfen bir admin seçin')
+      return
+    }
+
+    setSendingWinners(true)
+    try {
+      const winners = schedule.slots?.filter(s => s.assigned) || []
+
+      if (winners.length === 0) {
+        toast.error('Bu planda henüz kazanan yok')
+        setSendingWinners(false)
+        return
+      }
+
+      // Kazananları formatlayarak mesaj oluştur
+      let message = `🎉 **Randy Kazananları**\n\n`
+      message += `📋 **Plan:** ${schedule.prizeText}\n`
+      message += `📅 **Tarih:** ${new Date(schedule.startTime).toLocaleDateString('tr-TR')}\n`
+      message += `🏆 **Toplam Kazanan:** ${winners.length}\n\n`
+      message += `**Kazananlar:**\n`
+
+      winners.forEach((winner, index) => {
+        const name = winner.assignedUsername ? `@${winner.assignedUsername}` : winner.assignedFirstName || 'Kullanıcı'
+        message += `${index + 1}. ${name} - 🎁 ${schedule.prizeText}\n`
+      })
+
+      // Telegram üzerinden mesaj gönder
+      const response = await fetch('/api/admin/randy/send-winners', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminTelegramId: selectedAdminTelegramId,
+          message: message
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success('Kazananlar admin\'e gönderildi!')
+        setSendWinnersDialogOpen(false)
+        setSelectedScheduleForSend(null)
+        setSelectedAdminTelegramId('')
+      } else {
+        toast.error(data.error || 'Mesaj gönderilemedi')
+      }
+    } catch (error) {
+      console.error('Send winners error:', error)
+      toast.error('Bir hata oluştu')
+    } finally {
+      setSendingWinners(false)
+    }
+  }
+
+  function openSendWinnersDialog(schedule: RandySchedule) {
+    setSelectedScheduleForSend(schedule)
+    setSendWinnersDialogOpen(true)
+    loadAdmins()
   }
 
   async function saveRandySettings() {
@@ -378,28 +459,6 @@ export default function AdminRandyPage() {
                 <div className="space-y-4 border-t border-white/10 pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label className="text-white">Randy Başlangıç Duyurusu Gönder</Label>
-                      <p className="text-xs text-gray-400">Randy başladığında grupta duyuru yapılacak</p>
-                    </div>
-                    <Switch
-                      checked={formData.sendAnnouncement}
-                      onCheckedChange={(checked) => setFormData({ ...formData, sendAnnouncement: checked })}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="text-white">Başlangıç Duyurusunu Sabitle</Label>
-                      <p className="text-xs text-gray-400">Randy başlangıç duyurusu mesajı sabitlenecek</p>
-                    </div>
-                    <Switch
-                      checked={formData.pinMessage}
-                      onCheckedChange={(checked) => setFormData({ ...formData, pinMessage: checked })}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
                       <Label className="text-white">Kullanıcı Başına Bir Kez</Label>
                       <p className="text-xs text-gray-400">Her kullanıcı bu Randy'de sadece bir kez kazanabilir</p>
                     </div>
@@ -407,6 +466,11 @@ export default function AdminRandyPage() {
                       checked={formData.onePerUser}
                       onCheckedChange={(checked) => setFormData({ ...formData, onePerUser: checked })}
                     />
+                  </div>
+                  <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                    <p className="text-xs text-blue-300">
+                      💡 <strong>Not:</strong> Randy başlangıç duyurusu gönderme ve sabitleme ayarları artık "Ayarlar ve Şablonlar" sekmesinden kontrol ediliyor.
+                    </p>
                   </div>
                 </div>
 
@@ -472,6 +536,14 @@ export default function AdminRandyPage() {
 
                   {/* Actions */}
                   <div className="flex gap-3 mt-6">
+                    <Button
+                      onClick={() => openSendWinnersDialog(activeSchedule)}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700"
+                      disabled={assignedCount === 0}
+                    >
+                      <Users className="w-4 h-4 mr-2" />
+                      Kazananları Gönder
+                    </Button>
                     <Button
                       onClick={() => handleStatusChange(activeSchedule.id, 'completed')}
                       className="flex-1 bg-green-600 hover:bg-green-700"
@@ -572,35 +644,120 @@ export default function AdminRandyPage() {
                 {schedules.filter(s => s.status !== 'active').length === 0 ? (
                   <p className="text-gray-400 text-center py-8">Geçmiş plan yok</p>
                 ) : (
-                  schedules.filter(s => s.status !== 'active').map((schedule) => (
-                    <div key={schedule.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h4 className="text-white font-semibold">{schedule.prizeText}</h4>
-                          <p className="text-sm text-gray-400">
-                            {new Date(schedule.startTime).toLocaleDateString('tr-TR')} • {schedule.winnerCount} kazanan
-                          </p>
+                  schedules.filter(s => s.status !== 'active').map((schedule) => {
+                    const isExpanded = expandedScheduleId === schedule.id
+                    const winnersCount = schedule.slots?.filter(s => s.assigned).length || 0
+
+                    return (
+                      <div key={schedule.id} className="bg-white/5 rounded-lg border border-white/10">
+                        <div className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <h4 className="text-white font-semibold">{schedule.prizeText}</h4>
+                              <p className="text-sm text-gray-400">
+                                {new Date(schedule.startTime).toLocaleDateString('tr-TR')} • {winnersCount}/{schedule.winnerCount} kazanan
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                schedule.status === 'completed'
+                                  ? 'bg-green-500/20 text-green-400'
+                                  : 'bg-red-500/20 text-red-400'
+                              }`}>
+                                {schedule.status === 'completed' ? 'Tamamlandı' : 'İptal'}
+                              </span>
+
+                              {winnersCount > 0 && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => openSendWinnersDialog(schedule)}
+                                  className="border-blue-500/20 text-blue-400 hover:bg-blue-500/10"
+                                >
+                                  <Users className="w-4 h-4" />
+                                </Button>
+                              )}
+
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setExpandedScheduleId(isExpanded ? null : schedule.id)}
+                                className="border-white/20 text-white hover:bg-white/10"
+                              >
+                                {isExpanded ? '▼' : '►'}
+                              </Button>
+
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDelete(schedule.id)}
+                                className="border-red-500/20 text-red-400 hover:bg-red-500/10"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            schedule.status === 'completed'
-                              ? 'bg-green-500/20 text-green-400'
-                              : 'bg-red-500/20 text-red-400'
-                          }`}>
-                            {schedule.status === 'completed' ? 'Tamamlandı' : 'İptal'}
-                          </span>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDelete(schedule.id)}
-                            className="border-red-500/20 text-red-400 hover:bg-red-500/10"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
+
+                        {/* Detaylar */}
+                        {isExpanded && (
+                          <div className="border-t border-white/10 p-4 space-y-4">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                              <div className="p-3 bg-white/5 rounded-lg">
+                                <p className="text-xs text-gray-400">Başlangıç</p>
+                                <p className="text-white text-sm font-medium">
+                                  {new Date(schedule.startTime).toLocaleString('tr-TR')}
+                                </p>
+                              </div>
+                              <div className="p-3 bg-white/5 rounded-lg">
+                                <p className="text-xs text-gray-400">Süre</p>
+                                <p className="text-white text-sm font-medium">{schedule.distributionHours} saat</p>
+                              </div>
+                              <div className="p-3 bg-white/5 rounded-lg">
+                                <p className="text-xs text-gray-400">Bir Kez</p>
+                                <p className="text-white text-sm font-medium">{schedule.onePerUser ? 'Evet' : 'Hayır'}</p>
+                              </div>
+                              <div className="p-3 bg-white/5 rounded-lg">
+                                <p className="text-xs text-gray-400">Min. Mesaj</p>
+                                <p className="text-white text-sm font-medium">{schedule.minMessages || 'Yok'}</p>
+                              </div>
+                            </div>
+
+                            {/* Kazananlar Listesi */}
+                            {winnersCount > 0 && (
+                              <div>
+                                <h5 className="text-white font-semibold mb-3 flex items-center gap-2">
+                                  <Gift className="w-4 h-4 text-yellow-400" />
+                                  Kazananlar ({winnersCount})
+                                </h5>
+                                <div className="space-y-2 max-h-60 overflow-y-auto">
+                                  {schedule.slots?.filter(s => s.assigned).map((slot, index) => (
+                                    <div key={slot.id} className="p-3 bg-green-500/10 rounded-lg border border-green-500/30">
+                                      <div className="flex items-center justify-between">
+                                        <div>
+                                          <p className="text-white font-medium">
+                                            {index + 1}. {slot.assignedUsername ? `@${slot.assignedUsername}` : slot.assignedFirstName || 'Kullanıcı'}
+                                          </p>
+                                          <p className="text-xs text-gray-400">
+                                            {slot.assignedAt && new Date(slot.assignedAt).toLocaleString('tr-TR')}
+                                          </p>
+                                        </div>
+                                        <div className="text-right">
+                                          <p className="text-xs text-gray-400">Telegram ID</p>
+                                          <p className="text-white text-sm font-mono">{slot.assignedUser}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))
+                    )
+                  })
+                )
                 )}
               </div>
             </Card>
@@ -752,6 +909,59 @@ export default function AdminRandyPage() {
         description="Bu randy planını silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
         onConfirm={confirmDelete}
       />
+
+      {/* Kazananları Gönderme Dialog */}
+      <Dialog open={sendWinnersDialogOpen} onOpenChange={setSendWinnersDialogOpen}>
+        <DialogContent className="bg-slate-900 border-white/20">
+          <DialogHeader>
+            <DialogTitle className="text-white">Kazananları Admin'e Gönder</DialogTitle>
+            <DialogDescription className="text-gray-300">
+              {selectedScheduleForSend && (
+                <>
+                  <p className="mb-2">🎉 <strong>{selectedScheduleForSend.prizeText}</strong> planındaki kazananları admin'e gönderin.</p>
+                  <p className="text-sm text-gray-400">
+                    Toplam kazanan: {selectedScheduleForSend.slots?.filter(s => s.assigned).length || 0}
+                  </p>
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="adminTelegramId" className="text-white">Admin Telegram ID</Label>
+              <Input
+                id="adminTelegramId"
+                value={selectedAdminTelegramId}
+                onChange={(e) => setSelectedAdminTelegramId(e.target.value)}
+                placeholder="Admin'in Telegram ID'si (örn: 123456789)"
+                className="bg-white/5 border-white/10 text-white mt-2"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Kazananların listesi bu Telegram ID'ye gönderilecek
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setSendWinnersDialogOpen(false)}
+              className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+              disabled={sendingWinners}
+            >
+              İptal
+            </Button>
+            <Button
+              onClick={() => selectedScheduleForSend && sendWinnersToAdmin(selectedScheduleForSend)}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              disabled={sendingWinners || !selectedAdminTelegramId}
+            >
+              {sendingWinners ? 'Gönderiliyor...' : 'Gönder'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
