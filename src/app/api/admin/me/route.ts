@@ -12,7 +12,6 @@ export async function GET(request: NextRequest) {
     username: admin.username,
     isSuperAdmin: admin.isSuperAdmin,
     permissions: {
-      canAccessDashboard: admin.canAccessDashboard,
       canAccessBroadcast: admin.canAccessBroadcast,
       canAccessStatistics: admin.canAccessStatistics,
       canAccessTasks: admin.canAccessTasks,
@@ -20,9 +19,8 @@ export async function GET(request: NextRequest) {
       canAccessWheel: admin.canAccessWheel,
       canAccessSponsors: admin.canAccessSponsors,
       canAccessRanks: admin.canAccessRanks,
+      canAccessRandy: admin.canAccessRandy,
       canAccessSettings: admin.canAccessSettings,
-      canAccessChannels: admin.canAccessChannels,
-      canAccessUsers: admin.canAccessUsers,
       canAccessAdmins: admin.canAccessAdmins,
     },
     createdAt: admin.createdAt,
