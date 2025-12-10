@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -37,8 +37,6 @@ interface UserSponsorInfo {
 
 function WalletInfoContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const userId = searchParams.get('userId')
 
   const [loading, setLoading] = useState(true)
   const [walletAddress, setWalletAddress] = useState('')
@@ -53,20 +51,22 @@ function WalletInfoContent() {
   const [sponsorSearch, setSponsorSearch] = useState('')
 
   useEffect(() => {
-    if (!userId) {
-      router.push('/')
-      return
-    }
     loadData()
-  }, [userId])
+  }, [])
 
   async function loadData() {
     try {
       const [walletRes, sponsorInfoRes, sponsorsRes] = await Promise.all([
-        fetch(`/api/user/wallet?userId=${userId}`),
-        fetch(`/api/user/sponsor-info?userId=${userId}`),
+        fetch('/api/user/wallet'),
+        fetch('/api/user/sponsor-info'),
         fetch('/api/sponsors')
       ])
+
+      if (walletRes.status === 401) {
+        // Session expired, redirect to login
+        router.push('/login')
+        return
+      }
 
       if (walletRes.ok) {
         const walletData = await walletRes.json()
@@ -103,7 +103,7 @@ function WalletInfoContent() {
     }
 
     try {
-      const response = await fetch(`/api/user/wallet?userId=${userId}`, {
+      const response = await fetch('/api/user/wallet', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -128,7 +128,7 @@ function WalletInfoContent() {
 
   async function deleteWallet() {
     try {
-      const response = await fetch(`/api/user/wallet?userId=${userId}`, {
+      const response = await fetch('/api/user/wallet', {
         method: 'DELETE'
       })
 
@@ -176,7 +176,7 @@ function WalletInfoContent() {
     }
 
     try {
-      const response = await fetch(`/api/user/sponsor-info?userId=${userId}`, {
+      const response = await fetch('/api/user/sponsor-info', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -205,7 +205,7 @@ function WalletInfoContent() {
 
   async function deleteSponsorInfo(sponsorId: string) {
     try {
-      const response = await fetch(`/api/user/sponsor-info?userId=${userId}`, {
+      const response = await fetch('/api/user/sponsor-info', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json'
@@ -560,7 +560,7 @@ function WalletInfoContent() {
         </Card>
       </div>
 
-      <BottomNav userId={userId!} />
+      <BottomNav />
     </div>
   )
 }
