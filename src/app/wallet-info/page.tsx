@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import BottomNav from '@/components/BottomNav'
 import {
   Wallet,
   Building2,
-  ArrowLeft,
   Plus,
   Edit2,
   Trash2,
@@ -38,10 +38,7 @@ interface UserSponsorInfo {
 function WalletInfoContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const urlUserId = searchParams.get('userId')
-
-  // Telegram WebApp'ten userId'yi al
-  const [userId, setUserId] = useState<string | null>(null)
+  const userId = searchParams.get('userId')
 
   const [loading, setLoading] = useState(true)
   const [walletAddress, setWalletAddress] = useState('')
@@ -55,21 +52,11 @@ function WalletInfoContent() {
   const [selectedSponsor, setSelectedSponsor] = useState<string | null>(null)
   const [sponsorSearch, setSponsorSearch] = useState('')
 
-  // Telegram WebApp ile userId'yi al
   useEffect(() => {
-    // @ts-ignore
-    const tg = window.Telegram?.WebApp
-    if (tg?.initDataUnsafe?.user?.id) {
-      setUserId(tg.initDataUnsafe.user.id.toString())
-    } else if (urlUserId) {
-      setUserId(urlUserId)
-    } else {
+    if (!userId) {
       router.push('/')
+      return
     }
-  }, [urlUserId])
-
-  useEffect(() => {
-    if (!userId) return
     loadData()
   }, [userId])
 
@@ -285,26 +272,21 @@ function WalletInfoContent() {
   }
 
   return (
-    <div className="min-h-screen pb-8">
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            className="mb-4 text-white hover:bg-white/10"
-            onClick={() => router.push(`/profile?userId=${userId}`)}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Profilime Dön
-          </Button>
-          <h1 className="text-2xl font-bold text-white mb-2">
-            Hesap Bilgilerim
-          </h1>
-          <p className="text-white/60 text-sm">
+    <div className="min-h-screen pb-24 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 p-6 shadow-xl sticky top-0 z-10">
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center gap-3">
+            <Wallet className="w-6 h-6 text-white" />
+            <h1 className="text-2xl font-bold text-white">Cüzdan Bilgileri</h1>
+          </div>
+          <p className="text-white/60 text-sm mt-2">
             Cüzdan ve sponsor bilgilerinizi yönetin
           </p>
         </div>
+      </div>
 
+      <div className="max-w-2xl mx-auto px-4 py-6">
         {/* TRC20 Cüzdan Adresi */}
         <Card className="bg-white/5 border-white/10 p-5 mb-4">
           <div className="flex items-center justify-between mb-4">
@@ -585,6 +567,8 @@ function WalletInfoContent() {
           </div>
         </Card>
       </div>
+
+      <BottomNav userId={userId!} />
     </div>
   )
 }
