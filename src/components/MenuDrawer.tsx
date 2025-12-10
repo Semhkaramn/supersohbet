@@ -20,10 +20,9 @@ import {
 interface MenuDrawerProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  userId: string
 }
 
-export function MenuDrawer({ open, onOpenChange, userId }: MenuDrawerProps) {
+export function MenuDrawer({ open, onOpenChange }: MenuDrawerProps) {
   const router = useRouter()
 
   const menuItems = [
@@ -31,7 +30,7 @@ export function MenuDrawer({ open, onOpenChange, userId }: MenuDrawerProps) {
       title: 'Ana Menü',
       description: 'Ana sayfaya dön',
       icon: Home,
-      href: `/dashboard?userId=${userId}`,
+      href: '/dashboard',
       gradient: 'from-blue-500/20 to-indigo-600/20',
       iconColor: 'text-blue-400',
       borderColor: 'border-blue-500/30',
@@ -41,7 +40,7 @@ export function MenuDrawer({ open, onOpenChange, userId }: MenuDrawerProps) {
       title: 'Profilim',
       description: 'Profil bilgilerim ve geçmişim',
       icon: User,
-      href: `/profile?userId=${userId}`,
+      href: '/profile',
       gradient: 'from-cyan-500/20 to-blue-500/20',
       iconColor: 'text-cyan-400',
       borderColor: 'border-cyan-500/30',
@@ -51,7 +50,7 @@ export function MenuDrawer({ open, onOpenChange, userId }: MenuDrawerProps) {
       title: 'Cüzdan & Sponsor',
       description: 'Cüzdan ve sponsor bilgilerini yönet',
       icon: Wallet,
-      href: `/wallet-info?userId=${userId}`,
+      href: '/wallet-info',
       gradient: 'from-green-500/20 to-emerald-500/20',
       iconColor: 'text-green-400',
       borderColor: 'border-green-500/30',
@@ -61,7 +60,7 @@ export function MenuDrawer({ open, onOpenChange, userId }: MenuDrawerProps) {
       title: 'Referans',
       description: 'Arkadaşlarını davet et, ödül kazan',
       icon: Users,
-      href: `/referral?userId=${userId}`,
+      href: '/referral',
       gradient: 'from-orange-500/20 to-red-500/20',
       iconColor: 'text-orange-400',
       borderColor: 'border-orange-500/30',
@@ -71,7 +70,7 @@ export function MenuDrawer({ open, onOpenChange, userId }: MenuDrawerProps) {
       title: 'Mağaza',
       description: 'Ödüllere göz at ve satın al',
       icon: ShoppingBag,
-      href: `/shop?userId=${userId}`,
+      href: '/shop',
       gradient: 'from-emerald-500/20 to-teal-500/20',
       iconColor: 'text-emerald-400',
       borderColor: 'border-emerald-500/30',
@@ -81,7 +80,7 @@ export function MenuDrawer({ open, onOpenChange, userId }: MenuDrawerProps) {
       title: 'Görevler',
       description: 'Günlük ve haftalık görevler',
       icon: FileText,
-      href: `/tasks?userId=${userId}`,
+      href: '/tasks',
       gradient: 'from-purple-500/20 to-pink-500/20',
       iconColor: 'text-purple-400',
       borderColor: 'border-purple-500/30',
@@ -91,7 +90,7 @@ export function MenuDrawer({ open, onOpenChange, userId }: MenuDrawerProps) {
       title: 'Çark',
       description: 'Şansını dene, ödül kazan',
       icon: Ticket,
-      href: `/wheel?userId=${userId}`,
+      href: '/wheel',
       gradient: 'from-yellow-500/20 to-amber-500/20',
       iconColor: 'text-yellow-400',
       borderColor: 'border-yellow-500/30',
@@ -101,7 +100,7 @@ export function MenuDrawer({ open, onOpenChange, userId }: MenuDrawerProps) {
       title: 'Liderlik',
       description: 'En başarılı kullanıcılar',
       icon: Trophy,
-      href: `/leaderboard?userId=${userId}`,
+      href: '/leaderboard',
       gradient: 'from-amber-500/20 to-orange-500/20',
       iconColor: 'text-amber-400',
       borderColor: 'border-amber-500/30',
@@ -111,7 +110,7 @@ export function MenuDrawer({ open, onOpenChange, userId }: MenuDrawerProps) {
       title: 'Sponsorlar',
       description: 'Sponsorlarımıza göz atın',
       icon: Heart,
-      href: `/sponsors?userId=${userId}`,
+      href: '/sponsors',
       gradient: 'from-pink-500/20 to-rose-500/20',
       iconColor: 'text-pink-400',
       borderColor: 'border-pink-500/30',
