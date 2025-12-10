@@ -4,29 +4,18 @@ import { prisma } from "@/lib/prisma";
 // Tüm sponsor bilgilerini getir
 export async function GET(request: NextRequest) {
   try {
-    const telegramId = request.headers.get("x-telegram-id");
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("userId");
 
-    if (!telegramId) {
+    if (!userId) {
       return NextResponse.json(
-        { error: "Telegram ID bulunamadı" },
+        { error: "User ID bulunamadı" },
         { status: 401 }
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { telegramId },
-      select: { id: true },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "Kullanıcı bulunamadı" },
-        { status: 404 }
-      );
-    }
-
     const sponsorInfos = await prisma.userSponsorInfo.findMany({
-      where: { userId: user.id },
+      where: { userId },
       include: {
         sponsor: {
           select: {
@@ -52,11 +41,12 @@ export async function GET(request: NextRequest) {
 // Sponsor bilgisi kaydet/güncelle
 export async function POST(request: NextRequest) {
   try {
-    const telegramId = request.headers.get("x-telegram-id");
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("userId");
 
-    if (!telegramId) {
+    if (!userId) {
       return NextResponse.json(
-        { error: "Telegram ID bulunamadı" },
+        { error: "User ID bulunamadı" },
         { status: 401 }
       );
     }
@@ -77,18 +67,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Bilgi boş olamaz" },
         { status: 400 }
-      );
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { telegramId },
-      select: { id: true },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "Kullanıcı bulunamadı" },
-        { status: 404 }
       );
     }
 
@@ -128,7 +106,7 @@ export async function POST(request: NextRequest) {
     const sponsorInfo = await prisma.userSponsorInfo.upsert({
       where: {
         userId_sponsorId: {
-          userId: user.id,
+          userId,
           sponsorId,
         },
       },
@@ -136,7 +114,7 @@ export async function POST(request: NextRequest) {
         identifier: trimmedIdentifier,
       },
       create: {
-        userId: user.id,
+        userId,
         sponsorId,
         identifier: trimmedIdentifier,
       },
@@ -168,11 +146,12 @@ export async function POST(request: NextRequest) {
 // Sponsor bilgisini sil
 export async function DELETE(request: NextRequest) {
   try {
-    const telegramId = request.headers.get("x-telegram-id");
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("userId");
 
-    if (!telegramId) {
+    if (!userId) {
       return NextResponse.json(
-        { error: "Telegram ID bulunamadı" },
+        { error: "User ID bulunamadı" },
         { status: 401 }
       );
     }
@@ -186,22 +165,10 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { telegramId },
-      select: { id: true },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "Kullanıcı bulunamadı" },
-        { status: 404 }
-      );
-    }
-
     await prisma.userSponsorInfo.delete({
       where: {
         userId_sponsorId: {
-          userId: user.id,
+          userId,
           sponsorId,
         },
       },
