@@ -12,7 +12,8 @@ export async function GET(request: NextRequest) {
 
     // Build filter conditions
     const where: any = {
-      isBanned: false // Only non-banned users
+      isBanned: false, // Only non-banned users
+      hadStart: true // Only users who started the bot
     }
 
     // Search by username or first name
