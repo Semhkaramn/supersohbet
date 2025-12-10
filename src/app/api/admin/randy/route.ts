@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Başlangıç duyurusunu gönder
+    // Başlangıç duyurusunu gönder (sadece grup aktifse)
     if (sendAnnouncement) {
       try {
         const settings = await prisma.settings.findMany()
@@ -121,10 +121,12 @@ export async function POST(request: NextRequest) {
 
         const botToken = settingsMap.telegram_bot_token || ''
         const activityGroupId = settingsMap.activity_group_id || ''
+        const activityGroupStatus = settingsMap.activity_group_status || ''
         const startTemplate = settingsMap.randy_start_template || ''
         const pinStartMessage = (settingsMap.randy_pin_start_message || 'true') === 'true'
 
-        if (botToken && activityGroupId) {
+        // Sadece grup aktifse duyuru gönder
+        if (botToken && activityGroupId && activityGroupStatus === 'active') {
           await announceRandyStart(
             botToken,
             Number(activityGroupId),
@@ -136,7 +138,9 @@ export async function POST(request: NextRequest) {
             pinStartMessage,
             startTemplate || undefined
           )
-          console.log('✅ Randy başlangıç duyurusu gönderildi')
+          console.log('✅ Randy başlangıç duyurusu gönderildi (Aktif grup)')
+        } else if (activityGroupStatus !== 'active') {
+          console.log('⚠️ Randy başlangıç duyurusu gönderilemedi: Grup aktif değil')
         }
       } catch (announceError) {
         console.error('Randy start announcement error:', announceError)
