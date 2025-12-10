@@ -60,6 +60,9 @@ function ShopContent() {
   const [loadingPurchases, setLoadingPurchases] = useState(false)
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null)
+  const [walletInfoDialogOpen, setWalletInfoDialogOpen] = useState(false)
+  const [sponsorInfoDialogOpen, setSponsorInfoDialogOpen] = useState(false)
+  const [sponsorInfoData, setSponsorInfoData] = useState<{ sponsorName?: string; identifierType?: string } | null>(null)
 
   useEffect(() => {
     if (!userId) {
@@ -142,6 +145,22 @@ function ShopContent() {
         loadData()
         loadPurchases(true) // Siparişleri sessizce güncelle
       } else {
+        // TRC20 cüzdan bilgisi gerekiyorsa dialog göster
+        if (data.error && data.error.includes('TRC20') || data.error && data.error.includes('cüzdan')) {
+          setWalletInfoDialogOpen(true)
+          return
+        }
+
+        // Sponsor bilgisi gerekiyorsa dialog göster
+        if (data.requiresSponsorInfo) {
+          setSponsorInfoData({
+            sponsorName: data.sponsorName,
+            identifierType: data.identifierType
+          })
+          setSponsorInfoDialogOpen(true)
+          return
+        }
+
         toast.error(data.error || 'Satın alma başarısız')
       }
     } catch (error) {
@@ -378,6 +397,82 @@ function ShopContent() {
       </div>
 
       <BottomNav userId={userId!} />
+
+      {/* Wallet Info Dialog */}
+      <AlertDialog open={walletInfoDialogOpen} onOpenChange={setWalletInfoDialogOpen}>
+        <AlertDialogContent className="bg-slate-900 border-slate-700 max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white text-xl">
+              Cüzdan Bilgisi Gerekli
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-300">
+              <div className="space-y-3 py-4">
+                <p>Bu ürünü satın alabilmek için TRC20 cüzdan adresinizi eklemeniz gerekmektedir.</p>
+                <p className="text-sm text-gray-400">Cüzdan bilgilerinizi eklemek için Cüzdan Bilgileri sayfasına yönlendirileceksiniz.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-white/10 text-white border-white/20 hover:bg-white/20">
+              İptal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setWalletInfoDialogOpen(false)
+                router.push(`/wallet-info?userId=${userId}`)
+              }}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              Cüzdan Bilgilerine Git
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Sponsor Info Dialog */}
+      <AlertDialog open={sponsorInfoDialogOpen} onOpenChange={setSponsorInfoDialogOpen}>
+        <AlertDialogContent className="bg-slate-900 border-slate-700 max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white text-xl">
+              Sponsor Bilgisi Gerekli
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-300">
+              <div className="space-y-3 py-4">
+                <p>Bu ürünü satın alabilmek için sponsor bilginizi eklemeniz gerekmektedir.</p>
+                {sponsorInfoData?.sponsorName && (
+                  <p className="text-sm">
+                    <span className="font-semibold text-white">Sponsor: </span>
+                    {sponsorInfoData.sponsorName}
+                  </p>
+                )}
+                {sponsorInfoData?.identifierType && (
+                  <p className="text-sm">
+                    <span className="font-semibold text-white">Gerekli Bilgi: </span>
+                    {sponsorInfoData.identifierType === 'username' ? 'Kullanıcı Adı' :
+                     sponsorInfoData.identifierType === 'phone' ? 'Telefon Numarası' :
+                     sponsorInfoData.identifierType === 'email' ? 'E-posta' : 'ID'}
+                  </p>
+                )}
+                <p className="text-sm text-gray-400">Sponsor bilgilerinizi eklemek için Cüzdan Bilgileri sayfasına yönlendirileceksiniz.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-white/10 text-white border-white/20 hover:bg-white/20">
+              İptal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setSponsorInfoDialogOpen(false)
+                router.push(`/wallet-info?userId=${userId}`)
+              }}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              Sponsor Bilgilerine Git
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Purchase Confirmation Dialog */}
       <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
