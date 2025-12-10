@@ -4,14 +4,13 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CheckCircle2, Copy, ExternalLink, Loader2, Send } from 'lucide-react'
+import { CheckCircle2, Send } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function TelegramConnectPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [botUsername, setBotUsername] = useState('@SuperSohbetBot')
-  const [checking, setChecking] = useState(false)
+  const [botUsername, setBotUsername] = useState<string>('')
   const [connected, setConnected] = useState(false)
   const [connectionToken, setConnectionToken] = useState<string | null>(null)
   const [tokenExpiry, setTokenExpiry] = useState<Date | null>(null)
@@ -23,8 +22,10 @@ export default function TelegramConnectPage() {
       fetch('/api/user/telegram-connection-token').then(res => res.json())
     ])
       .then(([botData, tokenData]) => {
-        if (botData.botUsername) {
-          setBotUsername(botData.botUsername)
+        if (botData.username) {
+          setBotUsername('@' + botData.username.replace('@', ''))
+        } else if (botData.error) {
+          toast.error('Bot username ayarlanmamış. Lütfen yöneticiyle iletişime geçin.')
         }
         if (tokenData.token) {
           setConnectionToken(tokenData.token)
@@ -51,7 +52,6 @@ export default function TelegramConnectPage() {
 
   const checkTelegramStatus = async () => {
     try {
-      setChecking(true)
       const response = await fetch('/api/user/telegram-status')
 
       if (response.status === 401) {
@@ -72,20 +72,15 @@ export default function TelegramConnectPage() {
       }
     } catch (error) {
       console.error('Error checking Telegram status:', error)
-    } finally {
-      setChecking(false)
-    }
-  }
-
-  const handleCopyToken = () => {
-    if (connectionToken) {
-      navigator.clipboard.writeText(`/start ${connectionToken}`)
-      toast.success('Komut kopyalandı!')
     }
   }
 
   const handleOpenTelegram = () => {
-    const telegramUrl = `https://t.me/${botUsername.replace('@', '')}`
+    // Token ile birlikte otomatik start komutu gönder
+    const botUsernameClean = botUsername.replace('@', '')
+    const telegramUrl = connectionToken
+      ? `https://t.me/${botUsernameClean}?start=${connectionToken}`
+      : `https://t.me/${botUsernameClean}`
     window.open(telegramUrl, '_blank')
   }
 
@@ -135,16 +130,16 @@ export default function TelegramConnectPage() {
             <>
               <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 space-y-3">
                 <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                  📱 Adımlar
+                  📱 Nasıl Bağlanılır?
                 </h3>
                 <ol className="space-y-2 text-gray-300">
                   <li className="flex gap-2">
                     <span className="font-semibold text-blue-400">1.</span>
-                    <span>Aşağıdaki butona tıklayarak {botUsername} botuna gidin</span>
+                    <span>Aşağıdaki butona tıklayın</span>
                   </li>
                   <li className="flex gap-2">
                     <span className="font-semibold text-blue-400">2.</span>
-                    <span>Aşağıdaki komutu kopyalayıp bot'a gönderin</span>
+                    <span>Telegram'da açılan {botUsername} botunda "START" butonuna basın</span>
                   </li>
                   <li className="flex gap-2">
                     <span className="font-semibold text-blue-400">3.</span>
@@ -153,28 +148,11 @@ export default function TelegramConnectPage() {
                 </ol>
               </div>
 
-              {connectionToken && (
-                <div className="bg-gray-700/50 border border-gray-600 rounded-lg p-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-gray-300">Bağlantı Komutu:</span>
-                    <Button
-                      onClick={handleCopyToken}
-                      variant="ghost"
-                      size="sm"
-                      className="text-blue-400 hover:text-blue-300"
-                    >
-                      <Copy className="w-4 h-4 mr-1" />
-                      Kopyala
-                    </Button>
-                  </div>
-                  <code className="block bg-gray-900 text-green-400 p-3 rounded text-sm font-mono break-all">
-                    /start {connectionToken}
-                  </code>
-                  {tokenExpiry && (
-                    <p className="text-xs text-gray-400">
-                      Bu kod {new Date(tokenExpiry).toLocaleTimeString('tr-TR')} tarihine kadar geçerlidir
-                    </p>
-                  )}
+              {connectionToken && tokenExpiry && (
+                <div className="bg-gray-700/50 border border-gray-600 rounded-lg p-3">
+                  <p className="text-xs text-gray-400 text-center">
+                    ⏱️ Bağlantı kodu {new Date(tokenExpiry).toLocaleTimeString('tr-TR')} tarihine kadar geçerlidir
+                  </p>
                 </div>
               )}
 
@@ -183,8 +161,8 @@ export default function TelegramConnectPage() {
                 className="w-full bg-blue-600 hover:bg-blue-700"
                 size="lg"
               >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Telegram'a Git
+                <Send className="w-5 h-5 mr-2" />
+                Telegram'da Bağlan
               </Button>
 
               <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
@@ -195,13 +173,6 @@ export default function TelegramConnectPage() {
                   </span>
                 </p>
               </div>
-
-              {checking && (
-                <div className="flex items-center justify-center gap-2 text-gray-400">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-sm">Bağlantı kontrol ediliyor...</span>
-                </div>
-              )}
             </>
           )}
         </CardContent>
