@@ -1,18 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth";
 
 // Tüm sponsor bilgilerini getir
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "User ID bulunamadı" },
-        { status: 401 }
-      );
-    }
+    // Session kontrolü - artık query parametresi yerine session kullanıyoruz
+    const session = await requireAuth(request);
+    const userId = session.userId;
 
     const sponsorInfos = await prisma.userSponsorInfo.findMany({
       where: { userId },
@@ -30,6 +25,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ sponsorInfos });
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Oturum geçersiz. Lütfen tekrar giriş yapın.' },
+        { status: 401 }
+      );
+    }
     console.error("Sponsor bilgileri getirme hatası:", error);
     return NextResponse.json(
       { error: "Sponsor bilgileri getirilemedi" },
@@ -41,15 +42,9 @@ export async function GET(request: NextRequest) {
 // Sponsor bilgisi kaydet/güncelle
 export async function POST(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "User ID bulunamadı" },
-        { status: 401 }
-      );
-    }
+    // Session kontrolü - artık query parametresi yerine session kullanıyoruz
+    const session = await requireAuth(request);
+    const userId = session.userId;
 
     const { sponsorId, identifier } = await request.json();
 
@@ -135,6 +130,12 @@ export async function POST(request: NextRequest) {
       sponsorInfo,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Oturum geçersiz. Lütfen tekrar giriş yapın.' },
+        { status: 401 }
+      );
+    }
     console.error("Sponsor bilgisi kaydetme hatası:", error);
     return NextResponse.json(
       { error: "Sponsor bilgisi kaydedilemedi" },
@@ -146,15 +147,9 @@ export async function POST(request: NextRequest) {
 // Sponsor bilgisini sil
 export async function DELETE(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "User ID bulunamadı" },
-        { status: 401 }
-      );
-    }
+    // Session kontrolü - artık query parametresi yerine session kullanıyoruz
+    const session = await requireAuth(request);
+    const userId = session.userId;
 
     const { sponsorId } = await request.json();
 
@@ -176,6 +171,12 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Oturum geçersiz. Lütfen tekrar giriş yapın.' },
+        { status: 401 }
+      );
+    }
     console.error("Sponsor bilgisi silme hatası:", error);
     return NextResponse.json(
       { error: "Sponsor bilgisi silinemedi" },
