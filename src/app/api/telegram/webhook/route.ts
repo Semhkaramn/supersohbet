@@ -662,16 +662,29 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
         return NextResponse.json({ ok: true, message: 'Private chat - no points' })
       }
 
-      // Kullanıcıyı bul - SADECE /start ile kayıt olanlar puan kazanabilir
+      // Kullanıcıyı bul veya oluştur
       let user = await prisma.user.findUnique({
         where: { telegramId: userId }
       })
 
-      // Kullanıcı yoksa puan verilmez - önce /start yapmalı
+      // Kullanıcı yoksa oluştur (hadStart: false) - mesaj istatistiği için
       if (!user) {
-        console.log(`⚠️ Kullanıcı kayıtlı değil - puan verilmedi (userId: ${userId})`)
-        return NextResponse.json({ ok: true, message: 'User not registered - must use /start first' })
+        const dailyWheelSpins = Number.parseInt(getSetting('daily_wheel_spins', '3'))
+        user = await prisma.user.create({
+          data: {
+            telegramId: userId,
+            username,
+            firstName,
+            lastName,
+            dailySpinsLeft: dailyWheelSpins,
+            hadStart: false // Kullanıcı sadece gruba yazdı, /start yapmadı
+          }
+        })
+        console.log(`✅ Yeni kullanıcı oluşturuldu (sadece mesaj için, hadStart: false): ${userId}`)
       }
+
+      // hadStart yapmamışlara puan verilmez
+      const canEarnPoints = user.hadStart
 
       // TÜM MESAJLARI İSTATİSTİK İÇİN KAYDET (KURALLARDAN BAĞIMSIZ)
       await prisma.messageStats.create({
@@ -682,6 +695,12 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
           earnedReward: false // Varsayılan olarak false, ödül verilirse güncellenecek
         }
       })
+
+      // Puan kazanamayanlar için buradan çık
+      if (!canEarnPoints) {
+        console.log(`⚠️ Kullanıcı /start yapmamış - sadece mesaj kaydedildi, puan verilmedi (userId: ${userId})`)
+        return NextResponse.json({ ok: true, message: 'Message saved, no points (hadStart required)' })
+      }
 
       // Mesaj uzunluğu kontrolü (ÖDÜL İÇİN)
       if (messageText.length < minMessageLength) {
