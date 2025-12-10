@@ -122,6 +122,7 @@ export async function POST(request: NextRequest) {
         const botToken = settingsMap.telegram_bot_token || ''
         const activityGroupId = settingsMap.activity_group_id || ''
         const startTemplate = settingsMap.randy_start_template || ''
+        const pinStartMessage = (settingsMap.randy_pin_start_message || 'true') === 'true'
 
         if (botToken && activityGroupId) {
           await announceRandyStart(
@@ -132,7 +133,7 @@ export async function POST(request: NextRequest) {
               distributionHours,
               prizeText
             },
-            pinMessage,
+            pinStartMessage,
             startTemplate || undefined
           )
           console.log('✅ Randy başlangıç duyurusu gönderildi')
