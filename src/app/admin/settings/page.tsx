@@ -94,7 +94,8 @@ export default function AdminSettingsPage() {
 
       // Roll sistemi ayarını yükle
       const rollEnabledSetting = data.settings.find((s: Setting) => s.key === 'roll_enabled')
-      setRollEnabled(rollEnabledSetting?.value !== 'false') // Default true
+      setRollEnabled(rollEnabledSetting?.value === 'true')
+
     } catch (error) {
       console.error('Error loading settings:', error)
       toast.error('Ayarlar yüklenemedi')
