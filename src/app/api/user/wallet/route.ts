@@ -1,18 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth";
 
 // Cüzdan adresini getir
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "User ID bulunamadı" },
-        { status: 401 }
-      );
-    }
+    // Session kontrolü - artık query parametresi yerine session kullanıyoruz
+    const session = await requireAuth(request);
+    const userId = session.userId;
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -30,6 +25,12 @@ export async function GET(request: NextRequest) {
       walletAddress: user.trc20WalletAddress,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Oturum geçersiz. Lütfen tekrar giriş yapın.' },
+        { status: 401 }
+      );
+    }
     console.error("Cüzdan adresi getirme hatası:", error);
     return NextResponse.json(
       { error: "Cüzdan adresi getirilemedi" },
@@ -41,15 +42,9 @@ export async function GET(request: NextRequest) {
 // Cüzdan adresini kaydet/güncelle
 export async function POST(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "User ID bulunamadı" },
-        { status: 401 }
-      );
-    }
+    // Session kontrolü - artık query parametresi yerine session kullanıyoruz
+    const session = await requireAuth(request);
+    const userId = session.userId;
 
     const { walletAddress } = await request.json();
 
@@ -78,6 +73,12 @@ export async function POST(request: NextRequest) {
       walletAddress: user.trc20WalletAddress,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Oturum geçersiz. Lütfen tekrar giriş yapın.' },
+        { status: 401 }
+      );
+    }
     console.error("Cüzdan adresi kaydetme hatası:", error);
     return NextResponse.json(
       { error: "Cüzdan adresi kaydedilemedi" },
@@ -89,15 +90,9 @@ export async function POST(request: NextRequest) {
 // Cüzdan adresini sil
 export async function DELETE(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "User ID bulunamadı" },
-        { status: 401 }
-      );
-    }
+    // Session kontrolü - artık query parametresi yerine session kullanıyoruz
+    const session = await requireAuth(request);
+    const userId = session.userId;
 
     await prisma.user.update({
       where: { id: userId },
@@ -106,6 +101,12 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Oturum geçersiz. Lütfen tekrar giriş yapın.' },
+        { status: 401 }
+      );
+    }
     console.error("Cüzdan adresi silme hatası:", error);
     return NextResponse.json(
       { error: "Cüzdan adresi silinemedi" },
