@@ -38,6 +38,7 @@ interface UserSponsorInfo {
     username?: string
     firstName?: string
     lastName?: string
+    trc20WalletAddress?: string
   }
   sponsor: {
     id: string
@@ -45,6 +46,23 @@ interface UserSponsorInfo {
     identifierType: string
     category: string
   }
+}
+
+interface GroupedUserData {
+  userId: string
+  telegramId: string
+  username?: string
+  firstName?: string
+  lastName?: string
+  trc20WalletAddress?: string
+  sponsors: {
+    sponsorId: string
+    sponsorName: string
+    sponsorCategory: string
+    identifierType: string
+    identifier: string
+    createdAt: string
+  }[]
 }
 
 export default function AdminSponsorsPage() {
@@ -333,13 +351,47 @@ export default function AdminSponsorsPage() {
     return matchesSearch && matchesCategory
   })
 
-  // Filter user sponsor info based on search and sponsor
-  const filteredUserSponsorInfos = userSponsorInfos.filter(info => {
-    const userName = info.user.firstName || info.user.username || info.user.telegramId
+  // Group user sponsor info by user
+  const groupedUserData: GroupedUserData[] = []
+  const userMap = new Map<string, GroupedUserData>()
+
+  userSponsorInfos.forEach(info => {
+    const userId = info.user.id
+    if (!userMap.has(userId)) {
+      userMap.set(userId, {
+        userId: info.user.id,
+        telegramId: info.user.telegramId,
+        username: info.user.username,
+        firstName: info.user.firstName,
+        lastName: info.user.lastName,
+        trc20WalletAddress: info.user.trc20WalletAddress,
+        sponsors: []
+      })
+    }
+
+    const userData = userMap.get(userId)!
+    userData.sponsors.push({
+      sponsorId: info.sponsor.id,
+      sponsorName: info.sponsor.name,
+      sponsorCategory: info.sponsor.category,
+      identifierType: info.sponsor.identifierType,
+      identifier: info.identifier,
+      createdAt: info.createdAt
+    })
+  })
+
+  groupedUserData.push(...userMap.values())
+
+  // Filter grouped user data based on search and sponsor
+  const filteredGroupedUserData = groupedUserData.filter(userData => {
+    const userName = userData.firstName || userData.username || userData.telegramId
     const matchesSearch = userName.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-      info.identifier.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-      info.sponsor.name.toLowerCase().includes(userSearchTerm.toLowerCase())
-    const matchesSponsor = sponsorFilter === 'all' || info.sponsor.id === sponsorFilter
+      (userData.trc20WalletAddress && userData.trc20WalletAddress.toLowerCase().includes(userSearchTerm.toLowerCase())) ||
+      userData.sponsors.some(s =>
+        s.sponsorName.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+        s.identifier.toLowerCase().includes(userSearchTerm.toLowerCase())
+      )
+    const matchesSponsor = sponsorFilter === 'all' || userData.sponsors.some(s => s.sponsorId === sponsorFilter)
     return matchesSearch && matchesSponsor
   })
 
@@ -468,7 +520,7 @@ export default function AdminSponsorsPage() {
               <div className="flex items-center justify-center py-12">
                 <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
               </div>
-            ) : filteredUserSponsorInfos.length === 0 ? (
+            ) : filteredGroupedUserData.length === 0 ? (
               <Card className="bg-white/5 border-white/10 p-12 text-center">
                 <Users className="w-16 h-16 text-gray-500 mx-auto mb-4" />
                 <p className="text-gray-400">
@@ -476,43 +528,75 @@ export default function AdminSponsorsPage() {
                 </p>
               </Card>
             ) : (
-              <div className="space-y-3">
-                {filteredUserSponsorInfos.map((info) => (
-                  <Card key={info.id} className="bg-white/5 border-white/10 p-4 hover:bg-white/10 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <div>
-                            <h3 className="text-white font-semibold">
-                              {info.user.firstName || info.user.username || 'Kullanıcı'}
-                            </h3>
-                            <p className="text-sm text-gray-400">
-                              @{info.user.username || info.user.telegramId}
-                            </p>
+              <div className="space-y-4">
+                {filteredGroupedUserData.map((userData) => (
+                  <Card key={userData.userId} className="bg-white/5 border-white/10 p-5 hover:bg-white/10 transition-colors">
+                    <div className="space-y-4">
+                      {/* User Info Header */}
+                      <div className="flex items-start justify-between border-b border-white/10 pb-3">
+                        <div>
+                          <h3 className="text-white font-bold text-lg">
+                            {userData.firstName || userData.username || 'Kullanıcı'}
+                          </h3>
+                          <p className="text-sm text-gray-400">
+                            @{userData.username || userData.telegramId}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs text-gray-500">Toplam Sponsor</span>
+                          <p className="text-2xl font-bold text-blue-400">{userData.sponsors.length}</p>
+                        </div>
+                      </div>
+
+                      {/* TRC20 Wallet Address */}
+                      {userData.trc20WalletAddress && (
+                        <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-green-400 font-semibold text-sm">💰 TRC20 Cüzdan Adresi:</span>
                           </div>
-                          <div className="flex items-center gap-2 ml-4">
-                            <span className="text-gray-400 text-sm">→</span>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-white font-medium">{info.sponsor.name}</span>
-                                {info.sponsor.category === 'vip' && (
-                                  <Crown className="w-4 h-4 text-yellow-400" />
-                                )}
+                          <span className="text-white font-mono text-sm break-all">{userData.trc20WalletAddress}</span>
+                        </div>
+                      )}
+
+                      {/* Sponsors List */}
+                      <div className="space-y-2">
+                        <h4 className="text-white font-semibold text-sm flex items-center gap-2">
+                          <Heart className="w-4 h-4 text-pink-400" />
+                          Sponsor Bilgileri:
+                        </h4>
+                        {userData.sponsors.map((sponsor, index) => (
+                          <div key={`${userData.userId}-${sponsor.sponsorId}`} className="p-3 bg-white/5 border border-white/10 rounded-lg">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-white font-medium">{sponsor.sponsorName}</span>
+                                  {sponsor.sponsorCategory === 'vip' && (
+                                    <Crown className="w-4 h-4 text-yellow-400" />
+                                  )}
+                                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                    sponsor.sponsorCategory === 'vip'
+                                      ? 'bg-yellow-500/20 text-yellow-400'
+                                      : 'bg-blue-500/20 text-blue-400'
+                                  }`}>
+                                    {sponsor.sponsorCategory === 'vip' ? 'VIP' : 'Normal'}
+                                  </span>
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-gray-500">
+                                      {sponsor.identifierType === 'username' ? 'Kullanıcı Adı:' :
+                                       sponsor.identifierType === 'id' ? 'ID:' : 'Email:'}
+                                    </span>
+                                    <span className="text-sm text-blue-300 font-mono">{sponsor.identifier}</span>
+                                  </div>
+                                  <p className="text-xs text-gray-500">
+                                    Kayıt: {new Date(sponsor.createdAt).toLocaleString('tr-TR')}
+                                  </p>
+                                </div>
                               </div>
-                              <p className="text-xs text-gray-400">
-                                {info.sponsor.identifierType === 'username' ? 'Kullanıcı Adı' :
-                                 info.sponsor.identifierType === 'id' ? 'ID' : 'Email'}
-                              </p>
                             </div>
                           </div>
-                        </div>
-                        <div className="mt-3 p-2 bg-blue-500/10 border border-blue-500/30 rounded">
-                          <span className="text-blue-400 font-semibold text-sm">Kayıtlı Bilgi: </span>
-                          <span className="text-white font-mono text-sm">{info.identifier}</span>
-                        </div>
-                        <div className="mt-2 text-xs text-gray-500">
-                          Kayıt: {new Date(info.createdAt).toLocaleString('tr-TR')}
-                        </div>
+                        ))}
                       </div>
                     </div>
                   </Card>
