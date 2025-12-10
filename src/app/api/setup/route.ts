@@ -38,49 +38,21 @@ export async function GET(request: NextRequest) {
     })
     steps.push(`✅ Super Admin hazır: ${admin.username}`)
 
-
-    for (const prize of wheelPrizes) {
-      await prisma.wheelPrize.upsert({
-        where: { name: prize.name },
-        update: prize,
-        create: prize
-      })
-    }
-    steps.push(`✅ ${wheelPrizes.length} çark ödülü oluşturuldu`)
-
-
-    for (const setting of settings) {
-      await prisma.settings.upsert({
-        where: { key: setting.key },
-        update: setting,
-        create: setting
-      })
-    }
-    steps.push(`✅ ${settings.length} ayar oluşturuldu`)
-
     steps.push('')
-    steps.push('🎉 DATABASE KURULUMU TAMAMLANDI!')
+    steps.push('🎉 ADMIN KURULUMU TAMAMLANDI!')
     steps.push('')
-    steps.push('📋 SONRAKI ADIMLAR:')
+    steps.push('📋 GİRİŞ BİLGİLERİ:')
     steps.push('')
     steps.push('1️⃣ Admin Paneline Git: /admin')
-    steps.push('   👤 Kullanıcı: admin')
-    steps.push('   🔑 Şifre: admin123')
-    steps.push('   ⚠️ İLK GİRİŞTE ŞİFREYİ DEĞİŞTİR!')
+    steps.push('   👤 Kullanıcı: semhkaramn')
+    steps.push('   🔑 Şifre: Abuzittin74.')
+    steps.push('   ⚠️ ŞİFRENİZİ GÜVENLİ TUTUN!')
     steps.push('')
-    steps.push('2️⃣ Telegram Bot Token\'ı Ekle:')
-    steps.push('   • Admin Panel → Settings → Telegram sekmesi')
-    steps.push('   • @BotFather\'dan aldığın token\'ı yapıştır')
-    steps.push('')
-    steps.push('3️⃣ Webhook\'u Aktifleştir:')
-    steps.push('   Tarayıcıda şu URL\'i aç:')
-    steps.push('   https://api.telegram.org/bot<TOKEN>/setWebhook?url=<SITE_URL>/api/telegram/webhook')
-    steps.push('')
-    steps.push('✨ Tüm sistem hazır!')
+    steps.push('✨ Sistem hazır!')
 
     return NextResponse.json({
       success: true,
-      message: 'Database setup completed successfully!',
+      message: 'Admin setup completed successfully!',
       steps
     })
 
@@ -89,7 +61,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: 'Database setup failed',
+        error: 'Admin setup failed',
         details: error instanceof Error ? error.message : String(error),
         hint: 'DATABASE_URL environment variable doğru mu? Netlify\'de kontrol edin.'
       },
@@ -97,4 +69,3 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-
