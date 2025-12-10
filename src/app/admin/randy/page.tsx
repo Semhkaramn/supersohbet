@@ -226,19 +226,19 @@ export default function AdminRandyPage() {
   async function saveRandySettings() {
     setSavingSettings(true)
     try {
-      const response = await fetch('/api/admin/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ settings: randySettings })
-      })
+      // Her ayarı ayrı ayrı kaydet
+      const settingsToSave = Object.entries(randySettings)
 
-      const data = await response.json()
-
-      if (data.success) {
-        toast.success('Randy ayarları kaydedildi')
-      } else {
-        toast.error(data.error || 'Ayarlar kaydedilemedi')
+      for (const [key, value] of settingsToSave) {
+        await fetch('/api/admin/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key, value })
+        })
       }
+
+      toast.success('Randy ayarları kaydedildi')
+      loadRandySettings() // Ayarları yeniden yükle
     } catch (error) {
       console.error('Error saving randy settings:', error)
       toast.error('Bir hata oluştu')
@@ -452,6 +452,7 @@ export default function AdminRandyPage() {
                         <SelectItem value="none">Kontrol Yok</SelectItem>
                         <SelectItem value="today">Bugün</SelectItem>
                         <SelectItem value="week">Bu Hafta</SelectItem>
+                        <SelectItem value="month">Bu Ay</SelectItem>
                         <SelectItem value="all">Tüm Zamanlar</SelectItem>
                       </SelectContent>
                     </Select>
