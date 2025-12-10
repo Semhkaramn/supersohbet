@@ -30,5 +30,5 @@ export default async (req: Request) => {
 }
 
 export const config = {
-  schedule: "*/5 * * * *" // Her 5 dakikada bir çalış
+  schedule: "* * * * *" // Her 1 dakikada bir çalış
 }
