@@ -228,6 +228,10 @@ function getMessagePeriodFilter(period: string): any {
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
       return { createdAt: { gte: weekAgo } }
     }
+    case 'month': {
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+      return { createdAt: { gte: monthStart } }
+    }
     case 'all':
       return {} // Tüm mesajlar
     default:
