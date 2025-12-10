@@ -69,6 +69,10 @@ model User {
   // Bot başlatma durumu
   hadStart         Boolean         @default(false) // Kullanıcı bota /start yaptı mı?
 
+  // Telegram bağlantı token'ı (geçici - 10 dakika)
+  telegramConnectionToken String?  // 6 haneli kod
+  telegramConnectionTokenExpiry DateTime? // Token süresi
+
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
@@ -382,7 +386,7 @@ model UserSponsorInfo {
   identifier       String          // username, id veya email değeri
 
   createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  updatedAt        DateTime        @default(now())
 
   @@unique([userId, sponsorId]) // Her kullanıcı her sponsor için bir bilgi kaydedebilir
   @@index([userId])
