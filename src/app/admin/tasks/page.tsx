@@ -394,7 +394,10 @@ export default function AdminTasksPage() {
                 <Input
                   type="number"
                   value={formData.targetValue}
-                  onChange={(e) => setFormData({ ...formData, targetValue: parseInt(e.target.value) || 1 })}
+                  onChange={(e) => {
+                    const val = e.target.value === '' ? 1 : Number(e.target.value)
+                    setFormData({ ...formData, targetValue: val })
+                  }}
                   className="bg-slate-800 border-slate-700"
                   min="1"
                   required
@@ -414,7 +417,10 @@ export default function AdminTasksPage() {
                   <Input
                     type="number"
                     value={formData.xpReward}
-                    onChange={(e) => setFormData({ ...formData, xpReward: parseInt(e.target.value) || 0 })}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? 0 : Number(e.target.value)
+                      setFormData({ ...formData, xpReward: val })
+                    }}
                     className="bg-slate-800 border-slate-700"
                     min="0"
                   />
@@ -424,7 +430,10 @@ export default function AdminTasksPage() {
                   <Input
                     type="number"
                     value={formData.pointsReward}
-                    onChange={(e) => setFormData({ ...formData, pointsReward: parseInt(e.target.value) || 0 })}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? 0 : Number(e.target.value)
+                      setFormData({ ...formData, pointsReward: val })
+                    }}
                     className="bg-slate-800 border-slate-700"
                     min="0"
                   />
@@ -491,7 +500,10 @@ export default function AdminTasksPage() {
                   <Input
                     type="number"
                     value={formData.order}
-                    onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? 0 : Number(e.target.value)
+                      setFormData({ ...formData, order: val })
+                    }}
                     className="bg-slate-800 border-slate-700"
                     min="0"
                   />
