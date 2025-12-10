@@ -2,13 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserProfilePhoto } from '@/lib/telegram'
 import { checkAndResetWheelSpins, getTurkeyToday, getTurkeyDateAgo } from '@/lib/utils'
+import { requireAuth } from '@/lib/auth'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const { userId } = await params
+    // Session kontrolü - artık URL parametresi yerine session kullanıyoruz
+    const session = await requireAuth(request)
+    const userId = session.userId
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -179,6 +182,12 @@ export async function GET(
       createdAt: user.createdAt
     })
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Oturum geçersiz. Lütfen tekrar giriş yapın.' },
+        { status: 401 }
+      )
+    }
     console.error('Get user error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
