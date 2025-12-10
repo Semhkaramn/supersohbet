@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
             .replace(/{rank}/g, user.rank?.name || 'Rütbesiz')
         }
 
-        const chatId = parseInt(user.telegramId)
+        const chatId = parseInt(user.telegramId!)
 
         if (imageUrl && personalizedMessage) {
           // Send photo with caption (text + image)
