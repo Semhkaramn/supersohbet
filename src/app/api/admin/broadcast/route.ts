@@ -94,6 +94,13 @@ export async function POST(request: NextRequest) {
     // Send messages to users
     for (const user of targetUsers) {
       try {
+        // Telegram bağlantısı yoksa atla (pratikte olmamalı ama güvenlik için)
+        if (!user.telegramId) {
+          console.log(`⏭️ Kullanıcı ${user.id} atlandı - Telegram bağlı değil`)
+          failedCount++
+          continue
+        }
+
         // Replace tags in message (with @ prefix for username)
         let personalizedMessage = ''
         if (message && message.trim()) {
@@ -104,7 +111,7 @@ export async function POST(request: NextRequest) {
             .replace(/{rank}/g, user.rank?.name || 'Rütbesiz')
         }
 
-        const chatId = parseInt(user.telegramId!)
+        const chatId = parseInt(user.telegramId)
 
         if (imageUrl && personalizedMessage) {
           // Send photo with caption (text + image)
