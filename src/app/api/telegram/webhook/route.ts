@@ -267,11 +267,22 @@ Bot özelliklerini kullanmanız engellenmiştir.
         const groupId = String(chatId)
         const text = messageText.trim()
 
-        // "liste" komutu - Herkes kullanabilir
+        // Roll sistemi aktif mi kontrol et
+        const rollEnabled = getSetting('roll_enabled', 'true') === 'true'
+        if (!rollEnabled) {
+          // Roll sistemi devre dışı - roll komutlarını ignore et
+          if (text.toLowerCase() === 'liste' || text.startsWith('roll ') || text === 'roll') {
+            return NextResponse.json({ ok: true })
+          }
+        }
+
+        // Aktif grup kontrolü - Roll sistemi sadece aktif grupta çalışır
+        const activeGroupId = getSetting('activity_group_id', '')
+        const isActiveGroup = activeGroupId === groupId
+
+        // "liste" komutu - Herkes kullanabilir (sadece aktif grupta)
         if (text.toLowerCase() === 'liste') {
-          // Roll sistemi aktif mi kontrol et
-          const rollEnabled = getSetting('roll_enabled', 'true') === 'true'
-          if (!rollEnabled) {
+          if (!isActiveGroup) {
             return NextResponse.json({ ok: true })
           }
 
@@ -280,11 +291,9 @@ Bot özelliklerini kullanmanız engellenmiştir.
           return NextResponse.json({ ok: true })
         }
 
-        // Roll komutları - Sadece adminler
+        // Roll komutları - Sadece adminler (sadece aktif grupta)
         if (text.startsWith('roll ') || text === 'roll') {
-          // Roll sistemi aktif mi kontrol et
-          const rollEnabled = getSetting('roll_enabled', 'true') === 'true'
-          if (!rollEnabled) {
+          if (!isActiveGroup) {
             return NextResponse.json({ ok: true })
           }
 
@@ -438,10 +447,12 @@ Bot özelliklerini kullanmanız engellenmiştir.
           return NextResponse.json({ ok: true })
         }
 
-        // Normal mesaj - tracking aktifse kaydet
-        const state = getRollState(groupId)
-        if (state.status === 'active' || state.status === 'locked') {
-          trackUserMessage(groupId, userId, username || null, firstName || null)
+        // Normal mesaj - tracking aktifse kaydet (sadece aktif grupta)
+        if (isActiveGroup && rollEnabled) {
+          const state = getRollState(groupId)
+          if (state.status === 'active' || state.status === 'locked') {
+            trackUserMessage(groupId, userId, username || null, firstName || null)
+          }
         }
       }
 
