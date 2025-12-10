@@ -228,7 +228,7 @@ async function findEligibleWinner(
     for (const message of messagesInTimeWindow) {
       const isEligible = eligibleUsers.some(u => u.id === message.userId)
 
-      if (isEligible && message.user) {
+      if (isEligible && message.user && message.user.telegramId) {
         console.log(`✅ İlk uygun kazanan bulundu: ${message.user.firstName || message.user.username} (${message.user.telegramId}) - Mesaj zamanı: ${message.createdAt.toISOString()}`)
         return {
           userId: message.user.telegramId,
@@ -241,6 +241,11 @@ async function findEligibleWinner(
     // Eğer slot zamanında mesaj yazan uygun kullanıcı bulunamazsa, genel uygun kullanıcılardan ilkini seç
     console.log(`⚠️ Slot zamanında uygun kullanıcı bulunamadı, genel listeden seçiliyor`)
     const winner = eligibleUsers[0]
+
+    if (!winner.telegramId) {
+      console.log(`❌ Kazanan kullanıcının telegramId yok`)
+      return null
+    }
 
     return {
       userId: winner.telegramId,
