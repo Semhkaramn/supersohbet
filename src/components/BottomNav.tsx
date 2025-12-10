@@ -6,35 +6,31 @@ import { usePathname } from 'next/navigation'
 import { Home, Ticket, Trophy, Heart, Menu } from 'lucide-react'
 import { MenuDrawer } from './MenuDrawer'
 
-interface BottomNavProps {
-  userId: string
-}
-
-export default function BottomNav({ userId }: BottomNavProps) {
+export default function BottomNav() {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
 
   const navItems = [
     {
-      href: `/dashboard?userId=${userId}`,
+      href: '/dashboard',
       label: 'Ana Menü',
       icon: Home,
       active: pathname === '/dashboard'
     },
     {
-      href: `/wheel?userId=${userId}`,
+      href: '/wheel',
       label: 'Çark',
       icon: Ticket,
       active: pathname === '/wheel'
     },
     {
-      href: `/leaderboard?userId=${userId}`,
+      href: '/leaderboard',
       label: 'Liderlik',
       icon: Trophy,
       active: pathname === '/leaderboard'
     },
     {
-      href: `/sponsors?userId=${userId}`,
+      href: '/sponsors',
       label: 'Sponsorlar',
       icon: Heart,
       active: pathname === '/sponsors'
@@ -78,7 +74,7 @@ export default function BottomNav({ userId }: BottomNavProps) {
       </nav>
 
       {/* Menu Drawer */}
-      <MenuDrawer open={menuOpen} onOpenChange={setMenuOpen} userId={userId} />
+      <MenuDrawer open={menuOpen} onOpenChange={setMenuOpen} />
     </>
   )
 }
