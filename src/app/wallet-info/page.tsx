@@ -17,7 +17,8 @@ import {
   Save,
   X,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Search
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -52,6 +53,7 @@ function WalletInfoContent() {
   const [editingSponsor, setEditingSponsor] = useState<string | null>(null)
   const [sponsorInput, setSponsorInput] = useState('')
   const [selectedSponsor, setSelectedSponsor] = useState<string | null>(null)
+  const [sponsorSearch, setSponsorSearch] = useState('')
 
   // Telegram WebApp ile userId'yi al
   useEffect(() => {
@@ -404,11 +406,25 @@ function WalletInfoContent() {
             <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
               <Building2 className="w-5 h-5 text-purple-400" />
             </div>
-            <div>
+            <div className="flex-1">
               <h2 className="text-white font-semibold">Sponsor Bilgilerim</h2>
               <p className="text-white/60 text-xs">Sponsor ürünleri için gerekli</p>
             </div>
           </div>
+
+          {/* Arama Çubuğu */}
+          {allSponsors.length > 0 && (
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+              <Input
+                type="text"
+                placeholder="Sponsor ara..."
+                value={sponsorSearch}
+                onChange={(e) => setSponsorSearch(e.target.value)}
+                className="pl-10 bg-white/5 border-white/20 text-white placeholder:text-white/40"
+              />
+            </div>
+          )}
 
           <div className="space-y-3">
             {allSponsors.length === 0 ? (
@@ -417,130 +433,154 @@ function WalletInfoContent() {
                 <p className="text-sm">Henüz sponsor bulunmuyor</p>
               </div>
             ) : (
-              allSponsors.map((sponsor) => {
-                const userInfo = sponsorInfos.find(info => info.sponsor.id === sponsor.id)
-                const isEditing = editingSponsor === sponsor.id
+              allSponsors
+                .filter(sponsor =>
+                  sponsor.name.toLowerCase().includes(sponsorSearch.toLowerCase())
+                )
+                .map((sponsor) => {
+                  const userInfo = sponsorInfos.find(info => info.sponsor.id === sponsor.id)
+                  const isEditing = editingSponsor === sponsor.id
 
-                return (
-                  <div
-                    key={sponsor.id}
-                    className="bg-white/5 border border-white/10 rounded-lg p-4"
-                  >
-                    <div className="flex items-start gap-3 mb-3">
+                  return (
+                    <div
+                      key={sponsor.id}
+                      className="bg-white/5 border border-white/10 rounded-lg p-4"
+                    >
+                      {/* Logo - Ortada */}
                       {sponsor.logoUrl && (
-                        <img
-                          src={sponsor.logoUrl}
-                          alt={sponsor.name}
-                          className="w-10 h-10 rounded-lg object-cover"
-                        />
+                        <div className="flex justify-center mb-4">
+                          <img
+                            src={sponsor.logoUrl}
+                            alt={sponsor.name}
+                            className="w-20 h-20 rounded-lg object-contain bg-white/5 p-2"
+                          />
+                        </div>
                       )}
-                      <div className="flex-1">
-                        <h3 className="text-white font-medium">{sponsor.name}</h3>
-                        <p className="text-white/40 text-xs">
-                          {getIdentifierLabel(sponsor.identifierType)} gerekli
-                        </p>
-                      </div>
-                      {userInfo && !isEditing && (
-                        <CheckCircle className="w-5 h-5 text-green-400" />
-                      )}
-                    </div>
 
-                    {!isEditing ? (
-                      <div>
-                        {userInfo ? (
-                          <div className="bg-white/5 border border-white/10 rounded-lg p-3 mb-3">
-                            <p className="text-white/40 text-xs mb-1">
-                              {getIdentifierLabel(sponsor.identifierType)}
-                            </p>
-                            <p className="text-white font-medium">{userInfo.identifier}</p>
-                          </div>
+                      {/* Durum Badge */}
+                      <div className="flex justify-center mb-3">
+                        {userInfo && !isEditing ? (
+                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Bilgi Kaydedildi
+                          </Badge>
                         ) : (
-                          <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3 mb-3">
-                            <p className="text-orange-400 text-sm">
-                              Bu sponsor için bilgi eklenmemiş
+                          <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+                            <AlertCircle className="w-3 h-3 mr-1" />
+                            Bilgi Eklenmemiş
+                          </Badge>
+                        )}
+                      </div>
+
+                      {!isEditing ? (
+                        <div>
+                          {userInfo ? (
+                            <div className="bg-white/5 border border-white/10 rounded-lg p-3 mb-3">
+                              <p className="text-white/40 text-xs mb-1 text-center">
+                                {getIdentifierLabel(sponsor.identifierType)}
+                              </p>
+                              <p className="text-white font-medium text-center">{userInfo.identifier}</p>
+                            </div>
+                          ) : (
+                            <div className="mb-3 text-center">
+                              <p className="text-white/60 text-sm">
+                                {sponsor.name}
+                              </p>
+                              <p className="text-white/40 text-xs mt-1">
+                                {getIdentifierLabel(sponsor.identifierType)} gerekli
+                              </p>
+                            </div>
+                          )}
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => userInfo ? startEditSponsor(userInfo) : startAddSponsor(sponsor.id)}
+                              size="sm"
+                              className="flex-1 bg-blue-600 hover:bg-blue-700"
+                            >
+                              {userInfo ? (
+                                <>
+                                  <Edit2 className="w-3 h-3 mr-1" />
+                                  Düzenle
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="w-3 h-3 mr-1" />
+                                  Bilgi Ekle
+                                </>
+                              )}
+                            </Button>
+                            {userInfo && (
+                              <Button
+                                onClick={() => deleteSponsorInfo(sponsor.id)}
+                                size="sm"
+                                variant="outline"
+                                className="border-red-500/50 text-red-400 hover:bg-red-500/20"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="text-center mb-3">
+                            <p className="text-white text-sm font-medium">{sponsor.name}</p>
+                            <p className="text-white/60 text-xs mt-1">
+                              {getIdentifierLabel(sponsor.identifierType)} bilgisi girin
                             </p>
                           </div>
-                        )}
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={() => userInfo ? startEditSponsor(userInfo) : startAddSponsor(sponsor.id)}
-                            size="sm"
-                            className="flex-1 bg-blue-600 hover:bg-blue-700"
-                          >
-                            {userInfo ? (
-                              <>
-                                <Edit2 className="w-3 h-3 mr-1" />
-                                Düzenle
-                              </>
-                            ) : (
-                              <>
-                                <Plus className="w-3 h-3 mr-1" />
-                                Ekle
-                              </>
-                            )}
-                          </Button>
-                          {userInfo && (
+                          <div>
+                            <Input
+                              value={sponsorInput}
+                              onChange={(e) => setSponsorInput(e.target.value)}
+                              placeholder={
+                                sponsor.identifierType === 'id'
+                                  ? 'Örn: 123456789'
+                                  : sponsor.identifierType === 'email'
+                                  ? 'Örn: kullanici@example.com'
+                                  : 'Örn: kullaniciadi'
+                              }
+                              type={sponsor.identifierType === 'email' ? 'email' : sponsor.identifierType === 'id' ? 'tel' : 'text'}
+                              inputMode={sponsor.identifierType === 'id' ? 'numeric' : sponsor.identifierType === 'email' ? 'email' : 'text'}
+                              className="bg-white/5 border-white/20 text-white"
+                            />
+                            <p className="text-white/40 text-xs mt-1">
+                              {sponsor.identifierType === 'id' && 'Sadece rakamlar girebilirsiniz'}
+                              {sponsor.identifierType === 'email' && 'Geçerli bir email adresi giriniz'}
+                              {sponsor.identifierType === 'username' && 'Kullanıcı adınızı giriniz'}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
                             <Button
-                              onClick={() => deleteSponsorInfo(sponsor.id)}
+                              onClick={() => saveSponsorInfo(sponsor.id)}
+                              size="sm"
+                              className="flex-1 bg-green-600 hover:bg-green-700"
+                            >
+                              <Save className="w-3 h-3 mr-1" />
+                              Kaydet
+                            </Button>
+                            <Button
+                              onClick={cancelEdit}
                               size="sm"
                               variant="outline"
-                              className="border-red-500/50 text-red-400 hover:bg-red-500/20"
+                              className="border-white/20 text-white hover:bg-white/10"
                             >
-                              <Trash2 className="w-3 h-3" />
+                              <X className="w-3 h-3 mr-1" />
+                              İptal
                             </Button>
-                          )}
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        <div>
-                          <Label className="text-white/80 text-sm mb-2 block">
-                            {getIdentifierLabel(sponsor.identifierType)}
-                          </Label>
-                          <Input
-                            value={sponsorInput}
-                            onChange={(e) => setSponsorInput(e.target.value)}
-                            placeholder={
-                              sponsor.identifierType === 'id'
-                                ? 'Örn: 123456789'
-                                : sponsor.identifierType === 'email'
-                                ? 'Örn: kullanici@example.com'
-                                : 'Örn: kullaniciadi'
-                            }
-                            type={sponsor.identifierType === 'email' ? 'email' : sponsor.identifierType === 'id' ? 'tel' : 'text'}
-                            inputMode={sponsor.identifierType === 'id' ? 'numeric' : sponsor.identifierType === 'email' ? 'email' : 'text'}
-                            className="bg-white/5 border-white/20 text-white"
-                          />
-                          <p className="text-white/40 text-xs mt-1">
-                            {sponsor.identifierType === 'id' && 'Sadece rakamlar girebilirsiniz'}
-                            {sponsor.identifierType === 'email' && 'Geçerli bir email adresi giriniz'}
-                            {sponsor.identifierType === 'username' && 'Kullanıcı adınızı giriniz'}
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={() => saveSponsorInfo(sponsor.id)}
-                            size="sm"
-                            className="flex-1 bg-green-600 hover:bg-green-700"
-                          >
-                            <Save className="w-3 h-3 mr-1" />
-                            Kaydet
-                          </Button>
-                          <Button
-                            onClick={cancelEdit}
-                            size="sm"
-                            variant="outline"
-                            className="border-white/20 text-white hover:bg-white/10"
-                          >
-                            <X className="w-3 h-3 mr-1" />
-                            İptal
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )
-              })
+                      )}
+                    </div>
+                  )
+                })
+            )}
+
+            {allSponsors.length > 0 && allSponsors.filter(s => s.name.toLowerCase().includes(sponsorSearch.toLowerCase())).length === 0 && (
+              <div className="text-center py-8 text-white/60">
+                <Search className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p className="text-sm">Arama sonucu bulunamadı</p>
+              </div>
             )}
           </div>
         </Card>
