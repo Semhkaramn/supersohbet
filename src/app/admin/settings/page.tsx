@@ -146,6 +146,10 @@ export default function AdminSettingsPage() {
 
   async function toggleMaintenanceMode() {
     const newValue = !maintenanceMode
+
+    // Optimistic update - önce UI'ı güncelle
+    setMaintenanceMode(newValue)
+
     setSaving(true)
     try {
       const response = await fetch('/api/admin/settings', {
@@ -157,13 +161,15 @@ export default function AdminSettingsPage() {
       const data = await response.json()
 
       if (data.success) {
-        setMaintenanceMode(newValue)
         toast.success(newValue ? 'Bakım modu aktif edildi' : 'Bakım modu kapatıldı')
-        loadSettings()
       } else {
+        // Hata varsa geri al
+        setMaintenanceMode(!newValue)
         toast.error(data.error || 'Ayar kaydedilemedi')
       }
     } catch (error) {
+      // Hata varsa geri al
+      setMaintenanceMode(!newValue)
       console.error('Save error:', error)
       toast.error('Bir hata oluştu')
     } finally {
@@ -173,6 +179,10 @@ export default function AdminSettingsPage() {
 
   async function toggleNotificationSetting(key: string, currentValue: boolean, setterFunction: (value: boolean) => void) {
     const newValue = !currentValue
+
+    // Optimistic update - önce UI'ı güncelle
+    setterFunction(newValue)
+
     setSaving(true)
     try {
       const response = await fetch('/api/admin/settings', {
@@ -184,13 +194,15 @@ export default function AdminSettingsPage() {
       const data = await response.json()
 
       if (data.success) {
-        setterFunction(newValue)
-        toast.success('Bildirim ayarı güncellendi')
-        loadSettings()
+        toast.success('Ayar güncellendi')
       } else {
+        // Hata varsa geri al
+        setterFunction(currentValue)
         toast.error(data.error || 'Ayar kaydedilemedi')
       }
     } catch (error) {
+      // Hata varsa geri al
+      setterFunction(currentValue)
       console.error('Save error:', error)
       toast.error('Bir hata oluştu')
     } finally {
