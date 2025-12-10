@@ -386,8 +386,7 @@ model Admin {
   telegramId       String?         @unique
   isSuperAdmin     Boolean         @default(false) // Ana admin mi?
 
-  // Sayfa bazlı yetkiler
-  canAccessDashboard    Boolean     @default(true)
+  // Sayfa bazlı yetkiler (Dashboard her admin için otomatik aktif)
   canAccessBroadcast    Boolean     @default(false)
   canAccessStatistics   Boolean     @default(false)
   canAccessTasks        Boolean     @default(false)
@@ -395,11 +394,9 @@ model Admin {
   canAccessWheel        Boolean     @default(false)
   canAccessSponsors     Boolean     @default(false)
   canAccessRanks        Boolean     @default(false)
-  canAccessSettings     Boolean     @default(false)
-  canAccessChannels     Boolean     @default(false)
-  canAccessUsers        Boolean     @default(false)
-  canAccessAdmins       Boolean     @default(false)
   canAccessRandy        Boolean     @default(false)
+  canAccessSettings     Boolean     @default(false)
+  canAccessAdmins       Boolean     @default(false)
 
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
