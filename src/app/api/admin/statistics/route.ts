@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
         createdAt: true,
         totalReferrals: true,
         referralPoints: true,
+        hadStart: true,
         rank: {
           select: {
             name: true,
@@ -74,25 +75,28 @@ export async function GET(request: NextRequest) {
           }
         }
       },
-      orderBy,
-      take: 100
+      orderBy
     })
 
     // Get overall statistics
     const [
       totalUsers,
       bannedUsers,
+      hadStartUsers,
       totalMessages,
       dailyMessages,
       weeklyMessages,
-      monthlyMessages
+      monthlyMessages,
+      usersWithMessages
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { isBanned: true } }),
+      prisma.user.count({ where: { hadStart: true } }),
       prisma.messageStats.count(),
       prisma.messageStats.count({ where: { createdAt: { gte: today } } }),
       prisma.messageStats.count({ where: { createdAt: { gte: weekAgo } } }),
-      prisma.messageStats.count({ where: { createdAt: { gte: monthAgo } } })
+      prisma.messageStats.count({ where: { createdAt: { gte: monthAgo } } }),
+      prisma.user.count({ where: { totalMessages: { gt: 0 } } })
     ])
 
     return NextResponse.json({
@@ -100,7 +104,8 @@ export async function GET(request: NextRequest) {
       stats: {
         totalUsers,
         bannedUsers,
-        activeUsers: totalUsers - bannedUsers,
+        hadStartUsers,
+        usersWithMessages,
         messages: {
           total: totalMessages,
           daily: dailyMessages,
