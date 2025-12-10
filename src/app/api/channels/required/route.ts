@@ -26,6 +26,25 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // ✅ Telegram bağlantısı yoksa kanal kontrolü yapılamaz
+    if (!user.telegramId) {
+      const requiredChannels = await prisma.requiredChannel.findMany({
+        where: { isActive: true },
+        orderBy: { order: 'asc' }
+      })
+
+      return NextResponse.json({
+        channels: requiredChannels.map(ch => ({
+          id: ch.id,
+          channelId: ch.channelId,
+          channelName: ch.channelName,
+          channelLink: ch.channelLink,
+          channelUsername: ch.channelId.startsWith('@') ? ch.channelId.substring(1) : undefined,
+          joined: false
+        }))
+      })
+    }
+
     // Aktif zorunlu kanalları getir
     const requiredChannels = await prisma.requiredChannel.findMany({
       where: { isActive: true },
@@ -50,7 +69,7 @@ export async function GET(request: NextRequest) {
           // Telegram API ile gerçek üyelik durumunu kontrol et
           // Not: Bu noktada telegramId kesinlikle var (Telegram bağlama zorunlu)
           const isMemberNow = await checkChannelMembership(
-            user.telegramId!,
+            user.telegramId,
             channel.channelId
           )
 
