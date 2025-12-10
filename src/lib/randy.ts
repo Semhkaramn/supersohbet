@@ -21,13 +21,13 @@ export async function checkRandySlots(): Promise<RandySlotCheckResult[]> {
   try {
     const now = new Date()
 
-    // Önce grubun aktif olup olmadığını kontrol et
-    const groupStatus = await prisma.settings.findUnique({
-      where: { key: 'activity_group_status' }
+    // Önce grup ID'sinin ayarlanıp ayarlanmadığını kontrol et
+    const groupIdSetting = await prisma.settings.findUnique({
+      where: { key: 'activity_group_id' }
     })
 
-    if (groupStatus?.value !== 'active') {
-      console.log('⚠️ Randy kontrolü atlandı: Grup aktif değil')
+    if (!groupIdSetting?.value || groupIdSetting.value === '') {
+      console.log('⚠️ Randy kontrolü atlandı: Aktif grup ID ayarlanmamış')
       return []
     }
 
