@@ -139,7 +139,9 @@ export async function POST(request: NextRequest) {
         firstName: user.firstName,
         points: user.points,
         xp: user.xp,
-        referralCode: userReferralCode
+        referralCode: userReferralCode,
+        telegramId: null,
+        hadStart: false
       }
     }, token)
 
