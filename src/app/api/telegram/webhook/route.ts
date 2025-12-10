@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getTurkeyDate } from '@/lib/utils'
 import { notifyLevelUp } from '@/lib/notifications'
+import { checkRandySlots, announceRandyWinner } from '@/lib/randy'
 import {
   getRollState,
   startRoll,
@@ -429,6 +430,31 @@ Bot özelliklerini kullanmanız engellenmiştir.
         const state = getRollState(groupId)
         if (state.status === 'active' || state.status === 'locked') {
           trackUserMessage(groupId, userId, username || null, firstName || null)
+        }
+      }
+
+      // RANDY SİSTEMİ - Her mesajda slot kontrolü yap (sadece gruplarda)
+      if (chatType === 'group' || chatType === 'supergroup') {
+        try {
+          const randyResults = await checkRandySlots()
+          const botToken = getSetting('telegram_bot_token', '')
+          const sendAnnouncement = getSetting('randy_send_announcement', 'true') === 'true'
+          const pinMessage = getSetting('randy_pin_message', 'true') === 'true'
+
+          // Kazananları duyur
+          for (const result of randyResults) {
+            if (result.assigned && result.winner && result.prizeText && sendAnnouncement && botToken) {
+              await announceRandyWinner(
+                botToken,
+                chatId,
+                result.winner,
+                result.prizeText,
+                pinMessage
+              )
+            }
+          }
+        } catch (error) {
+          console.error('Randy check error:', error)
         }
       }
 
