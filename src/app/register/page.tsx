@@ -63,7 +63,9 @@ export default function RegisterPage() {
 
       if (response.ok) {
         toast.success(data.message || 'Kayıt başarılı!')
-        router.push('/dashboard')
+
+        // Kayıt başarılı, Telegram bağlama sayfasına yönlendir
+        router.push('/telegram-connect')
         router.refresh()
       } else {
         toast.error(data.error || 'Kayıt başarısız')
