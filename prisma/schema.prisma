@@ -24,11 +24,21 @@ model Settings {
 // Kullanıcı modeli
 model User {
   id               String          @id @default(cuid())
-  telegramId       String          @unique
+
+  // Email/Password Authentication
+  email            String?         @unique
+  password         String?         // Hashed password (bcrypt)
+
+  // Telegram Authentication (optional)
+  telegramId       String?         @unique
   username         String?
   firstName        String?
   lastName         String?
   photoUrl         String?
+
+  // Giriş yöntemi
+  loginMethod      String          @default("email") // "email" veya "telegram"
+
   points           Int             @default(0)
   xp               Int             @default(0)
   rankId           String?
@@ -69,6 +79,7 @@ model User {
   pointHistory     PointHistory[]
   sponsorInfos     UserSponsorInfo[] // Kullanıcının sponsor bilgileri
 
+  @@index([email])
   @@index([telegramId])
   @@index([referralCode])
   @@index([referredById])
