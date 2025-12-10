@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -58,8 +58,6 @@ const TASK_TYPE_LABELS: Record<string, string> = {
 
 function TasksContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const userId = searchParams.get('userId')
 
   const [dailyTasks, setDailyTasks] = useState<Task[]>([])
   const [weeklyTasks, setWeeklyTasks] = useState<Task[]>([])
@@ -71,19 +69,22 @@ function TasksContent() {
   const [activeTab, setActiveTab] = useState('active')
 
   useEffect(() => {
-    if (!userId) {
-      router.push('/')
-      return
-    }
     loadTasks()
-  }, [userId])
+  }, [])
 
   async function loadTasks() {
     try {
       const [tasksRes, referralRes] = await Promise.all([
-        fetch(`/api/task?userId=${userId}`),
-        fetch(`/api/referral/info?userId=${userId}`)
+        fetch('/api/task'),
+        fetch('/api/referral/info')
       ])
+
+      if (tasksRes.status === 401) {
+        // Session expired, redirect to login
+        router.push('/login')
+        return
+      }
+
       const tasksData = await tasksRes.json()
       const referralData = await referralRes.json()
 
@@ -101,14 +102,12 @@ function TasksContent() {
   }
 
   async function claimReward(taskId: string) {
-    if (!userId) return
-
     setClaiming(taskId)
     try {
       const response = await fetch('/api/task', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, taskId })
+        body: JSON.stringify({ taskId })
       })
 
       const data = await response.json()
@@ -421,7 +420,7 @@ function TasksContent() {
         </Tabs>
       </div>
 
-      <BottomNav userId={userId!} />
+      <BottomNav />
     </div>
   )
 }
