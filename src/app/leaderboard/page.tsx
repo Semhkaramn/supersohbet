@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -26,8 +26,6 @@ interface LeaderboardUser {
 
 function LeaderboardContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const userId = searchParams.get('userId')
 
   const [pointsLeaderboard, setPointsLeaderboard] = useState<LeaderboardUser[]>([])
   const [xpLeaderboard, setXpLeaderboard] = useState<LeaderboardUser[]>([])
@@ -37,19 +35,20 @@ function LeaderboardContent() {
   const [activeTab, setActiveTab] = useState('points')
 
   useEffect(() => {
-    if (!userId) {
-      router.push('/')
-      return
-    }
     loadLeaderboards()
-  }, [userId])
+  }, [])
 
   async function loadLeaderboards() {
     try {
       const [pointsRes, xpRes] = await Promise.all([
-        fetch(`/api/leaderboard?userId=${userId}&sortBy=points`),
-        fetch(`/api/leaderboard?userId=${userId}&sortBy=xp`)
+        fetch('/api/leaderboard?sortBy=points'),
+        fetch('/api/leaderboard?sortBy=xp')
       ])
+
+      if (pointsRes.status === 401) {
+        router.push('/login')
+        return
+      }
 
       const pointsData = await pointsRes.json()
       const xpData = await xpRes.json()
@@ -292,7 +291,7 @@ function LeaderboardContent() {
         </Tabs>
       </div>
 
-      <BottomNav userId={userId!} />
+      <BottomNav />
     </div>
   )
 }
