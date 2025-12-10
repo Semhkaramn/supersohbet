@@ -69,8 +69,8 @@ export async function GET(request: NextRequest) {
 
     // Tüm referralların profil fotoğraflarını güncelle (paralel olarak)
     await Promise.all([
-      ...user.referrals.map(ref => updateUserPhoto(ref.id, ref.telegramId)),
-      user.referredBy ? updateUserPhoto(user.referredBy.id, user.referredBy.telegramId) : null
+      ...user.referrals.map(ref => ref.telegramId ? updateUserPhoto(ref.id, ref.telegramId) : null),
+      user.referredBy?.telegramId ? updateUserPhoto(user.referredBy.id, user.referredBy.telegramId) : null
     ])
 
     // Güncellenmiş kullanıcıları tekrar çek
