@@ -17,7 +17,6 @@ interface Admin {
   id: string
   username: string
   isSuperAdmin: boolean
-  canAccessDashboard: boolean
   canAccessBroadcast: boolean
   canAccessStatistics: boolean
   canAccessTasks: boolean
@@ -25,15 +24,13 @@ interface Admin {
   canAccessWheel: boolean
   canAccessSponsors: boolean
   canAccessRanks: boolean
+  canAccessRandy: boolean
   canAccessSettings: boolean
-  canAccessChannels: boolean
-  canAccessUsers: boolean
   canAccessAdmins: boolean
   createdAt: string
 }
 
 const PERMISSION_LABELS = {
-  canAccessDashboard: 'Dashboard',
   canAccessBroadcast: 'Toplu Mesaj',
   canAccessStatistics: 'İstatistikler',
   canAccessTasks: 'Görevler',
@@ -41,9 +38,8 @@ const PERMISSION_LABELS = {
   canAccessWheel: 'Çark',
   canAccessSponsors: 'Sponsorlar',
   canAccessRanks: 'Rütbeler',
+  canAccessRandy: 'Randy',
   canAccessSettings: 'Ayarlar',
-  canAccessChannels: 'Kanallar',
-  canAccessUsers: 'Kullanıcılar',
   canAccessAdmins: 'Adminler',
 }
 
@@ -140,7 +136,6 @@ export default function AdminsPage() {
         },
         body: JSON.stringify({
           permissions: {
-            canAccessDashboard: selectedAdmin.canAccessDashboard,
             canAccessBroadcast: selectedAdmin.canAccessBroadcast,
             canAccessStatistics: selectedAdmin.canAccessStatistics,
             canAccessTasks: selectedAdmin.canAccessTasks,
@@ -148,9 +143,8 @@ export default function AdminsPage() {
             canAccessWheel: selectedAdmin.canAccessWheel,
             canAccessSponsors: selectedAdmin.canAccessSponsors,
             canAccessRanks: selectedAdmin.canAccessRanks,
+            canAccessRandy: selectedAdmin.canAccessRandy,
             canAccessSettings: selectedAdmin.canAccessSettings,
-            canAccessChannels: selectedAdmin.canAccessChannels,
-            canAccessUsers: selectedAdmin.canAccessUsers,
             canAccessAdmins: selectedAdmin.canAccessAdmins,
           }
         })
