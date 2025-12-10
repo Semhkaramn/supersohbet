@@ -274,7 +274,7 @@ export async function POST(request: NextRequest) {
         currentProgress = user.totalReferrals
         break
       case 'send_messages':
-        currentProgress = user.messageCount
+        currentProgress = user.totalMessages
         break
       case 'spin_wheel':
         currentProgress = user.wheelSpins.length
