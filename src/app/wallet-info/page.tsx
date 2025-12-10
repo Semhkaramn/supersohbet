@@ -63,12 +63,8 @@ function WalletInfoContent() {
   async function loadData() {
     try {
       const [walletRes, sponsorInfoRes, sponsorsRes] = await Promise.all([
-        fetch('/api/user/wallet', {
-          headers: { 'x-telegram-id': userId || '' }
-        }),
-        fetch('/api/user/sponsor-info', {
-          headers: { 'x-telegram-id': userId || '' }
-        }),
+        fetch(`/api/user/wallet?userId=${userId}`),
+        fetch(`/api/user/sponsor-info?userId=${userId}`),
         fetch('/api/sponsors')
       ])
 
@@ -107,11 +103,10 @@ function WalletInfoContent() {
     }
 
     try {
-      const response = await fetch('/api/user/wallet', {
+      const response = await fetch(`/api/user/wallet?userId=${userId}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-telegram-id': userId || ''
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ walletAddress: walletInput })
       })
@@ -133,9 +128,8 @@ function WalletInfoContent() {
 
   async function deleteWallet() {
     try {
-      const response = await fetch('/api/user/wallet', {
-        method: 'DELETE',
-        headers: { 'x-telegram-id': userId || '' }
+      const response = await fetch(`/api/user/wallet?userId=${userId}`, {
+        method: 'DELETE'
       })
 
       if (response.ok) {
@@ -182,11 +176,10 @@ function WalletInfoContent() {
     }
 
     try {
-      const response = await fetch('/api/user/sponsor-info', {
+      const response = await fetch(`/api/user/sponsor-info?userId=${userId}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-telegram-id': userId || ''
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           sponsorId,
@@ -212,11 +205,10 @@ function WalletInfoContent() {
 
   async function deleteSponsorInfo(sponsorId: string) {
     try {
-      const response = await fetch('/api/user/sponsor-info', {
+      const response = await fetch(`/api/user/sponsor-info?userId=${userId}`, {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
-          'x-telegram-id': userId || ''
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ sponsorId })
       })
