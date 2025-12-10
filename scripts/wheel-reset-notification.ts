@@ -23,11 +23,10 @@ async function notifyWheelReset() {
     })
     const dailySpins = Number.parseInt(dailySpinsSetting?.value || '3')
 
-    // Tüm aktif kullanıcıları al (banlı olmayanlar ve telegramId'si olanlar)
+    // Tüm aktif kullanıcıları al (banlı olmayanlar)
     const users = await prisma.user.findMany({
       where: {
-        isBanned: false,
-        telegramId: { not: null }
+        isBanned: false
       },
       select: {
         telegramId: true,
