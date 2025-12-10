@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { announceRandyStart } from '@/lib/randy'
 
 // GET - Randy schedule'ları getir
 export async function GET(request: NextRequest) {
@@ -111,6 +112,36 @@ export async function POST(request: NextRequest) {
         }
       }
     })
+
+    // Başlangıç duyurusunu gönder
+    if (sendAnnouncement) {
+      try {
+        const settings = await prisma.settings.findMany()
+        const settingsMap = settings.reduce((acc: Record<string, string>, s) => ({ ...acc, [s.key]: s.value }), {})
+
+        const botToken = settingsMap.telegram_bot_token || ''
+        const activityGroupId = settingsMap.activity_group_id || ''
+        const startTemplate = settingsMap.randy_start_template || ''
+
+        if (botToken && activityGroupId) {
+          await announceRandyStart(
+            botToken,
+            Number(activityGroupId),
+            {
+              winnerCount,
+              distributionHours,
+              prizeText
+            },
+            pinMessage,
+            startTemplate || undefined
+          )
+          console.log('✅ Randy başlangıç duyurusu gönderildi')
+        }
+      } catch (announceError) {
+        console.error('Randy start announcement error:', announceError)
+        // Duyuru hatası schedule oluşumunu engellemez
+      }
+    }
 
     return NextResponse.json({ schedule: scheduleWithSlots })
   } catch (error) {
