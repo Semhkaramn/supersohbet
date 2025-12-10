@@ -109,7 +109,7 @@ export async function PUT(request: NextRequest) {
 
     if (!key) {
       return NextResponse.json(
-        { error: 'Key is required' },
+        { error: 'Anahtar gerekli' },
         { status: 400 }
       )
     }
