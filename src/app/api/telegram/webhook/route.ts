@@ -267,8 +267,12 @@ Bot özelliklerini kullanmanız engellenmiştir.
         const groupId = String(chatId)
         const text = messageText.trim()
 
-        // Roll sistemi aktif mi kontrol et
-        const rollEnabled = getSetting('roll_enabled', 'true') === 'true'
+        // Roll sistemi aktif mi kontrol et - ANLIK DB OKUMA
+        const rollSetting = await prisma.settings.findUnique({
+          where: { key: 'roll_enabled' }
+        })
+        const rollEnabled = rollSetting?.value === 'true'
+
         if (!rollEnabled) {
           // Roll sistemi devre dışı - roll komutlarını ignore et
           if (text.toLowerCase() === 'liste' || text.startsWith('roll ') || text === 'roll') {
