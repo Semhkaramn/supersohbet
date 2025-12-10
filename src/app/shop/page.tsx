@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -49,8 +49,6 @@ interface Purchase {
 
 function ShopContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const userId = searchParams.get('userId')
 
   const [items, setItems] = useState<ShopItem[]>([])
   const [userData, setUserData] = useState<UserData | null>(null)
@@ -65,19 +63,21 @@ function ShopContent() {
   const [sponsorInfoData, setSponsorInfoData] = useState<{ sponsorName?: string; identifierType?: string } | null>(null)
 
   useEffect(() => {
-    if (!userId) {
-      router.push('/')
-      return
-    }
     loadData()
-  }, [userId])
+  }, [])
 
   async function loadData() {
     try {
       const [itemsRes, userRes] = await Promise.all([
         fetch('/api/shop/items'),
-        fetch(`/api/user/${userId}`)
+        fetch('/api/user/me')
       ])
+
+      if (userRes.status === 401) {
+        // Session expired, redirect to login
+        router.push('/login')
+        return
+      }
 
       const itemsData = await itemsRes.json()
       const userData = await userRes.json()
@@ -93,15 +93,13 @@ function ShopContent() {
   }
 
   async function loadPurchases(silent = false) {
-    if (!userId) return
-
     // Sessiz güncelleme değilse loading göster
     if (!silent) {
       setLoadingPurchases(true)
     }
 
     try {
-      const response = await fetch(`/api/user/${userId}/purchases`)
+      const response = await fetch('/api/user/me/purchases')
       const data = await response.json()
       setPurchases(data.purchases || [])
     } catch (error) {
@@ -135,7 +133,7 @@ function ShopContent() {
       const response = await fetch('/api/shop/purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, itemId: selectedItem.id })
+        body: JSON.stringify({ itemId: selectedItem.id })
       })
 
       const data = await response.json()
@@ -396,7 +394,7 @@ function ShopContent() {
         </Tabs>
       </div>
 
-      <BottomNav userId={userId!} />
+      <BottomNav />
 
       {/* Wallet Info Dialog */}
       <AlertDialog open={walletInfoDialogOpen} onOpenChange={setWalletInfoDialogOpen}>
@@ -419,7 +417,7 @@ function ShopContent() {
             <AlertDialogAction
               onClick={() => {
                 setWalletInfoDialogOpen(false)
-                router.push(`/wallet-info?userId=${userId}`)
+                router.push(`/wallet-info`)
               }}
               className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
@@ -464,7 +462,7 @@ function ShopContent() {
             <AlertDialogAction
               onClick={() => {
                 setSponsorInfoDialogOpen(false)
-                router.push(`/wallet-info?userId=${userId}`)
+                router.push(`/wallet-info`)
               }}
               className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
