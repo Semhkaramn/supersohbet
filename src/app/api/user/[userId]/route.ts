@@ -68,15 +68,17 @@ export async function GET(
 
     // Telegram profil fotoğrafını güncelle
     try {
-      const numericUserId = Number.parseInt(user.telegramId, 10)
-      if (!Number.isNaN(numericUserId)) {
-        const photoUrl = await getUserProfilePhoto(numericUserId)
-        if (photoUrl && photoUrl !== user.photoUrl) {
-          await prisma.user.update({
-            where: { id: userId },
-            data: { photoUrl }
-          })
-          user.photoUrl = photoUrl
+      if (user.telegramId) {
+        const numericUserId = Number.parseInt(user.telegramId, 10)
+        if (!Number.isNaN(numericUserId)) {
+          const photoUrl = await getUserProfilePhoto(numericUserId)
+          if (photoUrl && photoUrl !== user.photoUrl) {
+            await prisma.user.update({
+              where: { id: userId },
+              data: { photoUrl }
+            })
+            user.photoUrl = photoUrl
+          }
         }
       }
     } catch (photoError) {
