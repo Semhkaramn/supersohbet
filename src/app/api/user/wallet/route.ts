@@ -4,17 +4,18 @@ import { prisma } from "@/lib/prisma";
 // Cüzdan adresini getir
 export async function GET(request: NextRequest) {
   try {
-    const telegramId = request.headers.get("x-telegram-id");
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("userId");
 
-    if (!telegramId) {
+    if (!userId) {
       return NextResponse.json(
-        { error: "Telegram ID bulunamadı" },
+        { error: "User ID bulunamadı" },
         { status: 401 }
       );
     }
 
     const user = await prisma.user.findUnique({
-      where: { telegramId },
+      where: { id: userId },
       select: { trc20WalletAddress: true },
     });
 
@@ -40,11 +41,12 @@ export async function GET(request: NextRequest) {
 // Cüzdan adresini kaydet/güncelle
 export async function POST(request: NextRequest) {
   try {
-    const telegramId = request.headers.get("x-telegram-id");
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("userId");
 
-    if (!telegramId) {
+    if (!userId) {
       return NextResponse.json(
-        { error: "Telegram ID bulunamadı" },
+        { error: "User ID bulunamadı" },
         { status: 401 }
       );
     }
@@ -67,7 +69,7 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await prisma.user.update({
-      where: { telegramId },
+      where: { id: userId },
       data: { trc20WalletAddress: walletAddress },
     });
 
@@ -87,17 +89,18 @@ export async function POST(request: NextRequest) {
 // Cüzdan adresini sil
 export async function DELETE(request: NextRequest) {
   try {
-    const telegramId = request.headers.get("x-telegram-id");
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("userId");
 
-    if (!telegramId) {
+    if (!userId) {
       return NextResponse.json(
-        { error: "Telegram ID bulunamadı" },
+        { error: "User ID bulunamadı" },
         { status: 401 }
       );
     }
 
     await prisma.user.update({
-      where: { telegramId },
+      where: { id: userId },
       data: { trc20WalletAddress: null },
     });
 
