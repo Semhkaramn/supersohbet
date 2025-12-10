@@ -42,6 +42,13 @@ interface RandySlot {
   assignedAt?: string
 }
 
+interface TelegramAdmin {
+  userId: number
+  firstName: string
+  lastName?: string
+  username?: string
+}
+
 export default function AdminRandyPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -55,7 +62,7 @@ export default function AdminRandyPage() {
   const [selectedScheduleForSend, setSelectedScheduleForSend] = useState<RandySchedule | null>(null)
   const [selectedAdminTelegramId, setSelectedAdminTelegramId] = useState<string>('')
   const [sendingWinners, setSendingWinners] = useState(false)
-  const [admins, setAdmins] = useState<any[]>([])
+  const [admins, setAdmins] = useState<TelegramAdmin[]>([])
 
   // Geçmiş planlar için expanded state
   const [expandedScheduleId, setExpandedScheduleId] = useState<string | null>(null)
@@ -138,11 +145,18 @@ export default function AdminRandyPage() {
 
   async function loadAdmins() {
     try {
-      const response = await fetch('/api/admin/admins')
+      const response = await fetch('/api/admin/randy/get-group-admins')
       const data = await response.json()
-      setAdmins(data.admins || [])
+      if (data.error) {
+        toast.error(data.error)
+        setAdmins([])
+      } else {
+        setAdmins(data.admins || [])
+      }
     } catch (error) {
       console.error('Error loading admins:', error)
+      toast.error('Adminler yüklenemedi')
+      setAdmins([])
     }
   }
 
@@ -928,16 +942,32 @@ export default function AdminRandyPage() {
 
           <div className="space-y-4 py-4">
             <div>
-              <Label htmlFor="adminTelegramId" className="text-white">Admin Telegram ID</Label>
-              <Input
-                id="adminTelegramId"
-                value={selectedAdminTelegramId}
-                onChange={(e) => setSelectedAdminTelegramId(e.target.value)}
-                placeholder="Admin'in Telegram ID'si (örn: 123456789)"
-                className="bg-white/5 border-white/10 text-white mt-2"
-              />
+              <Label htmlFor="adminTelegramId" className="text-white">Grup Admini Seçin</Label>
+              {admins.length === 0 ? (
+                <div className="mt-2 p-3 bg-white/5 border border-white/10 rounded-md text-gray-400 text-sm">
+                  Adminler yükleniyor...
+                </div>
+              ) : (
+                <Select value={selectedAdminTelegramId} onValueChange={setSelectedAdminTelegramId}>
+                  <SelectTrigger className="bg-white/5 border-white/10 text-white mt-2">
+                    <SelectValue placeholder="Bir admin seçin" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-white/20">
+                    {admins.map((admin) => (
+                      <SelectItem
+                        key={admin.userId}
+                        value={admin.userId.toString()}
+                        className="text-white hover:bg-white/10"
+                      >
+                        {admin.firstName} {admin.lastName || ''}
+                        {admin.username && ` (@${admin.username})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <p className="text-xs text-gray-400 mt-1">
-                Kazananların listesi bu Telegram ID'ye gönderilecek
+                Kazananların listesi seçilen admin'e Telegram üzerinden gönderilecek
               </p>
             </div>
           </div>
