@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -44,24 +44,25 @@ interface ReferralData {
 
 function ReferralContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const userId = searchParams.get('userId')
 
   const [referralData, setReferralData] = useState<ReferralData | null>(null)
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    if (!userId) {
-      router.push('/')
-      return
-    }
     loadReferralData()
-  }, [userId])
+  }, [])
 
   async function loadReferralData() {
     try {
-      const response = await fetch(`/api/referral/info?userId=${userId}`)
+      const response = await fetch('/api/referral/info')
+
+      if (response.status === 401) {
+        // Session expired, redirect to login
+        router.push('/login')
+        return
+      }
+
       const data = await response.json()
       setReferralData(data)
     } catch (error) {
@@ -350,7 +351,7 @@ function ReferralContent() {
         )}
       </div>
 
-      <BottomNav userId={userId!} />
+      <BottomNav />
     </div>
   )
 }
