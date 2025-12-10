@@ -51,8 +51,46 @@ function DashboardContent() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    checkAccess()
+  }, [])
+
+  useEffect(() => {
     loadUserData()
   }, [])
+
+  async function checkAccess() {
+    try {
+      // 1. Telegram bağlantı kontrolü
+      const telegramResponse = await fetch('/api/user/telegram-status')
+
+      if (telegramResponse.status === 401) {
+        router.push('/login')
+        return
+      }
+
+      const telegramData = await telegramResponse.json()
+
+      // Telegram bağlı değilse yönlendir
+      if (!telegramData.connected || !telegramData.telegramId || !telegramData.hadStart) {
+        router.push('/telegram-connect')
+        return
+      }
+
+      // 2. Kanal kontrolü
+      const userResponse = await fetch('/api/user/me')
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+
+        // Kanallara katılmamışsa yönlendir
+        if (!userData.channelsVerified) {
+          router.push('/channels')
+          return
+        }
+      }
+    } catch (error) {
+      console.error('Error checking access:', error)
+    }
+  }
 
   async function loadUserData() {
     try {
