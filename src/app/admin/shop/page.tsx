@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Plus, Edit, Trash2, ShoppingCart, Package, Clock, CheckCircle, XCircle, AlertCircle, Upload, X } from 'lucide-react'
+import { ArrowLeft, Plus, Edit, Trash2, ShoppingCart, Package, Clock, CheckCircle, XCircle, AlertCircle, Upload, X, History } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
@@ -69,7 +69,8 @@ interface Order {
 export default function AdminShopPage() {
   const router = useRouter()
   const [items, setItems] = useState<ShopItem[]>([])
-  const [orders, setOrders] = useState<Order[]>([])
+  const [pendingOrders, setPendingOrders] = useState<Order[]>([])
+  const [historyOrders, setHistoryOrders] = useState<Order[]>([])
   const [sponsors, setSponsors] = useState<{ id: string; name: string; identifierType: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [ordersLoading, setOrdersLoading] = useState(true)
@@ -77,8 +78,8 @@ export default function AdminShopPage() {
   const [orderDialogOpen, setOrderDialogOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<ShopItem | null>(null)
   const [editingOrder, setEditingOrder] = useState<Order | null>(null)
-  const [statusFilter, setStatusFilter] = useState<string>('all')
   const [activeTab, setActiveTab] = useState('products')
+  const [orderSubTab, setOrderSubTab] = useState('pending')
   const [confirmItemOpen, setConfirmItemOpen] = useState(false)
   const [confirmOrderOpen, setConfirmOrderOpen] = useState(false)
   const [deleteItemId, setDeleteItemId] = useState<string | null>(null)
@@ -120,15 +121,15 @@ export default function AdminShopPage() {
     if (activeTab !== 'orders') return
 
     // Initial load
-    loadOrders(statusFilter)
+    loadOrders()
 
     // Set up polling - refresh every 10 seconds (silent mode)
     const interval = setInterval(() => {
-      loadOrders(statusFilter, true)
+      loadOrders(true)
     }, 10000)
 
     return () => clearInterval(interval)
-  }, [activeTab, statusFilter])
+  }, [activeTab])
 
   async function loadItems() {
     try {
@@ -143,17 +144,22 @@ export default function AdminShopPage() {
     }
   }
 
-  async function loadOrders(filter = 'all', silent = false) {
+  async function loadOrders(silent = false) {
     if (!silent) {
       setOrdersLoading(true)
     }
     try {
-      const url = filter === 'all'
-        ? '/api/admin/shop/orders'
-        : `/api/admin/shop/orders?status=${filter}`
-      const response = await fetch(url)
+      const response = await fetch('/api/admin/shop/orders')
       const data = await response.json()
-      setOrders(data.orders || [])
+      const allOrders = data.orders || []
+
+      // Bekliyor: sadece pending
+      setPendingOrders(allOrders.filter((o: Order) => o.status === 'pending'))
+
+      // Geçmiş: completed ve cancelled
+      setHistoryOrders(allOrders.filter((o: Order) =>
+        o.status === 'completed' || o.status === 'cancelled'
+      ))
     } catch (error) {
       console.error('Error loading orders:', error)
       if (!silent) {
@@ -339,7 +345,7 @@ export default function AdminShopPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...orderFormData,
-          processedBy: 'Admin' // Admin kullanıcı adını buraya ekleyebilirsiniz
+          processedBy: 'Admin'
         })
       })
 
@@ -348,7 +354,7 @@ export default function AdminShopPage() {
       if (data.order) {
         toast.success('Sipariş güncellendi')
         setOrderDialogOpen(false)
-        loadOrders(statusFilter)
+        loadOrders()
       } else {
         toast.error(data.error || 'Güncelleme başarısız')
       }
@@ -425,7 +431,7 @@ export default function AdminShopPage() {
 
       if (data.success) {
         toast.success('Sipariş silindi')
-        loadOrders(statusFilter)
+        loadOrders()
       } else {
         toast.error(data.error || 'Silme başarısız')
       }
@@ -481,11 +487,10 @@ export default function AdminShopPage() {
 
   function getOrderStats() {
     return {
-      total: orders.length,
-      pending: orders.filter(o => o.status === 'pending').length,
-      processing: orders.filter(o => o.status === 'processing').length,
-      completed: orders.filter(o => o.status === 'completed').length,
-      cancelled: orders.filter(o => o.status === 'cancelled').length
+      pending: pendingOrders.length,
+      completed: historyOrders.filter(o => o.status === 'completed').length,
+      cancelled: historyOrders.filter(o => o.status === 'cancelled').length,
+      total: pendingOrders.length + historyOrders.length
     }
   }
 
@@ -632,7 +637,7 @@ export default function AdminShopPage() {
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-4">
             {/* Order Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Card className="bg-white/5 border-white/10 p-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">{stats.total}</div>
@@ -643,12 +648,6 @@ export default function AdminShopPage() {
                 <div className="text-center">
                   <div className="text-2xl font-bold text-yellow-400">{stats.pending}</div>
                   <div className="text-sm text-yellow-400">Bekliyor</div>
-                </div>
-              </Card>
-              <Card className="bg-blue-500/10 border-blue-500/20 p-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-400">{stats.processing}</div>
-                  <div className="text-sm text-blue-400">İşleniyor</div>
                 </div>
               </Card>
               <Card className="bg-green-500/10 border-green-500/20 p-4">
@@ -665,133 +664,79 @@ export default function AdminShopPage() {
               </Card>
             </div>
 
-            {/* Filter */}
-            <div className="flex justify-between items-center">
-              <div className="flex gap-2">
-                <Select value={statusFilter} onValueChange={(value) => {
-                  setStatusFilter(value)
-                  loadOrders(value)
-                }}>
-                  <SelectTrigger className="w-48 bg-white/5 border-white/10 text-white">
-                    <SelectValue placeholder="Durum Filtrele" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-white/20">
-                    <SelectItem value="all">Tümü</SelectItem>
-                    <SelectItem value="pending">Bekliyor</SelectItem>
-                    <SelectItem value="processing">İşleniyor</SelectItem>
-                    <SelectItem value="completed">Tamamlandı</SelectItem>
-                    <SelectItem value="cancelled">İptal</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            {/* Order Sub Tabs */}
+            <Tabs value={orderSubTab} onValueChange={setOrderSubTab} className="space-y-4">
+              <TabsList className="bg-white/5 border border-white/10">
+                <TabsTrigger value="pending" className="data-[state=active]:bg-yellow-600">
+                  <Clock className="w-4 h-4 mr-2" />
+                  Bekliyor
+                  {stats.pending > 0 && (
+                    <span className="ml-2 px-2 py-0.5 bg-yellow-500 text-white text-xs rounded-full">
+                      {stats.pending}
+                    </span>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="history" className="data-[state=active]:bg-gray-600">
+                  <History className="w-4 h-4 mr-2" />
+                  Geçmiş
+                  <span className="ml-2 text-xs text-gray-400">
+                    ({stats.completed + stats.cancelled})
+                  </span>
+                </TabsTrigger>
+              </TabsList>
 
-            {/* Orders List */}
-            {ordersLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            ) : orders.length === 0 ? (
-              <Card className="bg-white/5 border-white/10 p-12 text-center">
-                <Package className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-                <p className="text-gray-400">Sipariş bulunamadı</p>
-              </Card>
-            ) : (
-              <div className="space-y-3">
-                {orders.map((order) => (
-                  <Card key={order.id} className="bg-white/5 border-white/10 p-4 hover:bg-white/10 transition-colors">
-                    <div className="flex gap-4">
-                      {order.item.imageUrl && (
-                        <img
-                          src={order.item.imageUrl}
-                          alt={order.item.name}
-                          className="w-20 h-20 object-cover rounded-lg"
-                        />
-                      )}
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h3 className="text-lg font-semibold text-white">{order.item.name}</h3>
-                            <p className="text-sm text-gray-400">
-                              {order.user.firstName || order.user.username || 'Kullanıcı'}
-                              {' '}(@{order.user.username || order.user.telegramId})
-                            </p>
-                          </div>
-                          {getStatusBadge(order.status)}
-                        </div>
-
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                          <div>
-                            <span className="text-gray-400">Fiyat:</span>
-                            <span className="text-yellow-400 font-semibold ml-1">{order.pointsSpent} Puan</span>
-                          </div>
-                          <div>
-                            <span className="text-gray-400">Tarih:</span>
-                            <span className="text-white ml-1">
-                              {new Date(order.purchasedAt).toLocaleDateString('tr-TR')}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-gray-400">Saat:</span>
-                            <span className="text-white ml-1">
-                              {new Date(order.purchasedAt).toLocaleTimeString('tr-TR')}
-                            </span>
-                          </div>
-                          {order.processedBy && (
-                            <div>
-                              <span className="text-gray-400">İşleyen:</span>
-                              <span className="text-white ml-1">{order.processedBy}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {order.deliveryInfo && (
-                          <div className="mt-2 p-2 bg-white/5 rounded text-sm">
-                            <span className="text-gray-400">Not: </span>
-                            <span className="text-white">{order.deliveryInfo}</span>
-                          </div>
-                        )}
-
-                        {order.walletAddress && (
-                          <div className="mt-2 p-2 bg-green-500/10 border border-green-500/30 rounded text-sm">
-                            <span className="text-green-400 font-semibold">TRC20 Cüzdan: </span>
-                            <span className="text-white font-mono">{order.walletAddress}</span>
-                          </div>
-                        )}
-
-                        {order.sponsorInfo && (
-                          <div className="mt-2 p-2 bg-purple-500/10 border border-purple-500/30 rounded text-sm">
-                            <span className="text-purple-400 font-semibold">Sponsor Bilgisi: </span>
-                            <span className="text-white">{order.sponsorInfo}</span>
-                          </div>
-                        )}
-
-                        <div className="flex gap-2 mt-3">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openOrderDialog(order)}
-                            className="border-white/20 hover:bg-white/10"
-                          >
-                            <Edit className="w-4 h-4 mr-1" />
-                            Düzenle
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDeleteOrder(order.id)}
-                            className="border-red-500/20 hover:bg-red-500/10 text-red-400"
-                          >
-                            <Trash2 className="w-4 h-4 mr-1" />
-                            Sil
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
+              {/* Pending Orders */}
+              <TabsContent value="pending" className="space-y-3">
+                {ordersLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                ) : pendingOrders.length === 0 ? (
+                  <Card className="bg-white/5 border-white/10 p-12 text-center">
+                    <Clock className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                    <p className="text-gray-400">Bekleyen sipariş yok</p>
                   </Card>
-                ))}
-              </div>
-            )}
+                ) : (
+                  <div className="space-y-3">
+                    {pendingOrders.map((order) => (
+                      <OrderCard
+                        key={order.id}
+                        order={order}
+                        onEdit={openOrderDialog}
+                        onDelete={handleDeleteOrder}
+                        getStatusBadge={getStatusBadge}
+                      />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* History Orders */}
+              <TabsContent value="history" className="space-y-3">
+                {ordersLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                ) : historyOrders.length === 0 ? (
+                  <Card className="bg-white/5 border-white/10 p-12 text-center">
+                    <History className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                    <p className="text-gray-400">Geçmiş sipariş yok</p>
+                  </Card>
+                ) : (
+                  <div className="space-y-3">
+                    {historyOrders.map((order) => (
+                      <OrderCard
+                        key={order.id}
+                        order={order}
+                        onEdit={openOrderDialog}
+                        onDelete={handleDeleteOrder}
+                        getStatusBadge={getStatusBadge}
+                      />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </TabsContent>
         </Tabs>
       </div>
@@ -891,8 +836,14 @@ export default function AdminShopPage() {
                 required
               />
               <p className="text-xs text-white/40 mt-1">
-                Önerilen: Genel, Nakit, Sponsor
+                Önerilen: Genel, Nakit (TRC20), Sponsor
               </p>
+              {formData.category.toLowerCase() === 'nakit' && (
+                <div className="mt-2 p-2 bg-green-500/10 border border-green-500/30 rounded text-xs">
+                  <span className="text-green-400 font-semibold">TRC20 Bilgisi: </span>
+                  <span className="text-white">Kullanıcılar bu ürünü alırken TRC20 USDT cüzdan adreslerini girecekler</span>
+                </div>
+              )}
             </div>
 
             {formData.category.toLowerCase() === 'sponsor' && (
@@ -1061,5 +1012,111 @@ export default function AdminShopPage() {
         onConfirm={confirmDeleteOrder}
       />
     </div>
+  )
+}
+
+// Order Card Component
+function OrderCard({
+  order,
+  onEdit,
+  onDelete,
+  getStatusBadge
+}: {
+  order: Order
+  onEdit: (order: Order) => void
+  onDelete: (id: string) => void
+  getStatusBadge: (status: string) => React.ReactNode
+}) {
+  return (
+    <Card className="bg-white/5 border-white/10 p-4 hover:bg-white/10 transition-colors">
+      <div className="flex gap-4">
+        {order.item.imageUrl && (
+          <img
+            src={order.item.imageUrl}
+            alt={order.item.name}
+            className="w-20 h-20 object-cover rounded-lg"
+          />
+        )}
+        <div className="flex-1">
+          <div className="flex items-start justify-between mb-2">
+            <div>
+              <h3 className="text-lg font-semibold text-white">{order.item.name}</h3>
+              <p className="text-sm text-gray-400">
+                {order.user.firstName || order.user.username || 'Kullanıcı'}
+                {' '}(@{order.user.username || order.user.telegramId})
+              </p>
+            </div>
+            {getStatusBadge(order.status)}
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            <div>
+              <span className="text-gray-400">Fiyat:</span>
+              <span className="text-yellow-400 font-semibold ml-1">{order.pointsSpent} Puan</span>
+            </div>
+            <div>
+              <span className="text-gray-400">Tarih:</span>
+              <span className="text-white ml-1">
+                {new Date(order.purchasedAt).toLocaleDateString('tr-TR')}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-400">Saat:</span>
+              <span className="text-white ml-1">
+                {new Date(order.purchasedAt).toLocaleTimeString('tr-TR')}
+              </span>
+            </div>
+            {order.processedBy && (
+              <div>
+                <span className="text-gray-400">İşleyen:</span>
+                <span className="text-white ml-1">{order.processedBy}</span>
+              </div>
+            )}
+          </div>
+
+          {order.deliveryInfo && (
+            <div className="mt-2 p-2 bg-white/5 rounded text-sm">
+              <span className="text-gray-400">Not: </span>
+              <span className="text-white">{order.deliveryInfo}</span>
+            </div>
+          )}
+
+          {order.walletAddress && (
+            <div className="mt-2 p-2 bg-green-500/10 border border-green-500/30 rounded text-sm">
+              <span className="text-green-400 font-semibold">TRC20 Cüzdan: </span>
+              <span className="text-white font-mono">{order.walletAddress}</span>
+            </div>
+          )}
+
+          {order.sponsorInfo && (
+            <div className="mt-2 p-2 bg-purple-500/10 border border-purple-500/30 rounded text-sm">
+              <span className="text-purple-400 font-semibold">Sponsor Bilgisi: </span>
+              <span className="text-white">{order.sponsorInfo}</span>
+            </div>
+          )}
+
+          <div className="flex gap-2 mt-3">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onEdit(order)}
+              className="border-white/20 hover:bg-white/10"
+            >
+              <Edit className="w-4 h-4 mr-1" />
+              Düzenle
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onDelete(order.id)}
+              className="border-red-500/20 hover:bg-red-500/10 text-red-400"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Sil
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Card>
   )
 }
