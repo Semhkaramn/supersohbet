@@ -56,6 +56,9 @@ model User {
   // TRC20 USDT Cüzdan
   trc20WalletAddress String?       // TRC20 USDT cüzdan adresi
 
+  // Bot başlatma durumu
+  hadStart         Boolean         @default(false) // Kullanıcı bota /start yaptı mı?
+
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
