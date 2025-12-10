@@ -47,17 +47,10 @@ export async function GET(request: NextRequest) {
     const realTimeChecks = await Promise.all(
       requiredChannels.map(async (channel) => {
         try {
-          // Kullanıcının telegramId'si yoksa, DB kaydına güven
-          if (!user.telegramId) {
-            return {
-              channelId: channel.id,
-              isMember: joinedChannelIds.has(channel.id)
-            }
-          }
-
           // Telegram API ile gerçek üyelik durumunu kontrol et
+          // Not: Bu noktada telegramId kesinlikle var (Telegram bağlama zorunlu)
           const isMemberNow = await checkChannelMembership(
-            user.telegramId,
+            user.telegramId!,
             channel.channelId
           )
 
