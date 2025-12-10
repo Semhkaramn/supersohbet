@@ -15,28 +15,14 @@ export async function GET(request: NextRequest) {
 
     console.log('🔍 Randy slot kontrolü başlatılıyor...')
 
-    // Ayarları al
-    const settings = await prisma.settings.findMany()
-    const settingsMap = settings.reduce((acc: Record<string, string>, s) => ({ ...acc, [s.key]: s.value }), {})
-
-    const activityGroupStatus = settingsMap.activity_group_status || ''
-
-    // Grup aktif değilse kontrol yapma
-    if (activityGroupStatus !== 'active') {
-      console.log('⚠️ Randy kontrolü atlandı: Grup aktif değil')
-      return NextResponse.json({
-        success: true,
-        message: 'Randy check skipped: Group is not active',
-        slotsChecked: 0,
-        winnersAnnounced: 0,
-        dmsSent: 0
-      })
-    }
-
-    // Slotları kontrol et
+    // Slotları kontrol et (içinde grup ID kontrolü var)
     const results = await checkRandySlots()
 
     console.log(`✅ Randy kontrol tamamlandı: ${results.length} slot işlendi`)
+
+    // Ayarları al
+    const settings = await prisma.settings.findMany()
+    const settingsMap = settings.reduce((acc: Record<string, string>, s) => ({ ...acc, [s.key]: s.value }), {})
 
     const botToken = settingsMap.telegram_bot_token || ''
     const activityGroupId = settingsMap.activity_group_id || ''
