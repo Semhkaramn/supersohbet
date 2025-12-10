@@ -228,6 +228,88 @@ export default function AdminSettingsPage() {
     return settings.find(s => s.key === key)
   }
 
+  // Grup kaydetme fonksiyonları
+  async function savePointsAndXpSettings() {
+    setSaving(true)
+    try {
+      const settingsToSave = [
+        { key: 'points_per_message', value: pointsPerMessage?.value || '' },
+        { key: 'xp_per_message', value: xpPerMessage?.value || '' },
+        { key: 'messages_for_xp', value: messagesForXp?.value || '' }
+      ]
+
+      // Tüm ayarları paralel olarak kaydet
+      const promises = settingsToSave.map(setting =>
+        fetch('/api/admin/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(setting)
+        }).then(res => res.json())
+      )
+
+      const results = await Promise.all(promises)
+
+      const allSuccess = results.every(r => r.success)
+
+      if (allSuccess) {
+        toast.success('Tüm ayarlar kaydedildi!')
+        // Settings state'ini güncelle
+        setSettings(prev =>
+          prev.map(s => {
+            const updatedSetting = settingsToSave.find(setting => setting.key === s.key)
+            return updatedSetting ? { ...s, value: updatedSetting.value } : s
+          })
+        )
+      } else {
+        toast.error('Bazı ayarlar kaydedilemedi')
+      }
+    } catch (error) {
+      console.error('Save error:', error)
+      toast.error('Bir hata oluştu')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function saveMessageRestrictionsSettings() {
+    setSaving(true)
+    try {
+      const settingsToSave = [
+        { key: 'min_message_length', value: minMessageLength?.value || '' },
+        { key: 'message_cooldown_seconds', value: messageCooldown?.value || '' }
+      ]
+
+      const promises = settingsToSave.map(setting =>
+        fetch('/api/admin/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(setting)
+        }).then(res => res.json())
+      )
+
+      const results = await Promise.all(promises)
+
+      const allSuccess = results.every(r => r.success)
+
+      if (allSuccess) {
+        toast.success('Tüm ayarlar kaydedildi!')
+        setSettings(prev =>
+          prev.map(s => {
+            const updatedSetting = settingsToSave.find(setting => setting.key === s.key)
+            return updatedSetting ? { ...s, value: updatedSetting.value } : s
+          })
+        )
+      } else {
+        toast.error('Bazı ayarlar kaydedilemedi')
+      }
+    } catch (error) {
+      console.error('Save error:', error)
+      toast.error('Bir hata oluştu')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   // Kanal dialog fonksiyonları
   function openChannelDialog(channel?: Channel) {
     if (channel) {
@@ -706,63 +788,44 @@ export default function AdminSettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label className="text-white text-base">Mesaj Başına Puan</Label>
-                <div className="flex gap-2 mt-2">
-                  <Input
-                    value={pointsPerMessage?.value || ''}
-                    onChange={(e) => handleInputChange('points_per_message', e.target.value)}
-                    className="bg-white/10 border-white/20 text-white"
-                    type="number"
-                  />
-                  <Button
-                    onClick={() => saveSetting('points_per_message', pointsPerMessage?.value || '')}
-                    disabled={saving}
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Save className="w-4 h-4" />
-                  </Button>
-                </div>
+                <Input
+                  value={pointsPerMessage?.value || ''}
+                  onChange={(e) => handleInputChange('points_per_message', e.target.value)}
+                  className="bg-white/10 border-white/20 text-white mt-2"
+                  type="number"
+                />
               </div>
 
               <div>
                 <Label className="text-white text-base">Mesaj Başına XP</Label>
-                <div className="flex gap-2 mt-2">
-                  <Input
-                    value={xpPerMessage?.value || ''}
-                    onChange={(e) => handleInputChange('xp_per_message', e.target.value)}
-                    className="bg-white/10 border-white/20 text-white"
-                    type="number"
-                  />
-                  <Button
-                    onClick={() => saveSetting('xp_per_message', xpPerMessage?.value || '')}
-                    disabled={saving}
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Save className="w-4 h-4" />
-                  </Button>
-                </div>
+                <Input
+                  value={xpPerMessage?.value || ''}
+                  onChange={(e) => handleInputChange('xp_per_message', e.target.value)}
+                  className="bg-white/10 border-white/20 text-white mt-2"
+                  type="number"
+                />
               </div>
 
               <div>
                 <Label className="text-white text-base">XP için Mesaj Sayısı</Label>
-                <div className="flex gap-2 mt-2">
-                  <Input
-                    value={messagesForXp?.value || ''}
-                    onChange={(e) => handleInputChange('messages_for_xp', e.target.value)}
-                    className="bg-white/10 border-white/20 text-white"
-                    type="number"
-                  />
-                  <Button
-                    onClick={() => saveSetting('messages_for_xp', messagesForXp?.value || '')}
-                    disabled={saving}
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Save className="w-4 h-4" />
-                  </Button>
-                </div>
+                <Input
+                  value={messagesForXp?.value || ''}
+                  onChange={(e) => handleInputChange('messages_for_xp', e.target.value)}
+                  className="bg-white/10 border-white/20 text-white mt-2"
+                  type="number"
+                />
               </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button
+                onClick={savePointsAndXpSettings}
+                disabled={saving}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Tüm Ayarları Kaydet
+              </Button>
             </div>
           </div>
         </Card>
@@ -770,45 +833,38 @@ export default function AdminSettingsPage() {
         {/* Mesaj Kısıtlamaları */}
         <Card className="bg-white/5 border-white/10 p-6">
           <h2 className="text-xl font-bold text-white mb-4">🚫 Mesaj Kısıtlamaları</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label className="text-white text-base">Min. Mesaj Uzunluğu</Label>
-              <div className="flex gap-2 mt-2">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-white text-base">Min. Mesaj Uzunluğu</Label>
                 <Input
                   value={minMessageLength?.value || ''}
                   onChange={(e) => handleInputChange('min_message_length', e.target.value)}
-                  className="bg-white/10 border-white/20 text-white"
+                  className="bg-white/10 border-white/20 text-white mt-2"
                   type="number"
                 />
-                <Button
-                  onClick={() => saveSetting('min_message_length', minMessageLength?.value || '')}
-                  disabled={saving}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Save className="w-4 h-4" />
-                </Button>
               </div>
-            </div>
 
-            <div>
-              <Label className="text-white text-base">Mesaj Cooldown (saniye)</Label>
-              <div className="flex gap-2 mt-2">
+              <div>
+                <Label className="text-white text-base">Mesaj Cooldown (saniye)</Label>
                 <Input
                   value={messageCooldown?.value || ''}
                   onChange={(e) => handleInputChange('message_cooldown_seconds', e.target.value)}
-                  className="bg-white/10 border-white/20 text-white"
+                  className="bg-white/10 border-white/20 text-white mt-2"
                   type="number"
                 />
-                <Button
-                  onClick={() => saveSetting('message_cooldown_seconds', messageCooldown?.value || '')}
-                  disabled={saving}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Save className="w-4 h-4" />
-                </Button>
               </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button
+                onClick={saveMessageRestrictionsSettings}
+                disabled={saving}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Tüm Ayarları Kaydet
+              </Button>
             </div>
           </div>
         </Card>
