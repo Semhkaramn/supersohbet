@@ -37,7 +37,10 @@ interface UserSponsorInfo {
 function WalletInfoContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const userId = searchParams.get('userId')
+  const urlUserId = searchParams.get('userId')
+
+  // Telegram WebApp'ten userId'yi al
+  const [userId, setUserId] = useState<string | null>(null)
 
   const [loading, setLoading] = useState(true)
   const [walletAddress, setWalletAddress] = useState('')
@@ -50,11 +53,21 @@ function WalletInfoContent() {
   const [sponsorInput, setSponsorInput] = useState('')
   const [selectedSponsor, setSelectedSponsor] = useState<string | null>(null)
 
+  // Telegram WebApp ile userId'yi al
   useEffect(() => {
-    if (!userId) {
+    // @ts-ignore
+    const tg = window.Telegram?.WebApp
+    if (tg?.initDataUnsafe?.user?.id) {
+      setUserId(tg.initDataUnsafe.user.id.toString())
+    } else if (urlUserId) {
+      setUserId(urlUserId)
+    } else {
       router.push('/')
-      return
     }
+  }, [urlUserId])
+
+  useEffect(() => {
+    if (!userId) return
     loadData()
   }, [userId])
 
