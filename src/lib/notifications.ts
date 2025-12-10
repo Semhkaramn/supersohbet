@@ -221,12 +221,7 @@ export async function notifyWheelReset(
   telegramId: string,
   dailySpins: number
 ): Promise<boolean> {
-  const message = `
-🎡 **Şans Çarkı Hakkın Yenilendi!**
-
-✨ Yeni günlük çark hakkın: **${dailySpins}**
-🎁 Hemen çevir, puanlarını kazan!
-  `.trim()
+  const message = `🎡 **Çark Hakkın Yenilendi!**\n\n✨ Günlük hakkın: **${dailySpins}**\n🎁 Hemen çevir, kazan!`
 
   return await sendUserNotification(telegramId, message)
 }
