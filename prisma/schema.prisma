@@ -29,11 +29,14 @@ model User {
   email            String?         @unique
   password         String?         // Hashed password (bcrypt)
 
+  // Site kullanıcı adı (kayıt sırasında girilir)
+  siteUsername     String?         @unique
+
   // Telegram Authentication (optional)
   telegramId       String?         @unique
-  username         String?
-  firstName        String?
-  lastName         String?
+  username         String?         // Telegram username (telegram'dan çekilir)
+  firstName        String?         // Telegram'dan çekilir
+  lastName         String?         // Telegram'dan çekilir
   photoUrl         String?
 
   // Giriş yöntemi
@@ -87,6 +90,7 @@ model User {
   sponsorInfos     UserSponsorInfo[] // Kullanıcının sponsor bilgileri
 
   @@index([email])
+  @@index([siteUsername])
   @@index([telegramId])
   @@index([referralCode])
   @@index([referredById])
