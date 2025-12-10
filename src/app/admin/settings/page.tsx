@@ -44,6 +44,9 @@ export default function AdminSettingsPage() {
   const [notifyOrderApproved, setNotifyOrderApproved] = useState(false)
   const [notifyLevelUp, setNotifyLevelUp] = useState(false)
 
+  // Roll sistemi
+  const [rollEnabled, setRollEnabled] = useState(true)
+
   const [channelDialogOpen, setChannelDialogOpen] = useState(false)
   const [editingChannel, setEditingChannel] = useState<Channel | null>(null)
   const [channelFormData, setChannelFormData] = useState({
@@ -88,6 +91,10 @@ export default function AdminSettingsPage() {
 
       const levelUpNotify = data.settings.find((s: Setting) => s.key === 'notify_level_up')
       setNotifyLevelUp(levelUpNotify?.value === 'true')
+
+      // Roll sistemi ayarını yükle
+      const rollEnabledSetting = data.settings.find((s: Setting) => s.key === 'roll_enabled')
+      setRollEnabled(rollEnabledSetting?.value !== 'false') // Default true
     } catch (error) {
       console.error('Error loading settings:', error)
       toast.error('Ayarlar yüklenemedi')
@@ -453,6 +460,29 @@ export default function AdminSettingsPage() {
                 disabled={saving}
               />
             </div>
+          </div>
+        </Card>
+
+        {/* Roll Sistemi Ayarları */}
+        <Card className="bg-white/5 border-white/10 p-6">
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            🎲 Roll Sistemi
+          </h2>
+          <p className="text-gray-400 text-sm mb-4">
+            Telegram grubunda roll sistemi komutlarını aktif/deaktif edin
+          </p>
+          <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
+            <div className="flex-1">
+              <h3 className="text-white font-medium">Roll Sistemini Aktifleştir</h3>
+              <p className="text-gray-400 text-sm mt-1">
+                Roll komutları (/başlat, /kaydet, /durum vs.) kullanılabilsin
+              </p>
+            </div>
+            <Switch
+              checked={rollEnabled}
+              onCheckedChange={() => toggleNotificationSetting('roll_enabled', rollEnabled, setRollEnabled)}
+              disabled={saving}
+            />
           </div>
         </Card>
 
