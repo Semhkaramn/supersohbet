@@ -652,148 +652,39 @@ Bu bot ile:
 Başlamak için yanındaki menü butonuna tıkla! 👆
         `.trim()
 
-        // Menu button BotFather'da app olarak ayarlandığı için
-        // inline keyboard butonlarını kaldırdık
         await sendTelegramMessage(chatId, welcomeMessage)
 
-        // Kullanıcıyı kaydet
-        const allowNewUsers = getSetting('allow_new_users', 'true') === 'true'
-        if (allowNewUsers) {
-          // Önce kullanıcının var olup olmadığını kontrol et
-          const existingUser = await prisma.user.findUnique({
-            where: { telegramId: userId }
+        // Mevcut kullanıcı kontrolü (artık Telegram'dan yeni kayıt yapılamaz)
+        const existingUser = await prisma.user.findUnique({
+          where: { telegramId: userId }
+        })
+
+        if (existingUser) {
+          // Mevcut kullanıcı, sadece temel bilgileri güncelle
+          await prisma.user.update({
+            where: { telegramId: userId },
+            data: {
+              username,
+              firstName,
+              lastName,
+              photoUrl: photoUrl || undefined, // PP varsa güncelle, yoksa mevcut kalsın
+              hadStart: true // Kullanıcı /start yaptı
+            }
           })
+        } else {
+          // Telegram ile kayıt kapatıldı - kullanıcıyı web'den kayıt olmaya yönlendir
+          const webAppUrl = getSetting('telegram_webhook_url', '').replace('/api/telegram/webhook', '') || process.env.NEXT_PUBLIC_APP_URL || 'https://soft-fairy-c52849.netlify.app'
 
-          // Yeni kullanıcı ise ve referans kodu varsa
-          if (!existingUser && (referrerTelegramId || legacyReferralCode)) {
-            // Referans koduna sahip kullanıcıyı bul
-            let referrer = null
+          await sendTelegramMessage(chatId, `
+⚠️ **Web'den Kayıt Gerekli**
 
-            // Yeni format: Telegram ID ile ara
-            if (referrerTelegramId) {
-              referrer = await prisma.user.findUnique({
-                where: { telegramId: referrerTelegramId }
-              })
-            }
-            // Eski format: Referral code ile ara (geriye dönük uyumluluk)
-            else if (legacyReferralCode) {
-              referrer = await prisma.user.findUnique({
-                where: { referralCode: legacyReferralCode }
-              })
-            }
+Merhaba ${firstName}!
 
-            if (referrer && referrer.telegramId !== userId) {
-              // Bonusları al
-              const referralBonusInviter = Number.parseInt(getSetting('referral_bonus_inviter', '100'))
-              const referralBonusInvited = Number.parseInt(getSetting('referral_bonus_invited', '50'))
-              const dailyWheelSpins = Number.parseInt(getSetting('daily_wheel_spins', '3'))
+Artık doğrudan Telegram'dan kayıt yapılamıyor.
+Lütfen önce web sitemizden kayıt olun, sonra hesabınızı Telegram'a bağlayın.
 
-              // Yeni kullanıcıyı oluştur - PP /start'ta kaydedilir
-              const newUser = await prisma.user.create({
-                data: {
-                  telegramId: userId,
-                  username,
-                  firstName,
-                  lastName,
-                  photoUrl, // PP'yi kaydet
-                  referredById: referrer.id,
-                  points: referralBonusInvited, // Davet edilene bonus
-                  dailySpinsLeft: dailyWheelSpins,
-                  hadStart: true // Kullanıcı /start yaptı
-                }
-              })
-
-              // Davet eden kullanıcıya bonus ver
-              await prisma.user.update({
-                where: { id: referrer.id },
-                data: {
-                  totalReferrals: { increment: 1 },
-                  referralPoints: { increment: referralBonusInviter },
-                  points: { increment: referralBonusInviter }
-                }
-              })
-
-              // Point history kayıtlarını oluştur
-              await prisma.pointHistory.create({
-                data: {
-                  userId: newUser.id,
-                  amount: referralBonusInvited,
-                  type: 'referral_reward',
-                  description: `${referrer.firstName || referrer.username || 'Bir kullanıcı'} tarafından davet edildin`
-                }
-              })
-
-              await prisma.pointHistory.create({
-                data: {
-                  userId: referrer.id,
-                  amount: referralBonusInviter,
-                  type: 'referral_reward',
-                  description: `${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı`
-                }
-              })
-
-              // Bonus mesajını gönder
-              await sendTelegramMessage(chatId, `
-
-🎁 **Referans Bonusu!**
-
-${referrer.firstName || referrer.username || 'Bir kullanıcı'} seni davet etti!
-+${referralBonusInvited} puan kazandın! 🎉
-              `.trim())
-
-              // Davet eden kişiye bildirim gönder
-              if (referrer.telegramId) {
-                await sendTelegramMessage(parseInt(referrer.telegramId), `
-👥 **Yeni Davet!**
-
-${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
-+${referralBonusInviter} puan kazandın! 🎉
-                `.trim())
-              }
-            } else {
-              // Referans kodu geçersiz, normal kayıt
-              const dailyWheelSpins = Number.parseInt(getSetting('daily_wheel_spins', '3'))
-
-              await prisma.user.create({
-                data: {
-                  telegramId: userId,
-                  username,
-                  firstName,
-                  lastName,
-                  photoUrl, // PP'yi kaydet
-                  dailySpinsLeft: dailyWheelSpins,
-                  hadStart: true // Kullanıcı /start yaptı
-                }
-              })
-            }
-          } else if (!existingUser) {
-            // Referans kodu yok, normal kayıt
-            const dailyWheelSpins = Number.parseInt(getSetting('daily_wheel_spins', '3'))
-
-            await prisma.user.create({
-              data: {
-                telegramId: userId,
-                username,
-                firstName,
-                lastName,
-                photoUrl, // PP'yi kaydet
-                dailySpinsLeft: dailyWheelSpins,
-                hadStart: true // Kullanıcı /start yaptı
-              }
-            })
-          } else {
-            // Mevcut kullanıcı, sadece temel bilgileri güncelle
-            await prisma.user.update({
-              where: { telegramId: userId },
-              data: {
-                username,
-                firstName,
-                lastName,
-                photoUrl: photoUrl || undefined, // PP varsa güncelle, yoksa mevcut kalsın
-                hadStart: true // Kullanıcı /start yaptı
-              }
-            })
-          }
+🌐 **Kayıt için:** ${webAppUrl}/register
+          `.trim())
         }
 
         return NextResponse.json({ ok: true })
@@ -813,25 +704,15 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
         return NextResponse.json({ ok: true, message: 'Private chat - no points' })
       }
 
-      // Kullanıcıyı bul veya oluştur
-      let user = await prisma.user.findUnique({
+      // Kullanıcıyı bul (artık otomatik oluşturulmaz)
+      const user = await prisma.user.findUnique({
         where: { telegramId: userId }
       })
 
-      // Kullanıcı yoksa oluştur (hadStart: false) - mesaj istatistiği için
+      // Kullanıcı yoksa (web'den kayıt olmamış), mesaj işlemez
       if (!user) {
-        const dailyWheelSpins = Number.parseInt(getSetting('daily_wheel_spins', '3'))
-        user = await prisma.user.create({
-          data: {
-            telegramId: userId,
-            username,
-            firstName,
-            lastName,
-            dailySpinsLeft: dailyWheelSpins,
-            hadStart: false // Kullanıcı sadece gruba yazdı, /start yapmadı
-          }
-        })
-        console.log(`✅ Yeni kullanıcı oluşturuldu (sadece mesaj için, hadStart: false): ${userId}`)
+        console.log(`⚠️ Kullanıcı bulunamadı - web'den kayıt gerekli: ${userId}`)
+        return NextResponse.json({ ok: true, message: 'User not found - web registration required' })
       }
 
       // hadStart yapmamışlara puan verilmez
