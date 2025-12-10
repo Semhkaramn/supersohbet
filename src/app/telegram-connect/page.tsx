@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CheckCircle2, Send } from 'lucide-react'
+import { CheckCircle2, Send, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function TelegramConnectPage() {
