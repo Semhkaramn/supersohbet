@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
-import { ArrowLeft, Sparkles, Plus, Clock, Users, Gift, CheckCircle, XCircle, Trash2 } from 'lucide-react'
+import { ArrowLeft, Sparkles, Plus, Clock, Users, Gift, CheckCircle, XCircle, Trash2, Settings } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
@@ -60,6 +60,18 @@ export default function AdminRandyPage() {
     messagePeriod: 'none'
   })
 
+  // Randy ayarları
+  const [randySettings, setRandySettings] = useState({
+    randy_dm_template: '',
+    randy_group_template: '',
+    randy_start_template: '',
+    randy_send_dm: 'true',
+    randy_send_announcement: 'true',
+    randy_pin_start_message: 'true',
+    randy_pin_winner_message: 'true'
+  })
+  const [savingSettings, setSavingSettings] = useState(false)
+
   useEffect(() => {
     const token = localStorage.getItem('admin_token')
     if (!token) {
@@ -67,6 +79,7 @@ export default function AdminRandyPage() {
       return
     }
     loadSchedules()
+    loadRandySettings()
   }, [])
 
   async function loadSchedules() {
@@ -82,6 +95,59 @@ export default function AdminRandyPage() {
       toast.error('Randy planları yüklenemedi')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function loadRandySettings() {
+    try {
+      const response = await fetch('/api/admin/settings')
+      const data = await response.json()
+      const settings = data.settings || []
+
+      const randyKeys = [
+        'randy_dm_template',
+        'randy_group_template',
+        'randy_start_template',
+        'randy_send_dm',
+        'randy_send_announcement',
+        'randy_pin_start_message',
+        'randy_pin_winner_message'
+      ]
+
+      const newSettings: any = {}
+      for (const key of randyKeys) {
+        const setting = settings.find((s: any) => s.key === key)
+        if (setting) {
+          newSettings[key] = setting.value
+        }
+      }
+      setRandySettings({ ...randySettings, ...newSettings })
+    } catch (error) {
+      console.error('Error loading randy settings:', error)
+    }
+  }
+
+  async function saveRandySettings() {
+    setSavingSettings(true)
+    try {
+      const response = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings: randySettings })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success('Randy ayarları kaydedildi')
+      } else {
+        toast.error(data.error || 'Ayarlar kaydedilemedi')
+      }
+    } catch (error) {
+      console.error('Error saving randy settings:', error)
+      toast.error('Bir hata oluştu')
+    } finally {
+      setSavingSettings(false)
     }
   }
 
@@ -210,11 +276,15 @@ export default function AdminRandyPage() {
           <TabsList className="bg-white/5 border border-white/10">
             <TabsTrigger value="create" className="data-[state=active]:bg-purple-600">
               <Plus className="w-4 h-4 mr-2" />
-              Oluşturma ve Ayarlar
+              Yeni Randy Oluştur
             </TabsTrigger>
             <TabsTrigger value="active" className="data-[state=active]:bg-purple-600">
               <Sparkles className="w-4 h-4 mr-2" />
               Aktif Randy
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="data-[state=active]:bg-purple-600">
+              <Settings className="w-4 h-4 mr-2" />
+              Ayarlar ve Şablonlar
             </TabsTrigger>
           </TabsList>
 
@@ -269,23 +339,12 @@ export default function AdminRandyPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <Label htmlFor="minMessages" className="text-white">Minimum Mesaj Sayısı</Label>
-                    <Input
-                      id="minMessages"
-                      type="number"
-                      min="0"
-                      value={formData.minMessages}
-                      onChange={(e) => setFormData({ ...formData, minMessages: parseInt(e.target.value) })}
-                      className="bg-white/5 border-white/10 text-white mt-2"
-                    />
-                    <p className="text-xs text-gray-400 mt-1">0 = sınırsız</p>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="messagePeriod" className="text-white">Mesaj Dönemi</Label>
+                    <Label htmlFor="messagePeriod" className="text-white">Mesaj Dönemi Kontrolü</Label>
                     <Select
                       value={formData.messagePeriod}
-                      onValueChange={(value) => setFormData({ ...formData, messagePeriod: value })}
+                      onValueChange={(value) => {
+                        setFormData({ ...formData, messagePeriod: value, minMessages: value === 'none' ? 0 : formData.minMessages })
+                      }}
                     >
                       <SelectTrigger className="bg-white/5 border-white/10 text-white mt-2">
                         <SelectValue />
@@ -297,14 +356,30 @@ export default function AdminRandyPage() {
                         <SelectItem value="all">Tüm Zamanlar</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-gray-400 mt-1">Kazananların hangi dönemde mesaj yazmış olması gerektiği</p>
                   </div>
+
+                  {formData.messagePeriod !== 'none' && (
+                    <div>
+                      <Label htmlFor="minMessages" className="text-white">Minimum Mesaj Sayısı</Label>
+                      <Input
+                        id="minMessages"
+                        type="number"
+                        min="0"
+                        value={formData.minMessages}
+                        onChange={(e) => setFormData({ ...formData, minMessages: parseInt(e.target.value) })}
+                        className="bg-white/5 border-white/10 text-white mt-2"
+                      />
+                      <p className="text-xs text-gray-400 mt-1">Seçilen dönemde en az kaç mesaj yazmış olmalı (0 = sınırsız)</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-4 border-t border-white/10 pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label className="text-white">Kazananı Grupta Duyur</Label>
-                      <p className="text-xs text-gray-400">Kazanan kullanıcı grupta etiketlenecek</p>
+                      <Label className="text-white">Randy Başlangıç Duyurusu Gönder</Label>
+                      <p className="text-xs text-gray-400">Randy başladığında grupta duyuru yapılacak</p>
                     </div>
                     <Switch
                       checked={formData.sendAnnouncement}
@@ -314,8 +389,8 @@ export default function AdminRandyPage() {
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label className="text-white">Mesajı Sabitle</Label>
-                      <p className="text-xs text-gray-400">Kazanan duyurusu sabitlenecek</p>
+                      <Label className="text-white">Başlangıç Duyurusunu Sabitle</Label>
+                      <p className="text-xs text-gray-400">Randy başlangıç duyurusu mesajı sabitlenecek</p>
                     </div>
                     <Switch
                       checked={formData.pinMessage}
@@ -326,7 +401,7 @@ export default function AdminRandyPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <Label className="text-white">Kullanıcı Başına Bir Kez</Label>
-                      <p className="text-xs text-gray-400">Her kullanıcı sadece bir kez kazanabilir</p>
+                      <p className="text-xs text-gray-400">Her kullanıcı bu Randy'de sadece bir kez kazanabilir</p>
                     </div>
                     <Switch
                       checked={formData.onePerUser}
@@ -345,18 +420,17 @@ export default function AdminRandyPage() {
               </form>
             </Card>
 
-            {/* Mesaj Şablonları Bilgisi */}
+            {/* Bilgi Kartı */}
             <Card className="bg-blue-500/10 border-blue-500/30 p-6">
               <h3 className="text-white font-bold mb-3 flex items-center gap-2">
                 <Gift className="w-5 h-5 text-blue-400" />
-                Mesaj Şablonları
+                Randy Nasıl Çalışır?
               </h3>
-              <p className="text-gray-300 text-sm mb-3">
-                Randy mesaj şablonlarını <Link href="/admin/settings" className="text-blue-400 underline">Sistem Ayarları</Link> sayfasından düzenleyebilirsiniz:
-              </p>
-              <ul className="text-sm text-gray-300 space-y-1 list-disc list-inside">
-                <li><code className="text-blue-300">randy_dm_template</code> - Kazanana gönderilecek özel mesaj</li>
-                <li><code className="text-blue-300">randy_group_template</code> - Grupta paylaşılacak duyuru mesajı</li>
+              <ul className="text-sm text-gray-300 space-y-2 list-disc list-inside">
+                <li>Randy planı oluşturduktan sonra otomatik olarak rastgele zamanlarda kazananlar seçilir</li>
+                <li>Kazananlar sadece /start yapmış ve yasaklanmamış kullanıcılar arasından seçilir</li>
+                <li>Mesaj şablonlarını ve diğer ayarları "Ayarlar ve Şablonlar" sekmesinden düzenleyebilirsiniz</li>
+                <li>Kazananlara otomatik DM gönderilebilir ve grupta duyuru yapılabilir</li>
               </ul>
             </Card>
           </TabsContent>
@@ -528,6 +602,142 @@ export default function AdminRandyPage() {
                     </div>
                   ))
                 )}
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* Ayarlar ve Şablonlar Tab */}
+          <TabsContent value="settings" className="space-y-6">
+            {/* Mesaj Şablonları */}
+            <Card className="bg-white/5 border-white/10 p-6">
+              <h2 className="text-xl font-bold text-white mb-6">Mesaj Şablonları</h2>
+              <div className="space-y-6">
+                <div>
+                  <Label htmlFor="randy_dm_template" className="text-white">
+                    Randy Kazanan DM Şablonu
+                  </Label>
+                  <p className="text-xs text-gray-400 mb-2">
+                    Kazanana gönderilecek özel mesaj. Kullanılabilir: {'{firstname}'}, {'{username}'}, {'{prize}'}
+                  </p>
+                  <Textarea
+                    id="randy_dm_template"
+                    value={randySettings.randy_dm_template}
+                    onChange={(e) => setRandySettings({ ...randySettings, randy_dm_template: e.target.value })}
+                    className="bg-white/5 border-white/10 text-white font-mono text-sm"
+                    rows={8}
+                    placeholder="🎉 Tebrikler! Randy Kazandınız!..."
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="randy_group_template" className="text-white">
+                    Randy Kazanan Grup Duyurusu Şablonu
+                  </Label>
+                  <p className="text-xs text-gray-400 mb-2">
+                    Grupta paylaşılacak duyuru mesajı. Kullanılabilir: {'{mention}'}, {'{username}'}, {'{firstname}'}, {'{prize}'}
+                  </p>
+                  <Textarea
+                    id="randy_group_template"
+                    value={randySettings.randy_group_template}
+                    onChange={(e) => setRandySettings({ ...randySettings, randy_group_template: e.target.value })}
+                    className="bg-white/5 border-white/10 text-white font-mono text-sm"
+                    rows={6}
+                    placeholder="🎉 Randy Kazananı! {mention} tebrikler!..."
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="randy_start_template" className="text-white">
+                    Randy Başlangıç Duyurusu Şablonu
+                  </Label>
+                  <p className="text-xs text-gray-400 mb-2">
+                    Randy başladığında gönderilecek mesaj. Kullanılabilir: {'{prize}'}, {'{winners}'}, {'{hours}'}, {'{endtime}'}
+                  </p>
+                  <Textarea
+                    id="randy_start_template"
+                    value={randySettings.randy_start_template}
+                    onChange={(e) => setRandySettings({ ...randySettings, randy_start_template: e.target.value })}
+                    className="bg-white/5 border-white/10 text-white font-mono text-sm"
+                    rows={8}
+                    placeholder="🎊 Randy Başladı!..."
+                  />
+                </div>
+              </div>
+            </Card>
+
+            {/* Randy Ayarları */}
+            <Card className="bg-white/5 border-white/10 p-6">
+              <h2 className="text-xl font-bold text-white mb-6">Randy Genel Ayarları</h2>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-white">Kazanana DM Gönder</Label>
+                    <p className="text-xs text-gray-400">Kazanan kullanıcıya özel mesaj gönderilecek (sadece /start yapmış kullanıcılara)</p>
+                  </div>
+                  <Switch
+                    checked={randySettings.randy_send_dm === 'true'}
+                    onCheckedChange={(checked) => setRandySettings({ ...randySettings, randy_send_dm: checked ? 'true' : 'false' })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-white">Kazananı Grupta Duyur</Label>
+                    <p className="text-xs text-gray-400">Kazanan kullanıcı grupta etiketlenecek</p>
+                  </div>
+                  <Switch
+                    checked={randySettings.randy_send_announcement === 'true'}
+                    onCheckedChange={(checked) => setRandySettings({ ...randySettings, randy_send_announcement: checked ? 'true' : 'false' })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-white">Başlangıç Duyurusunu Sabitle</Label>
+                    <p className="text-xs text-gray-400">Randy başlangıç duyurusu mesajı sabitlenecek</p>
+                  </div>
+                  <Switch
+                    checked={randySettings.randy_pin_start_message === 'true'}
+                    onCheckedChange={(checked) => setRandySettings({ ...randySettings, randy_pin_start_message: checked ? 'true' : 'false' })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-white">Kazanan Duyurusunu Sabitle</Label>
+                    <p className="text-xs text-gray-400">Kazanan duyurusu mesajı sabitlenecek</p>
+                  </div>
+                  <Switch
+                    checked={randySettings.randy_pin_winner_message === 'true'}
+                    onCheckedChange={(checked) => setRandySettings({ ...randySettings, randy_pin_winner_message: checked ? 'true' : 'false' })}
+                  />
+                </div>
+              </div>
+
+              <Button
+                onClick={saveRandySettings}
+                disabled={savingSettings}
+                className="w-full mt-6 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-semibold py-6"
+              >
+                {savingSettings ? 'Kaydediliyor...' : 'Ayarları Kaydet'}
+              </Button>
+            </Card>
+
+            {/* Bilgi Kartı */}
+            <Card className="bg-blue-500/10 border-blue-500/30 p-6">
+              <h3 className="text-white font-bold mb-3">💡 Mesaj Şablonları Hakkında</h3>
+              <div className="text-sm text-gray-300 space-y-2">
+                <p><strong>Kullanılabilir Değişkenler:</strong></p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li><code className="text-blue-300">{'{firstname}'}</code> - Kullanıcının adı</li>
+                  <li><code className="text-blue-300">{'{username}'}</code> - Kullanıcının kullanıcı adı</li>
+                  <li><code className="text-blue-300">{'{mention}'}</code> - Kullanıcı mention (@username veya ad)</li>
+                  <li><code className="text-blue-300">{'{prize}'}</code> - Ödül açıklaması</li>
+                  <li><code className="text-blue-300">{'{winners}'}</code> - Toplam kazanan sayısı</li>
+                  <li><code className="text-blue-300">{'{hours}'}</code> - Dağıtım süresi (saat)</li>
+                  <li><code className="text-blue-300">{'{endtime}'}</code> - Bitiş zamanı</li>
+                </ul>
+                <p className="mt-3"><strong>Not:</strong> DM sadece bota /start yapmış kullanıcılara gönderilebilir.</p>
               </div>
             </Card>
           </TabsContent>
