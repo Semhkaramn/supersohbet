@@ -28,12 +28,12 @@ export async function POST(request: NextRequest) {
 
     const { emailOrUsername, password } = validation.data
 
-    // Kullanıcıyı bul (email veya username ile)
+    // Kullanıcıyı bul (email veya siteUsername ile)
     const user = await prisma.user.findFirst({
       where: {
         OR: [
           { email: emailOrUsername },
-          { username: emailOrUsername }
+          { siteUsername: emailOrUsername }
         ],
         loginMethod: 'email' // Sadece email ile kayıtlı kullanıcılar
       },
@@ -80,12 +80,12 @@ export async function POST(request: NextRequest) {
     const token = await createToken({
       userId: user.id,
       email: user.email!,
-      username: user.username!
+      username: user.siteUsername!
     })
 
     console.log('✅ Kullanıcı giriş yaptı:', {
       email: user.email,
-      username: user.username
+      siteUsername: user.siteUsername
     })
 
     return createAuthResponse({
@@ -94,6 +94,7 @@ export async function POST(request: NextRequest) {
       user: {
         id: user.id,
         email: user.email,
+        siteUsername: user.siteUsername,
         username: user.username,
         firstName: user.firstName,
         lastName: user.lastName,
