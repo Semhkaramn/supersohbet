@@ -537,6 +537,8 @@ Bot özelliklerini kullanmanız engellenmiştir.
 
         // 1️⃣ ÖNCELİK: Connection Token kontrolü (6 haneli kod)
         if (startParam && /^\d{6}$/.test(startParam)) {
+          console.log('🔐 Token ile bağlantı denemesi:', { token: startParam, telegramId: userId, firstName, username })
+
           // Web'den kayıtlı kullanıcıyı token ile bul
           const webUser = await prisma.user.findFirst({
             where: {
@@ -546,9 +548,11 @@ Bot özelliklerini kullanmanız engellenmiştir.
             }
           })
 
+          console.log('👤 Token ile kullanıcı arama sonucu:', webUser ? `Bulundu: ${webUser.email || webUser.id}` : 'Bulunamadı')
+
           if (webUser) {
             // Kullanıcıya Telegram bilgilerini ekle
-            await prisma.user.update({
+            const updatedUser = await prisma.user.update({
               where: { id: webUser.id },
               data: {
                 telegramId: userId,
@@ -576,10 +580,38 @@ Web sitemizden kayıt olan hesabınız Telegram'a bağlandı.
             console.log('✅ Web kullanıcısı Telegram ile bağlandı:', {
               userId: webUser.id,
               email: webUser.email,
-              telegramId: userId
+              telegramId: userId,
+              updatedUser: updatedUser.telegramId
             })
 
             return NextResponse.json({ ok: true })
+          }
+
+          // Token bulunamadı - Detaylı kontrol
+          console.log('🔍 Token bulunamadı, detaylı kontrol yapılıyor...')
+
+          // Token'ı olan tüm kullanıcıları kontrol et (debug için)
+          const allTokenUsers = await prisma.user.findMany({
+            where: {
+              telegramConnectionToken: startParam
+            },
+            select: {
+              id: true,
+              email: true,
+              telegramId: true,
+              telegramConnectionToken: true,
+              telegramConnectionTokenExpiry: true
+            }
+          })
+
+          console.log('📋 Bu token ile bulunan kullanıcılar:', JSON.stringify(allTokenUsers, null, 2))
+
+          if (allTokenUsers.length > 0) {
+            const user = allTokenUsers[0]
+            console.log('⚠️ Token bulundu AMA:', {
+              zatenTelegramBagli: user.telegramId ? 'EVET' : 'HAYIR',
+              tokenSuresiGecmis: user.telegramConnectionTokenExpiry ? (user.telegramConnectionTokenExpiry < new Date() ? 'EVET' : 'HAYIR') : 'BİLİNMİYOR'
+            })
           }
 
           // Token geçersiz veya bulunamadı
