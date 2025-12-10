@@ -525,6 +525,16 @@ Bot özelliklerini kullanmanız engellenmiştir.
 
         const startParam = messageText.split(' ')[1]
 
+        // Profil fotoğrafını al (tüm yeni/mevcut kullanıcılar için)
+        const { getUserProfilePhoto } = await import('@/lib/telegram')
+        let photoUrl: string | null = null
+        try {
+          photoUrl = await getUserProfilePhoto(Number(userId))
+          console.log(`📸 PP alındı: ${photoUrl ? 'Var' : 'Yok'}`)
+        } catch (error) {
+          console.error('PP alınamadı:', error)
+        }
+
         // 1️⃣ ÖNCELİK: Connection Token kontrolü (6 haneli kod)
         if (startParam && /^\d{6}$/.test(startParam)) {
           // Web'den kayıtlı kullanıcıyı token ile bul
@@ -545,6 +555,7 @@ Bot özelliklerini kullanmanız engellenmiştir.
                 username: username || webUser.username,
                 firstName: firstName || webUser.firstName,
                 lastName: lastName || webUser.lastName,
+                photoUrl: photoUrl || webUser.photoUrl, // PP'yi kaydet
                 hadStart: true,
                 telegramConnectionToken: null, // Token'ı sil
                 telegramConnectionTokenExpiry: null
@@ -645,13 +656,14 @@ Başlamak için yanındaki menü butonuna tıkla! 👆
               const referralBonusInvited = Number.parseInt(getSetting('referral_bonus_invited', '50'))
               const dailyWheelSpins = Number.parseInt(getSetting('daily_wheel_spins', '3'))
 
-              // Yeni kullanıcıyı oluştur (photoUrl yok - web'den giriş yaparken güncellenecek)
+              // Yeni kullanıcıyı oluştur - PP /start'ta kaydedilir
               const newUser = await prisma.user.create({
                 data: {
                   telegramId: userId,
                   username,
                   firstName,
                   lastName,
+                  photoUrl, // PP'yi kaydet
                   referredById: referrer.id,
                   points: referralBonusInvited, // Davet edilene bonus
                   dailySpinsLeft: dailyWheelSpins,
@@ -716,6 +728,7 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
                   username,
                   firstName,
                   lastName,
+                  photoUrl, // PP'yi kaydet
                   dailySpinsLeft: dailyWheelSpins,
                   hadStart: true // Kullanıcı /start yaptı
                 }
@@ -731,19 +744,20 @@ ${firstName || username || 'Bir kullanıcı'} senin davetinle katıldı!
                 username,
                 firstName,
                 lastName,
+                photoUrl, // PP'yi kaydet
                 dailySpinsLeft: dailyWheelSpins,
                 hadStart: true // Kullanıcı /start yaptı
               }
             })
           } else {
             // Mevcut kullanıcı, sadece temel bilgileri güncelle
-            // photoUrl web'den giriş yaparken güncellenecek
             await prisma.user.update({
               where: { telegramId: userId },
               data: {
                 username,
                 firstName,
                 lastName,
+                photoUrl: photoUrl || undefined, // PP varsa güncelle, yoksa mevcut kalsın
                 hadStart: true // Kullanıcı /start yaptı
               }
             })
