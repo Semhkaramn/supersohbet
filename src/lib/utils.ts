@@ -131,28 +131,8 @@ export async function checkAndResetWheelSpins(
 
       console.log(`🔄 Çark hakları sıfırlandı: User ${userId} - ${dailyWheelSpins} hak`);
 
-      // Bildirim gönder (ayar aktifse)
-      const notifySetting = await prisma.settings.findUnique({
-        where: { key: 'notify_wheel_reset' }
-      })
-
-      if (notifySetting?.value === 'true' && user.telegramId) {
-        const message = `
-🎡 **Şans Çarkı Hakkın Yenilendi!**
-
-Merhaba ${user.firstName || user.username || 'Kullanıcı'}!
-
-✨ Yeni günlük çark hakkın: **${dailyWheelSpins}**
-🎁 Hemen çevir, muhteşem ödüller kazan!
-
-Bot menüsünden "Şans Çarkı" seçeneğine tıklayarak şansını dene! 🍀
-        `.trim()
-
-        // Asenkron olarak bildirim gönder
-        sendTelegramNotification(user.telegramId, message).catch(err =>
-          console.error('Failed to send wheel reset notification:', err)
-        )
-      }
+      // NOT: Bildirim artık otomatik gönderilmiyor
+      // Bildirimler sadece belirlenen saatte toplu olarak gönderilir (scripts/wheel-reset-notification.ts)
 
       return updatedUser;
     }
