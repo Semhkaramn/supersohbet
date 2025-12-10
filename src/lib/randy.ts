@@ -49,8 +49,8 @@ export async function checkRandySlots(): Promise<RandySlotCheckResult[]> {
 
     for (const schedule of activeSchedules) {
       for (const slot of schedule.slots) {
-        // Uygun kullanıcıları bul
-        const winner = await findEligibleWinner(schedule, slot.id)
+        // Uygun kullanıcıları bul (slot zamanını da gönder)
+        const winner = await findEligibleWinner(schedule, slot.id, slot.schedTime)
 
         if (winner) {
           // Slotu güncelle
@@ -107,13 +107,39 @@ export async function checkRandySlots(): Promise<RandySlotCheckResult[]> {
 
 /**
  * Slot için uygun kazanan kullanıcı bulur
+ * Slot zamanında mesaj yazan ve şartları karşılayan ilk kişiyi seçer
  */
 async function findEligibleWinner(
   schedule: any,
-  slotId: string
+  slotId: string,
+  slotTime: Date
 ): Promise<{ userId: string; username?: string; firstName?: string } | null> {
   try {
-    // Mesaj yazmış kullanıcıları bul (MessageStats'tan)
+    // Slot zamanı civarında mesaj yazmış kullanıcıları bul (slot zamanından önce 5 dk ve sonrası 5 dk içinde)
+    const timeWindowStart = new Date(slotTime.getTime() - 5 * 60 * 1000) // 5 dk önce
+    const timeWindowEnd = new Date(slotTime.getTime() + 5 * 60 * 1000) // 5 dk sonra
+
+    const messagesInTimeWindow = await prisma.messageStats.findMany({
+      where: {
+        createdAt: {
+          gte: timeWindowStart,
+          lte: timeWindowEnd
+        }
+      },
+      orderBy: {
+        createdAt: 'asc' // En erken mesajdan başlayarak sırala
+      },
+      include: {
+        user: true
+      }
+    })
+
+    if (messagesInTimeWindow.length === 0) {
+      console.log(`⚠️ Slot zamanında mesaj bulunamadı: ${slotTime.toISOString()}`)
+      return null
+    }
+
+    // Mesaj yazmış kullanıcıları bul (genel kontrol için)
     const usersWithMessages = await prisma.messageStats.groupBy({
       by: ['userId'],
       _count: { userId: true }
@@ -198,9 +224,23 @@ async function findEligibleWinner(
       return null
     }
 
-    // Rastgele bir kazanan seç
-    const randomIndex = Math.floor(Math.random() * eligibleUsers.length)
-    const winner = eligibleUsers[randomIndex]
+    // Slot zamanında mesaj yazan kullanıcılar arasından şartları karşılayan ilk kişiyi seç
+    for (const message of messagesInTimeWindow) {
+      const isEligible = eligibleUsers.some(u => u.id === message.userId)
+
+      if (isEligible && message.user) {
+        console.log(`✅ İlk uygun kazanan bulundu: ${message.user.firstName || message.user.username} (${message.user.telegramId}) - Mesaj zamanı: ${message.createdAt.toISOString()}`)
+        return {
+          userId: message.user.telegramId,
+          username: message.user.username || undefined,
+          firstName: message.user.firstName || undefined
+        }
+      }
+    }
+
+    // Eğer slot zamanında mesaj yazan uygun kullanıcı bulunamazsa, genel uygun kullanıcılardan ilkini seç
+    console.log(`⚠️ Slot zamanında uygun kullanıcı bulunamadı, genel listeden seçiliyor`)
+    const winner = eligibleUsers[0]
 
     return {
       userId: winner.telegramId,
