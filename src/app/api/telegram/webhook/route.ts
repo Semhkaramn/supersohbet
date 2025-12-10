@@ -523,8 +523,67 @@ Bot özelliklerini kullanmanız engellenmiştir.
       if (messageText === '/start' || messageText.startsWith('/start ')) {
         const webAppUrl = getSetting('telegram_webhook_url', '').replace('/api/telegram/webhook', '') || process.env.NEXT_PUBLIC_APP_URL || 'https://soft-fairy-c52849.netlify.app'
 
-        // Referans kodu kontrolü (örn: /start ref_123456789)
         const startParam = messageText.split(' ')[1]
+
+        // 1️⃣ ÖNCELİK: Connection Token kontrolü (6 haneli kod)
+        if (startParam && /^\d{6}$/.test(startParam)) {
+          // Web'den kayıtlı kullanıcıyı token ile bul
+          const webUser = await prisma.user.findFirst({
+            where: {
+              telegramConnectionToken: startParam,
+              telegramConnectionTokenExpiry: { gte: new Date() }, // Token geçerli mi?
+              telegramId: null // Henüz bağlanmamış
+            }
+          })
+
+          if (webUser) {
+            // Kullanıcıya Telegram bilgilerini ekle
+            await prisma.user.update({
+              where: { id: webUser.id },
+              data: {
+                telegramId: userId,
+                username: username || webUser.username,
+                firstName: firstName || webUser.firstName,
+                lastName: lastName || webUser.lastName,
+                hadStart: true,
+                telegramConnectionToken: null, // Token'ı sil
+                telegramConnectionTokenExpiry: null
+              }
+            })
+
+            await sendTelegramMessage(chatId, `
+✅ **Hesabınız Başarıyla Bağlandı!**
+
+Merhaba ${firstName || webUser.firstName}!
+
+Web sitemizden kayıt olan hesabınız Telegram'a bağlandı.
+Şimdi web sitesine dönebilir ve kanal kontrolünü tamamlayabilirsiniz.
+
+🌐 Web sitesine gitmek için menü butonuna tıklayın!
+            `.trim())
+
+            console.log('✅ Web kullanıcısı Telegram ile bağlandı:', {
+              userId: webUser.id,
+              email: webUser.email,
+              telegramId: userId
+            })
+
+            return NextResponse.json({ ok: true })
+          }
+
+          // Token geçersiz veya bulunamadı
+          await sendTelegramMessage(chatId, `
+❌ **Bağlantı Kodu Geçersiz!**
+
+Bu bağlantı kodu geçersiz veya süresi dolmuş.
+
+Lütfen web sitesinden yeni bir kod alın ve tekrar deneyin.
+          `.trim())
+
+          return NextResponse.json({ ok: true })
+        }
+
+        // 2️⃣ Referans kodu kontrolü (örn: /start ref_123456789)
         let referrerTelegramId: string | null = null
 
         // Yeni format: ref_TELEGRAM_ID
@@ -532,7 +591,7 @@ Bot özelliklerini kullanmanız engellenmiştir.
           referrerTelegramId = startParam.replace('ref_', '')
         }
         // Eski format için geriye dönük uyumluluk (referralCode)
-        const legacyReferralCode = startParam && !startParam.startsWith('ref_') ? startParam : null
+        const legacyReferralCode = startParam && !startParam.startsWith('ref_') && !(/^\d{6}$/.test(startParam)) ? startParam : null
 
         const welcomeMessage = `
 🎉 **SüperSohbet Bot'a Hoş Geldin!**
