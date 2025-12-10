@@ -249,6 +249,7 @@ export async function announceRandyWinner(
       .replace(/{username}/g, winner.username || winner.firstName || 'Kullanıcı')
       .replace(/{prize}/g, prizeText)
       .replace(/{firstname}/g, winner.firstName || 'Kullanıcı')
+      .replace(/{userId}/g, winner.userId)
 
     const url = `https://api.telegram.org/bot${botToken}/sendMessage`
     const response = await fetch(url, {
@@ -296,10 +297,11 @@ export async function sendRandyDM(
   try {
     // Kullanıcının /start yapıp yapmadığını kontrol et
     const user = await prisma.user.findUnique({
-      where: { telegramId: winner.userId }
+      where: { telegramId: winner.userId },
+      select: { hadStart: true }
     })
 
-    if (!user) {
+    if (!user || !user.hadStart) {
       console.log(`⚠️ Kullanıcı /start yapmamış, DM gönderilemedi: ${winner.userId}`)
       return false
     }
@@ -319,11 +321,19 @@ Randy çekilişinde kazanan siz oldunuz!
 Tebrikler! 🎊
     `.trim()
 
+    const userMention = winner.username
+      ? `@${winner.username}`
+      : winner.firstName
+        ? `[${winner.firstName}](tg://user?id=${winner.userId})`
+        : `Kullanıcı ${winner.userId}`
+
     // Placeholder'ları değiştir
     message = message
+      .replace(/{mention}/g, userMention)
       .replace(/{username}/g, winner.username || winner.firstName || 'Kullanıcı')
       .replace(/{prize}/g, prizeText)
       .replace(/{firstname}/g, winner.firstName || 'Kullanıcı')
+      .replace(/{userId}/g, winner.userId)
 
     const url = `https://api.telegram.org/bot${botToken}/sendMessage`
     const response = await fetch(url, {
