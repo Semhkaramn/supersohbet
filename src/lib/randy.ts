@@ -113,10 +113,20 @@ async function findEligibleWinner(
   slotId: string
 ): Promise<{ userId: string; username?: string; firstName?: string } | null> {
   try {
+    // Mesaj yazmış kullanıcıları bul (MessageStats'tan)
+    const usersWithMessages = await prisma.messageStats.groupBy({
+      by: ['userId'],
+      _count: { userId: true }
+    })
+
+    if (usersWithMessages.length === 0) {
+      return null
+    }
+
     // Mesaj filtrelerini hazırla
     const whereClause: any = {
       isBanned: false,
-      totalMessages: { gt: 0 } // Sadece mesaj yazmış kullanıcılar
+      id: { in: usersWithMessages.map(u => u.userId) } // Sadece mesaj yazmış kullanıcılar
     }
 
     // Minimum mesaj kontrolü
