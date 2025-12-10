@@ -53,9 +53,9 @@ export async function POST(request: NextRequest) {
       where: { id: session.userId },
       data: {
         telegramId,
-        username: telegramUser.username || undefined,
-        firstName: telegramUser.first_name,
-        lastName: telegramUser.last_name,
+        username: telegramUser.username || undefined, // Telegram username
+        firstName: telegramUser.first_name || undefined, // Telegram'dan
+        lastName: telegramUser.last_name || undefined, // Telegram'dan
         photoUrl: photoUrl || undefined
       },
       include: {
@@ -75,9 +75,10 @@ export async function POST(request: NextRequest) {
       user: {
         id: updatedUser.id,
         email: updatedUser.email,
-        username: updatedUser.username,
-        firstName: updatedUser.firstName,
-        lastName: updatedUser.lastName,
+        siteUsername: updatedUser.siteUsername,
+        username: updatedUser.username, // Telegram username
+        firstName: updatedUser.firstName, // Telegram'dan
+        lastName: updatedUser.lastName, // Telegram'dan
         photoUrl: updatedUser.photoUrl,
         telegramId: updatedUser.telegramId
       }
