@@ -116,7 +116,7 @@ function DashboardContent() {
           <div className="flex items-center gap-4">
             <Avatar
               className="w-20 h-20 border-3 border-white/20 cursor-pointer shadow-xl hover:scale-105 transition-transform"
-              onClick={() => router.push(`/profile`)}
+              onClick={() => router.push('/profile')}
             >
               {userData.photoUrl && <AvatarImage src={userData.photoUrl} alt={userData.firstName || userData.username || 'User'} />}
               <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-2xl font-bold">
@@ -159,7 +159,7 @@ function DashboardContent() {
 
         {/* Daily Spin Alert - More Prominent */}
         {userData.dailySpinsLeft > 0 && (
-          <Card className="bg-gradient-to-br from-purple-600/30 via-pink-600/30 to-purple-700/30 border-2 border-purple-400/50 p-5 mb-6 shadow-xl hover:scale-[1.02] transition-transform cursor-pointer animate-pulse-subtle" onClick={() => router.push(`/wheel`)}>
+          <Card className="bg-gradient-to-br from-purple-600/30 via-pink-600/30 to-purple-700/30 border-2 border-purple-400/50 p-5 mb-6 shadow-xl hover:scale-[1.02] transition-transform cursor-pointer animate-pulse-subtle" onClick={() => router.push('/wheel')}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg animate-spin-slow">
@@ -195,7 +195,7 @@ function DashboardContent() {
 
           <Card
             className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 backdrop-blur-sm border-yellow-500/30 p-5 cursor-pointer hover:scale-105 transition-transform shadow-lg"
-            onClick={() => router.push(`/leaderboard`)}
+            onClick={() => router.push('/leaderboard')}
           >
             <div className="flex items-center gap-3">
               <div className="w-14 h-14 rounded-full bg-yellow-500/30 flex items-center justify-center shadow-inner">
@@ -212,7 +212,7 @@ function DashboardContent() {
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-4">
           <Card
-            onClick={() => router.push(`/shop`)}
+            onClick={() => router.push('/shop')}
             className="bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border-emerald-500/30 p-6 cursor-pointer hover:scale-105 transition-all shadow-lg"
           >
             <ShoppingBag className="w-10 h-10 text-emerald-300 mb-3" />
@@ -221,7 +221,7 @@ function DashboardContent() {
           </Card>
 
           <Card
-            onClick={() => router.push(`/tasks`)}
+            onClick={() => router.push('/tasks')}
             className="bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border-purple-500/30 p-6 cursor-pointer hover:scale-105 transition-all shadow-lg"
           >
             <Target className="w-10 h-10 text-purple-300 mb-3" />
@@ -231,7 +231,7 @@ function DashboardContent() {
         </div>
       </div>
 
-      <BottomNav userId={userData.id} />
+      <BottomNav />
 
       <style jsx>{`
         @keyframes pulse-subtle {
