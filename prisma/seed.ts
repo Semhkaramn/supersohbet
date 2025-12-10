@@ -39,6 +39,15 @@ async function main() {
     { key: 'referral_bonus_inviter', value: '100', description: 'Davet eden kişinin kazandığı puan', category: 'referral' },
     { key: 'referral_bonus_invited', value: '50', description: 'Davet edilen kişinin kazandığı puan', category: 'referral' },
 
+    // Randy Sistemi
+    { key: 'randy_dm_template', value: '🎉 **Tebrikler! Randy Kazandınız!**\n\nMerhaba {firstname},\n\nRandy çekilişinde kazanan siz oldunuz!\n\n🎁 **Ödülünüz:** {prize}\n\nÖdülünüzü almak için lütfen grup yöneticileriyle iletişime geçin.\n\nTebrikler! 🎊', description: 'Randy kazananına gönderilecek DM şablonu ({firstname}, {username}, {prize} kullanılabilir)', category: 'randy' },
+    { key: 'randy_group_template', value: '🎉 **Randy Kazananı!**\n\n{mention} tebrikler!\n\n🎁 **Ödül:** {prize}\n\nÖdülünüzü almak için lütfen yöneticilerle iletişime geçin.', description: 'Randy kazananı grup duyurusu şablonu ({mention}, {username}, {firstname}, {prize} kullanılabilir)', category: 'randy' },
+    { key: 'randy_start_template', value: '🎊 **Randy Başladı!**\n\nYeni bir Randy çekilişi başladı!\n\n🎁 **Ödül:** {prize}\n👥 **Kazanan Sayısı:** {winners}\n⏱️ **Süre:** {hours} saat\n📅 **Bitiş:** {endtime}\n\nÇekilişe katılmak için sadece aktif olun ve mesaj yazın. Kazananlar rastgele seçilecek!\n\nŞans herkese! 🍀', description: 'Randy başlangıç duyurusu şablonu ({prize}, {winners}, {hours}, {endtime} kullanılabilir)', category: 'randy' },
+    { key: 'randy_send_dm', value: 'true', description: 'Randy kazananına DM gönder (sadece /start yapmış kullanıcılara)', category: 'randy' },
+    { key: 'randy_send_announcement', value: 'true', description: 'Randy kazananını grupta duyur', category: 'randy' },
+    { key: 'randy_pin_start_message', value: 'true', description: 'Randy başlangıç duyurusunu sabitle', category: 'randy' },
+    { key: 'randy_pin_winner_message', value: 'true', description: 'Randy kazanan duyurusunu sabitle', category: 'randy' },
+
     // Genel Ayarlar
     { key: 'maintenance_mode', value: 'false', description: 'Bakım modu aktif mi?', category: 'general' },
     { key: 'allow_new_users', value: 'true', description: 'Yeni kullanıcı kayıtları açık mı?', category: 'general' },
