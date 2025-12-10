@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import type { Prisma } from '@prisma/client'
+import { requireAuth } from '@/lib/auth'
 
 // Çark artık tamamen ücretsiz
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { userId } = body
+    // Session kontrolü - artık body'den userId yerine session kullanıyoruz
+    const session = await requireAuth(request)
+    const userId = session.userId
 
     if (!userId) {
       return NextResponse.json(
@@ -108,6 +110,12 @@ export async function POST(request: NextRequest) {
       prizeIndex: selectedIndex
     })
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json(
+        { error: 'Oturum geçersiz. Lütfen tekrar giriş yapın.' },
+        { status: 401 }
+      )
+    }
     console.error('Wheel spin error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
