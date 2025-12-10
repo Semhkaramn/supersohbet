@@ -71,7 +71,6 @@ export default function AdminRandyPage() {
     winnerCount: 10,
     distributionHours: 24,
     prizeText: '',
-    onePerUser: true,
     minMessages: 0,
     messagePeriod: 'none'
   })
@@ -84,7 +83,8 @@ export default function AdminRandyPage() {
     randy_send_dm: 'true',
     randy_send_announcement: 'true',
     randy_pin_start_message: 'true',
-    randy_pin_winner_message: 'true'
+    randy_pin_winner_message: 'true',
+    randy_one_per_user: 'true'
   })
   const [savingSettings, setSavingSettings] = useState(false)
 
@@ -127,7 +127,8 @@ export default function AdminRandyPage() {
         'randy_send_dm',
         'randy_send_announcement',
         'randy_pin_start_message',
-        'randy_pin_winner_message'
+        'randy_pin_winner_message',
+        'randy_one_per_user'
       ]
 
       const newSettings: any = {}
@@ -263,7 +264,10 @@ export default function AdminRandyPage() {
       const response = await fetch('/api/admin/randy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          onePerUser: randySettings.randy_one_per_user === 'true'
+        })
       })
 
       const data = await response.json()
@@ -471,19 +475,9 @@ export default function AdminRandyPage() {
                 </div>
 
                 <div className="space-y-4 border-t border-white/10 pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="text-white">Kullanıcı Başına Bir Kez</Label>
-                      <p className="text-xs text-gray-400">Her kullanıcı bu Randy'de sadece bir kez kazanabilir</p>
-                    </div>
-                    <Switch
-                      checked={formData.onePerUser}
-                      onCheckedChange={(checked) => setFormData({ ...formData, onePerUser: checked })}
-                    />
-                  </div>
                   <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
                     <p className="text-xs text-blue-300">
-                      💡 <strong>Not:</strong> Randy başlangıç duyurusu gönderme ve sabitleme ayarları artık "Ayarlar ve Şablonlar" sekmesinden kontrol ediliyor.
+                      💡 <strong>Not:</strong> Randy başlangıç duyurusu gönderme, sabitleme ve "kullanıcı başına bir kez" ayarları "Ayarlar ve Şablonlar" sekmesinden kontrol ediliyor.
                     </p>
                   </div>
                 </div>
@@ -880,6 +874,17 @@ export default function AdminRandyPage() {
                   <Switch
                     checked={randySettings.randy_pin_winner_message === 'true'}
                     onCheckedChange={(checked) => setRandySettings({ ...randySettings, randy_pin_winner_message: checked ? 'true' : 'false' })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between border-t border-white/10 pt-4">
+                  <div>
+                    <Label className="text-white">Kullanıcı Başına Bir Kez</Label>
+                    <p className="text-xs text-gray-400">Her kullanıcı bir Randy planında sadece bir kez kazanabilir</p>
+                  </div>
+                  <Switch
+                    checked={randySettings.randy_one_per_user === 'true'}
+                    onCheckedChange={(checked) => setRandySettings({ ...randySettings, randy_one_per_user: checked ? 'true' : 'false' })}
                   />
                 </div>
               </div>
