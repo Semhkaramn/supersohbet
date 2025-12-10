@@ -114,12 +114,20 @@ export async function PUT(request: NextRequest) {
       )
     }
 
+    // value undefined veya null olmamalı
+    if (value === undefined || value === null) {
+      return NextResponse.json(
+        { error: 'Değer gerekli' },
+        { status: 400 }
+      )
+    }
+
     const setting = await prisma.settings.upsert({
       where: { key },
-      update: { value },
+      update: { value: String(value) },
       create: {
         key,
-        value,
+        value: String(value),
         description: key === 'activity_group_id' ? 'Mesaj dinleme ve puan verme yapılacak grup ID' : '',
         category: 'general'
       }
