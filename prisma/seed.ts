@@ -31,7 +31,6 @@ async function main() {
       username: 'semhkaramn',
       passwordHash: superAdminPasswordHash,
       isSuperAdmin: true,
-      canAccessDashboard: true,
       canAccessBroadcast: true,
       canAccessStatistics: true,
       canAccessTasks: true,
@@ -40,8 +39,7 @@ async function main() {
       canAccessSponsors: true,
       canAccessRanks: true,
       canAccessSettings: true,
-      canAccessChannels: true,
-      canAccessUsers: true,
+      canAccessRandy: true,
       canAccessAdmins: true,
     }
   })
@@ -68,4 +66,5 @@ main()
   .finally(async () => {
     await prisma.$disconnect()
   })
+
 
