@@ -164,6 +164,44 @@ export async function sendTelegramMessage(chatId: number, message: string): Prom
   }
 }
 
+// Grup adminlerini getir
+export async function getGroupAdmins(chatId: string): Promise<Array<{ userId: number; firstName: string; lastName?: string; username?: string }>> {
+  try {
+    const tokenSetting = await prisma.settings.findUnique({
+      where: { key: 'telegram_bot_token' }
+    })
+    const token = tokenSetting?.value || process.env.TELEGRAM_BOT_TOKEN
+    if (!token) {
+      throw new Error('TELEGRAM_BOT_TOKEN bulunamadı')
+    }
+
+    // Telegram Bot API'den grup adminlerini çek
+    const url = `https://api.telegram.org/bot${token}/getChatAdministrators?chat_id=${chatId}`
+    const response = await fetch(url)
+    const data = await response.json()
+
+    if (!data.ok) {
+      throw new Error(data.description || 'Adminler alınamadı')
+    }
+
+    // Adminleri formatla
+    const admins = data.result
+      .filter((admin: any) => !admin.user.is_bot) // Bot olmayan adminleri filtrele
+      .map((admin: any) => ({
+        userId: admin.user.id,
+        firstName: admin.user.first_name,
+        lastName: admin.user.last_name,
+        username: admin.user.username
+      }))
+
+    console.log(`✅ ${admins.length} admin bulundu`)
+    return admins
+  } catch (error) {
+    console.error('❌ Grup adminleri alınamadı:', error)
+    throw error
+  }
+}
+
 // Telegram Login Widget doğrulama
 export async function verifyTelegramAuth(data: Record<string, string>): Promise<boolean> {
   try {
