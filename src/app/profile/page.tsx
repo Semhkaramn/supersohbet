@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import BottomNav from '@/components/BottomNav'
-import { Trophy, Star, MessageSquare, TrendingUp, ShoppingBag, Clock, CheckCircle2, Package, Users, History, Crown, Wallet, Settings, ArrowRight } from 'lucide-react'
+import { Trophy, Star, MessageSquare, TrendingUp, ShoppingBag, Clock, CheckCircle2, Package, Users, History, Crown, Wallet, Settings, ArrowRight, Link as LinkIcon } from 'lucide-react'
 
 interface PointHistory {
   id: string
@@ -30,7 +30,8 @@ interface Rank {
 
 interface UserData {
   id: string
-  telegramId: string
+  telegramId?: string
+  email?: string
   username?: string
   firstName?: string
   lastName?: string
@@ -76,26 +77,21 @@ interface Purchase {
 
 function ProfileContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const userId = searchParams.get('userId')
 
   const [userData, setUserData] = useState<UserData | null>(null)
   const [purchases, setPurchases] = useState<Purchase[]>([])
   const [loading, setLoading] = useState(true)
+  const [linkingTelegram, setLinkingTelegram] = useState(false)
 
   useEffect(() => {
-    if (!userId) {
-      router.push('/')
-      return
-    }
     loadData()
-  }, [userId])
+  }, [])
 
   async function loadData() {
     try {
       const [userRes, purchasesRes] = await Promise.all([
-        fetch(`/api/user/${userId}`),
-        fetch(`/api/user/${userId}/purchases`)
+        fetch('/api/user/me'),
+        fetch('/api/user/me/purchases')
       ])
 
       const userData = await userRes.json()
@@ -107,6 +103,48 @@ function ProfileContent() {
       console.error('Error loading profile data:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleTelegramLink() {
+    setLinkingTelegram(true)
+    try {
+      // @ts-ignore - Telegram WebApp SDK
+      if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+        // @ts-ignore
+        const tg = window.Telegram.WebApp
+        const user = tg.initDataUnsafe?.user
+
+        if (!user) {
+          alert('Telegram kullanıcı bilgisi alınamadı. Lütfen Telegram üzerinden açın.')
+          return
+        }
+
+        const response = await fetch('/api/auth/telegram/link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            telegramUser: user
+          })
+        })
+
+        const data = await response.json()
+
+        if (response.ok) {
+          alert('✅ Telegram hesabınız başarıyla bağlandı!')
+          await loadData() // Verileri yeniden yükle
+        } else {
+          alert(data.error || 'Telegram bağlanırken hata oluştu')
+        }
+      } else {
+        alert('Bu özellik sadece Telegram üzerinden kullanılabilir.')
+      }
+    } catch (error) {
+      console.error('Telegram link error:', error)
+      alert('Bir hata oluştu')
+    } finally {
+      setLinkingTelegram(false)
     }
   }
 
@@ -179,6 +217,42 @@ function ProfileContent() {
           </div>
         </Card>
 
+        {/* Telegram Link Button */}
+        {!userData.telegramId && (
+          <Card className="bg-gradient-to-br from-blue-600/20 to-cyan-600/20 border-blue-500/30 p-4 mb-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-blue-500/30 flex items-center justify-center">
+                <LinkIcon className="w-5 h-5 text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-white font-semibold text-sm">Telegram Hesabını Bağla</h3>
+                <p className="text-white/60 text-xs">WebApp'ten otomatik giriş yapabilirsin</p>
+              </div>
+            </div>
+            <button
+              onClick={handleTelegramLink}
+              disabled={linkingTelegram}
+              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-2 rounded-lg font-medium hover:from-blue-700 hover:to-cyan-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {linkingTelegram ? 'Bağlanıyor...' : 'Telegram Hesabımı Bağla'}
+            </button>
+          </Card>
+        )}
+
+        {userData.telegramId && (
+          <Card className="bg-gradient-to-br from-green-600/20 to-emerald-600/20 border-green-500/30 p-4 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-500/30 flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-green-400" />
+              </div>
+              <div>
+                <h3 className="text-white font-semibold text-sm">Telegram Bağlı</h3>
+                <p className="text-white/60 text-xs">WebApp'ten otomatik giriş yapabiliyorsun</p>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           <Card className="bg-white/5 border-white/10 p-3 text-center">
@@ -203,7 +277,7 @@ function ProfileContent() {
         <div className="mb-4">
           <Card
             className="bg-gradient-to-br from-green-600/20 to-emerald-600/20 border-green-500/30 p-4 cursor-pointer hover:from-green-600/30 hover:to-emerald-600/30 transition-all"
-            onClick={() => router.push(`/wallet-info?userId=${userId}`)}
+            onClick={() => router.push('/wallet-info')}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -555,7 +629,7 @@ function ProfileContent() {
         </Tabs>
       </div>
 
-      <BottomNav userId={userId!} />
+      <BottomNav />
     </div>
   )
 }
