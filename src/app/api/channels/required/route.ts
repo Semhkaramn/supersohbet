@@ -121,6 +121,18 @@ export async function GET(request: NextRequest) {
       realTimeChecks.map(check => [check.channelId, check.isMember])
     )
 
+    // Tüm kanallara katılmış mı kontrol et
+    const allChannelsJoined = requiredChannels.every(ch => realTimeMembershipMap.get(ch.id))
+
+    // Eğer tüm kanallara katıldıysa channelsVerified'ı true yap
+    if (allChannelsJoined && !user.channelsVerified) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { channelsVerified: true }
+      })
+      console.log('✅ Tüm kanallara katıldı - channelsVerified = true')
+    }
+
     // Kanal listesini GERÇEK üyelik durumu ile birlikte döndür
     const channels = requiredChannels.map((channel) => {
       // channelId'den username çıkar (@ işaretini kaldır)
