@@ -1,19 +1,50 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url)
+    const includeUserData = searchParams.get('includeUserData')
+
+    if (includeUserData === 'true') {
+      // Kullanıcı sponsor bilgilerini getir
+      const userSponsorInfos = await prisma.userSponsorInfo.findMany({
+        include: {
+          user: {
+            select: {
+              id: true,
+              telegramId: true,
+              username: true,
+              firstName: true,
+              lastName: true
+            }
+          },
+          sponsor: {
+            select: {
+              id: true,
+              name: true,
+              identifierType: true,
+              category: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      })
+
+      return NextResponse.json({ userSponsorInfos })
+    }
+
+    // Normal sponsor listesi
     const sponsors = await prisma.sponsor.findMany({
-      orderBy: { order: 'asc' }
+      orderBy: [{ order: 'asc' }, { createdAt: 'desc' }]
     })
 
     return NextResponse.json({ sponsors })
   } catch (error) {
-    console.error('Get sponsors error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('Error fetching sponsors:', error)
+    return NextResponse.json({ error: 'Sponsorlar yüklenemedi' }, { status: 500 })
   }
 }
 
