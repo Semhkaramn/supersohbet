@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -37,8 +37,6 @@ interface RecentWinner {
 
 function WheelContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const userId = searchParams.get('userId')
 
   const [prizes, setPrizes] = useState<WheelPrize[]>([])
   const [userData, setUserData] = useState<UserData | null>(null)
@@ -48,20 +46,21 @@ function WheelContent() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!userId) {
-      router.push('/')
-      return
-    }
     loadData()
-  }, [userId])
+  }, [])
 
   async function loadData() {
     try {
       const [prizesRes, userRes, winnersRes] = await Promise.all([
         fetch('/api/wheel/prizes'),
-        fetch(`/api/user/${userId}`),
+        fetch('/api/user/me'),
         fetch('/api/wheel/recent-winners')
       ])
+
+      if (userRes.status === 401) {
+        router.push('/login')
+        return
+      }
 
       const prizesData = await prizesRes.json()
       const userData = await userRes.json()
@@ -72,6 +71,7 @@ function WheelContent() {
       setRecentWinners(winnersData.winners || [])
     } catch (error) {
       console.error('Error loading wheel data:', error)
+      router.push('/login')
     } finally {
       setLoading(false)
     }
@@ -88,9 +88,14 @@ function WheelContent() {
     try {
       const response = await fetch('/api/wheel/spin', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId })
+        headers: { 'Content-Type': 'application/json' }
       })
+
+      if (response.status === 401) {
+        toast.error('Oturum süreniz doldu. Lütfen tekrar giriş yapın.')
+        router.push('/login')
+        return
+      }
 
       const data = await response.json()
 
@@ -318,7 +323,7 @@ function WheelContent() {
         </div>
       </div>
 
-      <BottomNav userId={userId!} />
+      <BottomNav />
     </div>
   )
 }
