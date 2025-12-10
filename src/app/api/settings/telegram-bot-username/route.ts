@@ -9,7 +9,14 @@ export async function GET(request: NextRequest) {
     })
 
     // Eğer ayarlarda yoksa env'den al
-    const username = setting?.value || process.env.TELEGRAM_BOT_USERNAME || 'supersohbetbot'
+    const username = setting?.value || process.env.TELEGRAM_BOT_USERNAME
+
+    if (!username) {
+      return NextResponse.json(
+        { error: 'Bot username ayarlanmamış. Lütfen admin panelinden ayarlayın.' },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       username: username.replace('@', '') // @ işaretini kaldır
@@ -17,8 +24,8 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching bot username:', error)
     return NextResponse.json(
-      { username: 'supersohbetbot' }, // Fallback
-      { status: 200 }
+      { error: 'Bot username alınırken hata oluştu' },
+      { status: 500 }
     )
   }
 }
