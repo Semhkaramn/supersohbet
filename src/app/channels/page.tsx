@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { CheckCircle2 } from 'lucide-react'
+
 import { toast } from 'sonner'
 
 interface Channel {
@@ -115,19 +115,6 @@ function ChannelsContent() {
               ch.id === channel.id ? { ...ch, joined: true } : ch
             )
           )
-          toast.success(`${channel.channelName} kanalına katıldınız! ✓`, {
-            duration: 3000
-          })
-
-          // Tüm kanallara katıldıysa dashboard'a yönlendir
-          if (data.allChannelsJoined) {
-            toast.success('Tüm kanallara katıldınız! Dashboard\'a yönlendiriliyorsunuz...', {
-              duration: 2000
-            })
-            setTimeout(() => {
-              router.push('/dashboard')
-            }, 2000)
-          }
         } else if (data.error) {
           console.error('❌ Kanal kontrolünde hata:', data.error)
         }
@@ -151,12 +138,10 @@ function ChannelsContent() {
   const joinedCount = channels.filter(ch => ch.joined).length
   const allJoined = channels.length > 0 && unjoinedChannels.length === 0
 
-  // Tüm kanallara katıldıysa otomatik devam et
+  // Tüm kanallara katıldıysa direkt dashboard'a yönlendir
   useEffect(() => {
     if (allJoined && channels.length > 0) {
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 1500)
+      router.push('/dashboard')
     }
   }, [allJoined, channels.length, router])
 
@@ -171,23 +156,9 @@ function ChannelsContent() {
     )
   }
 
+  // Tüm kanallara katıldıysa direkt dashboard'a git
   if (allJoined) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <div className="mb-6">
-            <CheckCircle2 className="w-24 h-24 text-green-500 mx-auto mb-4 animate-bounce" />
-            <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-green-400 to-emerald-500 text-transparent bg-clip-text">
-              Harika! 🎉
-            </h1>
-            <p className="text-gray-300">
-              Tüm kanallara katıldınız. Dashboard'a yönlendiriliyorsunuz...
-            </p>
-          </div>
-          <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-        </div>
-      </div>
-    )
+    return null
   }
 
   return (
