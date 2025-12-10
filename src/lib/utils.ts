@@ -70,12 +70,14 @@ async function sendTelegramNotification(telegramId: string, message: string) {
  * Kullanıcının çark haklarını kontrol eder ve gerekirse sıfırlar
  * @param userId Kullanıcı ID'si
  * @param wheelResetHour Sıfırlama saati (0-23), varsayılan 0 (gece yarısı)
+ * @param wheelResetMinute Sıfırlama dakikası (0-59), varsayılan 0
  * @param dailyWheelSpins Günlük çark hakkı, varsayılan 3
  * @returns Güncellenmiş kullanıcı verisi veya null
  */
 export async function checkAndResetWheelSpins(
   userId: string,
   wheelResetHour: number = 0,
+  wheelResetMinute: number = 0,
   dailyWheelSpins: number = 3
 ) {
   try {
@@ -98,7 +100,7 @@ export async function checkAndResetWheelSpins(
 
     // Sıfırlama saatini hesapla (bugünün veya dünün reset saati) - Türkiye saatine göre
     const todayResetTime = new Date(now);
-    todayResetTime.setHours(wheelResetHour, 0, 0, 0);
+    todayResetTime.setHours(wheelResetHour, wheelResetMinute, 0, 0);
 
     const yesterdayResetTime = new Date(todayResetTime);
     yesterdayResetTime.setDate(yesterdayResetTime.getDate() - 1);
@@ -110,8 +112,11 @@ export async function checkAndResetWheelSpins(
       // Hiç sıfırlanmamış, hemen sıfırla
       shouldReset = true;
     } else {
-      // Eğer şu anki saat reset saatinden önce ise
-      if (now.getHours() < wheelResetHour) {
+      // Eğer şu anki zaman reset zamanından önce ise
+      const currentTimeInMinutes = now.getHours() * 60 + now.getMinutes();
+      const resetTimeInMinutes = wheelResetHour * 60 + wheelResetMinute;
+
+      if (currentTimeInMinutes < resetTimeInMinutes) {
         // Dünün reset zamanından sonra mı?
         shouldReset = lastReset < yesterdayResetTime;
       } else {
@@ -129,7 +134,7 @@ export async function checkAndResetWheelSpins(
         },
       });
 
-      console.log(`🔄 Çark hakları sıfırlandı: User ${userId} - ${dailyWheelSpins} hak`);
+      console.log(`🔄 Çark hakları sıfırlandı: User ${userId} - ${dailyWheelSpins} hak (Sıfırlama zamanı: ${wheelResetHour}:${wheelResetMinute.toString().padStart(2, '0')})`);
 
       // NOT: Bildirim artık otomatik gönderilmiyor
       // Bildirimler sadece belirlenen saatte toplu olarak gönderilir (scripts/wheel-reset-notification.ts)
