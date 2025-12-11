@@ -146,7 +146,7 @@ export default function AdminDashboard() {
       icon: MonitorPlay,
       href: '/admin/ads',
       color: 'from-violet-500 to-violet-600',
-      permission: 'canAccessSponsors'
+      permission: 'canAccessAds'
     },
     {
       title: 'Rütbe Sistemi',
