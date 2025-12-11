@@ -33,7 +33,7 @@ import Link from 'next/link'
 interface User {
   id: string
   telegramId?: string | null
-  siteUsername?: string
+  siteUsername?: string | null
   username?: string
   firstName?: string
   lastName?: string
@@ -47,11 +47,12 @@ interface User {
   bannedAt?: string
   bannedBy?: string
   createdAt: string
+  isRegistered: boolean // Siteye kayıtlı mı?
   rank?: {
     name: string
     icon: string
     color: string
-  }
+  } | null
   _count: {
     purchases: number
     wheelSpins: number
@@ -60,11 +61,20 @@ interface User {
 }
 
 interface Stats {
-  totalUsers: number
+  totalSiteUsers: number
+  totalTelegramUsers: number
+  totalLinkedUsers: number
+  totalUnlinkedUsers: number
   bannedUsers: number
   hadStartUsers: number
   usersWithMessages: number
   messages: {
+    total: number
+    daily: number
+    weekly: number
+    monthly: number
+  }
+  siteMessages?: {
     total: number
     daily: number
     weekly: number
@@ -94,9 +104,10 @@ export default function AdminStatisticsPage() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [sortBy, setSortBy] = useState('points')
+  const [sortBy, setSortBy] = useState('messages')
   const [sortOrder, setSortOrder] = useState('desc')
   const [bannedFilter, setBannedFilter] = useState<string>('all')
+  const [registrationFilter, setRegistrationFilter] = useState<string>('all')
 
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
@@ -151,12 +162,13 @@ export default function AdminStatisticsPage() {
     }, 300) // 300ms debounce - kullanıcı yazmayı bitirdiğinde arama yapar
 
     return () => clearTimeout(delayDebounceFn)
-  }, [searchTerm, sortBy, sortOrder, bannedFilter])
+  }, [searchTerm, sortBy, sortOrder, bannedFilter, registrationFilter])
 
   async function loadStatistics() {
     try {
       const bannedParam = bannedFilter === 'all' ? '' : `&banned=${bannedFilter}`
-      const response = await fetch(`/api/admin/statistics?search=${searchTerm}&sortBy=${sortBy}&sortOrder=${sortOrder}${bannedParam}`)
+      const registeredParam = registrationFilter === 'all' ? '' : `&registered=${registrationFilter}`
+      const response = await fetch(`/api/admin/statistics?search=${searchTerm}&sortBy=${sortBy}&sortOrder=${sortOrder}${bannedParam}${registeredParam}`)
       const data = await response.json()
       setUsers(data.users || [])
       setStats(data.stats)
@@ -284,13 +296,13 @@ export default function AdminStatisticsPage() {
         </div>
 
         {/* Overall Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           <Card className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-blue-500/30 p-6">
             <div className="flex items-center gap-3">
               <Users className="w-10 h-10 text-blue-400" />
               <div>
-                <p className="text-3xl font-bold text-white">{stats?.totalUsers || 0}</p>
-                <p className="text-blue-200 text-sm">Toplam Kullanıcı</p>
+                <p className="text-3xl font-bold text-white">{stats?.totalTelegramUsers || 0}</p>
+                <p className="text-blue-200 text-sm">Telegram Kullanıcı</p>
               </div>
             </div>
           </Card>
@@ -299,18 +311,28 @@ export default function AdminStatisticsPage() {
             <div className="flex items-center gap-3">
               <UserCheck className="w-10 h-10 text-green-400" />
               <div>
-                <p className="text-3xl font-bold text-white">{stats?.hadStartUsers || 0}</p>
-                <p className="text-green-200 text-sm">Hadstart Yapanlar</p>
+                <p className="text-3xl font-bold text-white">{stats?.totalLinkedUsers || 0}</p>
+                <p className="text-green-200 text-sm">Kayıtlı</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-yellow-500/20 to-yellow-600/20 border-yellow-500/30 p-6">
+            <div className="flex items-center gap-3">
+              <UserX className="w-10 h-10 text-yellow-400" />
+              <div>
+                <p className="text-3xl font-bold text-white">{stats?.totalUnlinkedUsers || 0}</p>
+                <p className="text-yellow-200 text-sm">Kayıtsız</p>
               </div>
             </div>
           </Card>
 
           <Card className="bg-gradient-to-br from-red-500/20 to-red-600/20 border-red-500/30 p-6">
             <div className="flex items-center gap-3">
-              <UserX className="w-10 h-10 text-red-400" />
+              <Ban className="w-10 h-10 text-red-400" />
               <div>
                 <p className="text-3xl font-bold text-white">{stats?.bannedUsers || 0}</p>
-                <p className="text-red-200 text-sm">Banlı Kullanıcı</p>
+                <p className="text-red-200 text-sm">Banlı</p>
               </div>
             </div>
           </Card>
@@ -320,7 +342,7 @@ export default function AdminStatisticsPage() {
               <MessageSquare className="w-10 h-10 text-purple-400" />
               <div>
                 <p className="text-3xl font-bold text-white">{stats?.usersWithMessages || 0}</p>
-                <p className="text-purple-200 text-sm">Gruptaki Kullanıcılar</p>
+                <p className="text-purple-200 text-sm">Mesaj Yazan</p>
               </div>
             </div>
           </Card>
@@ -408,6 +430,17 @@ export default function AdminStatisticsPage() {
               <SelectItem value="true">Banlı</SelectItem>
             </SelectContent>
           </Select>
+
+          <Select value={registrationFilter} onValueChange={setRegistrationFilter}>
+            <SelectTrigger className="w-full md:w-[200px] bg-white/5 border-white/10 text-white">
+              <SelectValue placeholder="Kayıt Durumu" />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-900 border-white/20">
+              <SelectItem value="all">Hepsi</SelectItem>
+              <SelectItem value="true">Kayıtlı</SelectItem>
+              <SelectItem value="false">Kayıtsız</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Users List */}
@@ -430,12 +463,20 @@ export default function AdminStatisticsPage() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <p className="text-white font-bold text-base truncate">
-                          {user.siteUsername || 'Kullanıcı'}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-white font-bold text-base truncate">
+                            {user.siteUsername || (user.firstName || user.username || 'Kullanıcı')}
+                          </p>
+                          {!user.isRegistered && (
+                            <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded border border-yellow-500/30">
+                              Kayıtsız
+                            </span>
+                          )}
+                        </div>
                         <div className="flex flex-col text-xs text-gray-400">
                           {user.firstName && <span className="truncate">{user.firstName}</span>}
                           {user.username && <span className="truncate">@{user.username}</span>}
+                          {!user.isRegistered && <span className="text-yellow-400/60">Siteye kayıt olmamış</span>}
                         </div>
                       </div>
                     </div>
