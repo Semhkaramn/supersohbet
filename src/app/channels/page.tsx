@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 
@@ -18,6 +19,7 @@ interface Channel {
 
 function ChannelsContent() {
   const router = useRouter()
+  const { setShowLoginModal } = useAuth()
 
   const [channels, setChannels] = useState<Channel[]>([])
   const [loading, setLoading] = useState(true)
@@ -49,7 +51,7 @@ function ChannelsContent() {
       const response = await fetch('/api/user/telegram-status')
 
       if (response.status === 401) {
-        router.push('/login')
+        setShowLoginModal(true)
         return
       }
 
@@ -70,7 +72,7 @@ function ChannelsContent() {
       const response = await fetch('/api/channels/required')
 
       if (response.status === 401) {
-        router.push('/login')
+        setShowLoginModal(true)
         return
       }
 
