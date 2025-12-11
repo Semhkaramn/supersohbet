@@ -69,24 +69,31 @@ function TasksContent() {
   const [loading, setLoading] = useState(true)
   const [claiming, setClaiming] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('active')
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
     loadTasks()
-  }, [])
+  }, [user])
 
   async function loadTasks() {
     try {
       const tasksRes = await fetch('/api/task')
+
+      if (!tasksRes.ok) {
+        throw new Error('Failed to fetch tasks')
+      }
+
       const tasksData = await tasksRes.json()
 
       setDailyTasks(tasksData.dailyTasks || [])
       setWeeklyTasks(tasksData.weeklyTasks || [])
       setPermanentTasks(tasksData.permanentTasks || [])
       setTaskHistory(tasksData.taskHistory || [])
+      setIsAuthenticated(tasksData.isAuthenticated || false)
       setReferralCount(0) // Referral count from task data if available
     } catch (error) {
       console.error('Error loading tasks:', error)
-      toast.error('Görevler yüklenemedi')
+      toast.error('Görevler yüklenirken bir hata oluştu')
     } finally {
       setLoading(false)
     }
@@ -315,6 +322,30 @@ function TasksContent() {
       <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
         {/* Tabs */}
         <div className="max-w-4xl mx-auto px-4 py-6">
+          {/* Giriş yapmamış kullanıcılar için uyarı */}
+          {!isAuthenticated && (
+            <Card className="bg-gradient-to-br from-yellow-900/40 via-orange-900/30 to-yellow-900/40 border-yellow-500/50 p-4 mb-6">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-yellow-500/20">
+                  <Star className="w-5 h-5 text-yellow-300" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-yellow-100 mb-1">Görevleri Tamamlamak İçin Giriş Yapın</p>
+                  <p className="text-sm text-yellow-200/80">
+                    Görevleri görüntüleyebilirsiniz ancak ödül alabilmek için giriş yapmanız gerekmektedir.
+                  </p>
+                  <Button
+                    onClick={() => setShowLoginModal(true)}
+                    size="sm"
+                    className="mt-3 bg-yellow-500 hover:bg-yellow-400 text-black font-bold"
+                  >
+                    Giriş Yap
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
           <Tabs defaultValue="active" value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="w-full bg-slate-800/50 border border-slate-700/50 mb-6 p-1">
               <TabsTrigger value="active" className="flex-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white">
