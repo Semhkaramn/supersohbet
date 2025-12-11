@@ -14,6 +14,7 @@ export async function GET(
       where: { id: userId },
       include: {
         rank: true,
+        telegramGroupUser: true // TelegramGroupUser bağlantısını al
       }
     })
 
@@ -91,28 +92,44 @@ export async function GET(
     const weekAgo = getTurkeyDateAgo(7) // 7 gün önce
     const monthAgo = getTurkeyDateAgo(30) // 30 gün önce
 
-    const [dailyMessages, weeklyMessages, monthlyMessages, recentMessages] = await Promise.all([
-      prisma.messageStats.count({
-        where: { userId, createdAt: { gte: today } }
-      }),
-      prisma.messageStats.count({
-        where: { userId, createdAt: { gte: weekAgo } }
-      }),
-      prisma.messageStats.count({
-        where: { userId, createdAt: { gte: monthAgo } }
-      }),
-      prisma.messageStats.findMany({
-        where: { userId },
-        orderBy: { createdAt: 'desc' },
-        take: 20,
-        select: {
-          id: true,
-          messageLength: true,
-          earnedReward: true,
-          createdAt: true
-        }
-      })
-    ])
+    // MessageStats artık TelegramGroupUser üzerinden alınıyor
+    let dailyMessages = 0
+    let weeklyMessages = 0
+    let monthlyMessages = 0
+    let recentMessages: any[] = []
+
+    if (user.telegramGroupUser) {
+      // TelegramGroupUser varsa MessageStats'ı al
+      const telegramUserId = user.telegramGroupUser.id
+
+      const [daily, weekly, monthly, recent] = await Promise.all([
+        prisma.messageStats.count({
+          where: { telegramUserId, createdAt: { gte: today } }
+        }),
+        prisma.messageStats.count({
+          where: { telegramUserId, createdAt: { gte: weekAgo } }
+        }),
+        prisma.messageStats.count({
+          where: { telegramUserId, createdAt: { gte: monthAgo } }
+        }),
+        prisma.messageStats.findMany({
+          where: { telegramUserId },
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+          select: {
+            id: true,
+            messageLength: true,
+            earnedReward: true,
+            createdAt: true
+          }
+        })
+      ])
+
+      dailyMessages = daily
+      weeklyMessages = weekly
+      monthlyMessages = monthly
+      recentMessages = recent
+    }
 
     // Calculate XP history from point history
     const xpHistory = pointHistory.filter(ph =>
