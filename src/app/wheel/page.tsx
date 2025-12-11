@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth-context'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -38,6 +39,7 @@ interface RecentWinner {
 
 function WheelContent() {
   const router = useRouter()
+  const { setShowLoginModal } = useAuth()
 
   const [prizes, setPrizes] = useState<WheelPrize[]>([])
   const [userData, setUserData] = useState<UserData | null>(null)
@@ -59,7 +61,7 @@ function WheelContent() {
       ])
 
       if (userRes.status === 401) {
-        router.push('/login')
+        setShowLoginModal(true)
         return
       }
 
@@ -72,7 +74,7 @@ function WheelContent() {
       setRecentWinners(winnersData.winners || [])
     } catch (error) {
       console.error('Error loading wheel data:', error)
-      router.push('/login')
+      setShowLoginModal(true)
     } finally {
       setLoading(false)
     }
@@ -94,7 +96,7 @@ function WheelContent() {
 
       if (response.status === 401) {
         toast.error('Oturum süreniz doldu. Lütfen tekrar giriş yapın.')
-        router.push('/login')
+        setShowLoginModal(true)
         return
       }
 
