@@ -16,7 +16,7 @@ import {
   Trophy, Star, MessageSquare, TrendingUp, ShoppingBag, Clock,
   CheckCircle2, Package, Users, History, Crown, Wallet,
   Building2, Edit2, Save, X, AlertCircle, Search, Plus, Trash2, Link2, Unlink,
-  CreditCard
+  CreditCard, Mail, Key, Send, Shield
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -65,6 +65,8 @@ interface UserData {
   id: string
   telegramId?: string
   email?: string
+  emailVerified?: boolean
+  siteUsername?: string
   username?: string
   firstName?: string
   lastName?: string
@@ -139,6 +141,19 @@ function ProfileContent() {
 
   // Search state for all tabs
   const [searchQuery, setSearchQuery] = useState('')
+
+  // Password change states
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [changingPassword, setChangingPassword] = useState(false)
+
+  // Email verification states
+  const [showEmailVerification, setShowEmailVerification] = useState(false)
+  const [verificationCode, setVerificationCode] = useState('')
+  const [sendingCode, setSendingCode] = useState(false)
+  const [verifying, setVerifying] = useState(false)
 
   useEffect(() => {
     loadData()
@@ -293,6 +308,101 @@ function ProfileContent() {
     }
   }
 
+  async function changePassword() {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('Tüm alanları doldurun')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('Yeni şifreler eşleşmiyor')
+      return
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('Yeni şifre en az 6 karakter olmalıdır')
+      return
+    }
+
+    setChangingPassword(true)
+    try {
+      const response = await fetch('/api/user/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success('Şifre başarıyla değiştirildi')
+        setShowPasswordDialog(false)
+        setCurrentPassword('')
+        setNewPassword('')
+        setConfirmPassword('')
+      } else {
+        toast.error(data.error || 'Şifre değiştirilemedi')
+      }
+    } catch (error) {
+      toast.error('Bir hata oluştu')
+    } finally {
+      setChangingPassword(false)
+    }
+  }
+
+  async function sendVerificationCode() {
+    setSendingCode(true)
+    try {
+      const response = await fetch('/api/user/send-verification-email', {
+        method: 'POST'
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success(data.message)
+        setShowEmailVerification(true)
+      } else {
+        toast.error(data.error || 'Kod gönderilemedi')
+      }
+    } catch (error) {
+      toast.error('Bir hata oluştu')
+    } finally {
+      setSendingCode(false)
+    }
+  }
+
+  async function verifyEmail() {
+    if (!verificationCode || verificationCode.length !== 6) {
+      toast.error('Geçerli bir 6 haneli kod girin')
+      return
+    }
+
+    setVerifying(true)
+    try {
+      const response = await fetch('/api/user/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: verificationCode })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success('Email başarıyla doğrulandı!')
+        setShowEmailVerification(false)
+        setVerificationCode('')
+        await loadData()
+      } else {
+        toast.error(data.error || 'Doğrulama başarısız')
+      }
+    } catch (error) {
+      toast.error('Bir hata oluştu')
+    } finally {
+      setVerifying(false)
+    }
+  }
+
   const getIdentifierLabel = (type: string) => {
     switch (type) {
       case 'username': return 'Kullanıcı Adı'
@@ -424,6 +534,88 @@ function ProfileContent() {
             </div>
           </div>
         </Card>
+
+        {/* Email Verification & Password Section */}
+        {userData.email && (
+          <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+            <div className="p-6 space-y-4">
+              {/* Email Verification */}
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                    <Mail className="w-5 h-5 text-purple-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-lg font-semibold text-white">Email Doğrulama</h2>
+                    <p className="text-slate-400 text-sm">{userData.email}</p>
+                  </div>
+                  {userData.emailVerified ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-400" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 text-yellow-400" />
+                  )}
+                </div>
+
+                {userData.emailVerified ? (
+                  <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-green-400 flex-shrink-0" />
+                    <span className="text-green-400 text-sm">Email adresiniz doğrulanmış</span>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 flex items-start gap-2">
+                      <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-yellow-400 text-sm font-medium mb-1">Email doğrulanmamış</p>
+                        <p className="text-slate-400 text-xs">
+                          Email adresinizi doğrulayarak hesabınızı güvence altına alın
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={sendVerificationCode}
+                      disabled={sendingCode}
+                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                    >
+                      {sendingCode ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                          Gönderiliyor
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4 mr-2" />
+                          Doğrulama Kodu Gönder
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Password Change */}
+              <div className="border-t border-slate-700 pt-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                    <Key className="w-5 h-5 text-orange-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-lg font-semibold text-white">Şifre Değiştir</h2>
+                    <p className="text-slate-400 text-sm">Hesap güvenliğiniz için düzenli olarak şifrenizi değiştirin</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => setShowPasswordDialog(true)}
+                  variant="outline"
+                  className="w-full border-slate-600 text-slate-300 hover:bg-slate-800"
+                >
+                  <Key className="w-4 h-4 mr-2" />
+                  Şifre Değiştir
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Telegram Connection Section */}
         <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
@@ -1003,6 +1195,172 @@ function ProfileContent() {
             >
               Bağlantıyı Kopar
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Password Change Dialog */}
+      <AlertDialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <AlertDialogContent className="bg-slate-800 border-slate-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white flex items-center gap-2">
+              <Key className="w-5 h-5 text-orange-400" />
+              Şifre Değiştir
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              Hesap güvenliğiniz için güçlü bir şifre seçin
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="current-password" className="text-slate-300 text-sm mb-2 block">
+                Mevcut Şifre
+              </Label>
+              <Input
+                id="current-password"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Mevcut şifrenizi girin"
+                className="bg-slate-900/50 border-slate-700 text-white"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-password" className="text-slate-300 text-sm mb-2 block">
+                Yeni Şifre
+              </Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Yeni şifrenizi girin (min. 6 karakter)"
+                className="bg-slate-900/50 border-slate-700 text-white"
+              />
+            </div>
+            <div>
+              <Label htmlFor="confirm-password" className="text-slate-300 text-sm mb-2 block">
+                Yeni Şifre (Tekrar)
+              </Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Yeni şifrenizi tekrar girin"
+                className="bg-slate-900/50 border-slate-700 text-white"
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setShowPasswordDialog(false)
+                setCurrentPassword('')
+                setNewPassword('')
+                setConfirmPassword('')
+              }}
+              className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600"
+            >
+              İptal
+            </AlertDialogCancel>
+            <Button
+              onClick={changePassword}
+              disabled={changingPassword}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              {changingPassword ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Değiştiriliyor
+                </>
+              ) : (
+                <>
+                  <Key className="w-4 h-4 mr-2" />
+                  Şifreyi Değiştir
+                </>
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Email Verification Dialog */}
+      <AlertDialog open={showEmailVerification} onOpenChange={setShowEmailVerification}>
+        <AlertDialogContent className="bg-slate-800 border-slate-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white flex items-center gap-2">
+              <Mail className="w-5 h-5 text-purple-400" />
+              Email Doğrulama
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              Email adresinize gönderilen 6 haneli doğrulama kodunu girin
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label htmlFor="verification-code" className="text-slate-300 text-sm mb-2 block">
+              Doğrulama Kodu
+            </Label>
+            <Input
+              id="verification-code"
+              type="text"
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="123456"
+              maxLength={6}
+              className="bg-slate-900/50 border-slate-700 text-white text-center text-2xl tracking-widest font-mono"
+            />
+            <p className="text-slate-500 text-xs mt-2 text-center">
+              Kod 10 dakika geçerlidir
+            </p>
+          </div>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              onClick={sendVerificationCode}
+              disabled={sendingCode}
+              variant="outline"
+              className="border-slate-600 text-slate-300 hover:bg-slate-800 w-full sm:w-auto"
+            >
+              {sendingCode ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Gönderiliyor
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Yeni Kod Gönder
+                </>
+              )}
+            </Button>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <AlertDialogCancel
+                onClick={() => {
+                  setShowEmailVerification(false)
+                  setVerificationCode('')
+                }}
+                className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600 flex-1 sm:flex-initial"
+              >
+                İptal
+              </AlertDialogCancel>
+              <Button
+                onClick={verifyEmail}
+                disabled={verifying || verificationCode.length !== 6}
+                className="bg-purple-600 hover:bg-purple-700 text-white flex-1 sm:flex-initial"
+              >
+                {verifying ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Doğrulanıyor
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    Doğrula
+                  </>
+                )}
+              </Button>
+            </div>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
