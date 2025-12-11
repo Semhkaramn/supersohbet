@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getTurkeyDate } from '@/lib/utils'
 import { notifyLevelUp } from '@/lib/notifications'
 import { checkRandySlots, announceRandyWinner } from '@/lib/randy'
+import { invalidateLeaderboardCache } from '@/lib/cache'
 import {
   getRollState,
   startRoll,
@@ -773,6 +774,10 @@ Lütfen önce web sitemizden kayıt olun, sonra hesabınızı Telegram'a bağlay
           earnedReward: true
         }
       })
+
+      // ✅ Puan/XP değiştiği için leaderboard cache'ini temizle
+      // Not: Her mesajda invalidate yapıyoruz çünkü points her mesajda artıyor
+      invalidateLeaderboardCache()
 
       // Rütbe kontrolü ve güncelleme (sadece XP verildiğinde)
       if (shouldGiveXp) {
