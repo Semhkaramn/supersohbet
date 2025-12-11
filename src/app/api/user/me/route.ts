@@ -141,7 +141,6 @@ export async function GET(request: NextRequest) {
       trc20WalletAddress: user.trc20WalletAddress,
       telegramId: user.telegramId,
       hadStart: user.hadStart,
-      channelsVerified: user.channelsVerified,
       createdAt: user.createdAt
     })
 
