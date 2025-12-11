@@ -759,19 +759,27 @@ Siteye Butondan ulaşabilirsiniz
       console.log(`📝 Telegram grup mesajı kaydedildi: ${userId} - ${telegramGroupUser.messageCount + 1} mesaj`)
       // ========== YENİ BİTİŞ ==========
 
-      // Kullanıcıyı bul (artık otomatik oluşturulmaz)
-      const user = await prisma.user.findUnique({
+      // Kullanıcıyı bul - Önce telegramId ile, yoksa linkedUserId ile
+      let user = await prisma.user.findUnique({
         where: { telegramId: userId }
       })
 
-      // Kullanıcı yoksa (web'den kayıt olmamış), mesajı kaydettik ama puan vermiyoruz
+      // TelegramId ile bulunamadıysa, TelegramGroupUser üzerinden linkedUserId ile bul
+      if (!user && telegramGroupUser.linkedUserId) {
+        user = await prisma.user.findUnique({
+          where: { id: telegramGroupUser.linkedUserId }
+        })
+        console.log(`🔗 Kullanıcı linkedUserId ile bulundu: ${user?.email || user?.siteUsername}`)
+      }
+
+      // Kullanıcı yoksa (web'den kayıt olmamış ve bağlantı yapmamış), mesajı kaydettik ama puan vermiyoruz
       if (!user) {
         console.log(`⚠️ Kullanıcı siteye kayıtlı değil - mesaj kaydedildi ama puan verilmedi: ${userId}`)
         return NextResponse.json({ ok: true, message: 'Message saved - user not registered on website' })
       }
 
-      // hadStart yapmamışlara puan verilmez
-      const canEarnPoints = user.hadStart
+      // Sitede kayıtlı olması yeterli - /start şartı kaldırıldı
+      const canEarnPoints = true
 
       // TÜM MESAJLARI İSTATİSTİK İÇİN KAYDET (KURALLARDAN BAĞIMSIZ)
       await prisma.messageStats.create({
@@ -790,12 +798,6 @@ Siteye Butondan ulaşabilirsiniz
           totalMessages: { increment: 1 }
         }
       })
-
-      // Puan kazanamayanlar için buradan çık
-      if (!canEarnPoints) {
-        console.log(`⚠️ Kullanıcı /start yapmamış - sadece mesaj kaydedildi, puan verilmedi (userId: ${userId})`)
-        return NextResponse.json({ ok: true, message: 'Message saved, no points (hadStart required)' })
-      }
 
       // Mesaj uzunluğu kontrolü (ÖDÜL İÇİN)
       if (messageText.length < minMessageLength) {
