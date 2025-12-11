@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth-context'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -45,6 +46,7 @@ interface ReferralData {
 
 function ReferralContent() {
   const router = useRouter()
+  const { setShowLoginModal } = useAuth()
 
   const [referralData, setReferralData] = useState<ReferralData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -59,8 +61,8 @@ function ReferralContent() {
       const response = await fetch('/api/referral/info')
 
       if (response.status === 401) {
-        // Session expired, redirect to login
-        router.push('/login')
+        // Session expired, show login modal
+        setShowLoginModal(true)
         return
       }
 
