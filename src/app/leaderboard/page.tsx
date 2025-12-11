@@ -48,8 +48,23 @@ function LeaderboardContent() {
         fetch(`/api/leaderboard?sortBy=xp${userId ? `&userId=${userId}` : ''}`)
       ])
 
+      // Response kontrolü
+      if (!pointsRes.ok || !xpRes.ok) {
+        console.error('Leaderboard API error:', {
+          pointsStatus: pointsRes.status,
+          xpStatus: xpRes.status
+        })
+        throw new Error('Failed to fetch leaderboard')
+      }
+
       const pointsData = await pointsRes.json()
       const xpData = await xpRes.json()
+
+      console.log('Leaderboard loaded:', {
+        pointsCount: pointsData.leaderboard?.length || 0,
+        xpCount: xpData.leaderboard?.length || 0,
+        hasCurrentUser: !!pointsData.currentUser
+      })
 
       // Login olmasa bile leaderboard'ı göster
       setPointsLeaderboard(pointsData.leaderboard || [])
