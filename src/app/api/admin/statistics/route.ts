@@ -133,11 +133,7 @@ export async function GET(request: NextRequest) {
       totalMessageStats,
       dailyMessageStats,
       weeklyMessageStats,
-      monthlyMessageStats,
-      totalTelegramMessages,
-      dailyTelegramMessages,
-      weeklyTelegramMessages,
-      monthlyTelegramMessages
+      monthlyMessageStats
     ] = await Promise.all([
       prisma.user.count(),
       prisma.telegramGroupUser.count(),
@@ -147,11 +143,7 @@ export async function GET(request: NextRequest) {
       prisma.messageStats.count(),
       prisma.messageStats.count({ where: { createdAt: { gte: today } } }),
       prisma.messageStats.count({ where: { createdAt: { gte: weekAgo } } }),
-      prisma.messageStats.count({ where: { createdAt: { gte: monthAgo } } }),
-      prisma.telegramGroupMessage.count(),
-      prisma.telegramGroupMessage.count({ where: { createdAt: { gte: today } } }),
-      prisma.telegramGroupMessage.count({ where: { createdAt: { gte: weekAgo } } }),
-      prisma.telegramGroupMessage.count({ where: { createdAt: { gte: monthAgo } } })
+      prisma.messageStats.count({ where: { createdAt: { gte: monthAgo } } })
     ])
 
     return NextResponse.json({
@@ -165,10 +157,10 @@ export async function GET(request: NextRequest) {
         hadStartUsers,
         usersWithMessages: totalTelegramUsers, // Mesaj yazan telegram kullanıcısı
         messages: {
-          total: totalTelegramMessages, // Toplam telegram grup mesajı
-          daily: dailyTelegramMessages,
-          weekly: weeklyTelegramMessages,
-          monthly: monthlyTelegramMessages
+          total: totalMessageStats, // Toplam mesaj (MessageStats)
+          daily: dailyMessageStats,
+          weekly: weeklyMessageStats,
+          monthly: monthlyMessageStats
         },
         siteMessages: {
           total: totalMessageStats,
