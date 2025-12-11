@@ -750,6 +750,18 @@ Siteye Butondan ulaşabilirsiniz
       })
 
       console.log(`📝 Telegram grup mesajı kaydedildi: ${userId} - ${telegramGroupUser.messageCount + 1} mesaj`)
+
+      // ========== HERKES İÇİN İSTATİSTİK KAYDET ==========
+      // MessageStats - Tüm mesajları kaydet (siteye kayıtlı olmasalar bile)
+      await prisma.messageStats.create({
+        data: {
+          telegramUserId: telegramGroupUser.id,
+          content: messageText.substring(0, 500),
+          messageLength: messageText.length,
+          earnedReward: false // Varsayılan false, eğer ödül verilirse güncellenecek
+        }
+      })
+      console.log(`📊 MessageStats kaydedildi: ${userId}`)
       // ========== YENİ BİTİŞ ==========
 
       // 🔍 DEBUG: userId değerini detaylı logla
@@ -807,19 +819,6 @@ Siteye Butondan ulaşabilirsiniz
         return NextResponse.json({ ok: true, message: 'Message saved - user not registered on website' })
       }
 
-      // Sitede kayıtlı olması yeterli - /start şartı kaldırıldı
-      const canEarnPoints = true
-
-      // TÜM MESAJLARI İSTATİSTİK İÇİN KAYDET (KURALLARDAN BAĞIMSIZ)
-      await prisma.messageStats.create({
-        data: {
-          userId: user.id,
-          content: messageText.substring(0, 500),
-          messageLength: messageText.length,
-          earnedReward: false // Varsayılan olarak false, ödül verilirse güncellenecek
-        }
-      })
-
       // Toplam mesaj sayısını artır (tüm mesajlar için - görevler için kullanılır)
       await prisma.user.update({
         where: { id: user.id },
@@ -861,7 +860,7 @@ Siteye Butondan ulaşabilirsiniz
       // Bu mesajın ödül kazandığını işaretle
       await prisma.messageStats.updateMany({
         where: {
-          userId: user.id,
+          telegramUserId: telegramGroupUser.id,
           createdAt: { gte: new Date(getTurkeyDate().getTime() - 2000) } // Son 2 saniyedeki mesaj (Türkiye saati)
         },
         data: {
