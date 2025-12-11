@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
         select: {
           id: true,
           telegramId: true,
+          siteUsername: true,
           username: true,
           firstName: true,
           points: true,
@@ -57,6 +58,7 @@ export async function POST(request: NextRequest) {
         select: {
           id: true,
           telegramId: true,
+          siteUsername: true,
           username: true,
           firstName: true,
           points: true,
