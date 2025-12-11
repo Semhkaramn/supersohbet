@@ -51,7 +51,12 @@ export default function AdminAdsPage() {
 
   async function loadSettings() {
     try {
-      const response = await fetch('/api/admin/settings')
+      const token = localStorage.getItem('admin_token')
+      const response = await fetch('/api/admin/settings', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
       const data = await response.json()
       setSettings(data.settings || [])
 
@@ -69,7 +74,12 @@ export default function AdminAdsPage() {
 
   async function loadSponsors() {
     try {
-      const response = await fetch('/api/admin/sponsors')
+      const token = localStorage.getItem('admin_token')
+      const response = await fetch('/api/admin/sponsors', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
       const data = await response.json()
       // Order'a göre sırala
       const sorted = (data.sponsors || []).sort((a: Sponsor, b: Sponsor) => a.order - b.order)
@@ -88,9 +98,13 @@ export default function AdminAdsPage() {
 
     setSaving(true)
     try {
+      const token = localStorage.getItem('admin_token')
       const response = await fetch('/api/admin/settings', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ key: 'sponsor_banner_enabled', value: newValue.toString() })
       })
 
@@ -116,9 +130,13 @@ export default function AdminAdsPage() {
 
   async function toggleSponsorInBanner(sponsorId: string, currentValue: boolean) {
     try {
+      const token = localStorage.getItem('admin_token')
       const response = await fetch(`/api/admin/sponsors/${sponsorId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ showInBanner: !currentValue })
       })
 
@@ -165,9 +183,13 @@ export default function AdminAdsPage() {
         order: index
       }))
 
+      const token = localStorage.getItem('admin_token')
       const response = await fetch('/api/admin/sponsors/reorder', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ sponsors: updates })
       })
 
