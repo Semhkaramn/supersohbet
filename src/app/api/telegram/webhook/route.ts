@@ -25,6 +25,10 @@ let settingsCache: Record<string, string> = {}
 let lastCacheUpdate = 0
 const CACHE_TTL = 60000 // 1 dakika
 
+// İşlenmiş mesajları takip et (idempotency için - duplicate webhook çağrılarını engeller)
+const processedMessages = new Set<string>()
+const MAX_PROCESSED_MESSAGES = 1000
+
 async function getSettings() {
   const now = Date.now()
   if (now - lastCacheUpdate > CACHE_TTL) {
@@ -216,6 +220,23 @@ Daha fazla bilgi için Ödül Merkezi'ne git!
       if (!message.from || !message.from.id) {
         console.log('⚠️ message.from YOK veya message.from.id YOK - Anonymous admin veya channel mesajı')
         return NextResponse.json({ ok: true, message: 'No from.id - anonymous/channel message' })
+      }
+
+      // 🚨 DUPLICATE MESAJ KONTROLÜ - Telegram aynı mesajı retry edebilir
+      const messageId = String(message.chat.id) + '_' + String(message.message_id)
+      if (processedMessages.has(messageId)) {
+        console.log(`⚠️ DUPLICATE MESAJ ENGELLENDI - messageId: ${messageId}`)
+        return NextResponse.json({ ok: true, message: 'Duplicate message - already processed' })
+      }
+
+      // Mesajı işlenmiş olarak işaretle
+      processedMessages.add(messageId)
+
+      // Set boyutunu kontrol et - çok büyürse eski mesajları temizle
+      if (processedMessages.size > MAX_PROCESSED_MESSAGES) {
+        const itemsToDelete = Array.from(processedMessages).slice(0, processedMessages.size - MAX_PROCESSED_MESSAGES)
+        itemsToDelete.forEach(id => processedMessages.delete(id))
+        console.log(`🗑️ Processed messages cache temizlendi - ${itemsToDelete.length} eski mesaj silindi`)
       }
 
       const chatId = message.chat.id
@@ -825,10 +846,18 @@ Siteye Butondan ulaşabilirsiniz
       console.log(`👤 Kullanıcı: ${user?.email || user?.siteUsername}`)
       console.log(`📝 Mesaj Uzunluğu: ${messageText.length} karakter (Min: ${minMessageLength})`)
       console.log(`⏱️  Son Mesaj: ${user.lastMessageAt ? user.lastMessageAt.toISOString() : 'İlk mesaj'}`)
+
+      // Zaman kontrolü - UTC kullan
+      const now = Date.now() // UTC timestamp (milliseconds)
+
       if (user.lastMessageAt) {
-        const timeSince = Math.floor((Date.now() - user.lastMessageAt.getTime()) / 1000)
+        const lastMessageTimestamp = new Date(user.lastMessageAt).getTime() // UTC timestamp'e çevir
+        const timeSince = Math.floor((now - lastMessageTimestamp) / 1000) // Saniye cinsinden
         console.log(`⏳ Geçen Süre: ${timeSince} saniye (Min: ${messageCooldown})`)
+        console.log(`📅 Şu anki zaman (UTC): ${new Date(now).toISOString()}`)
+        console.log(`📅 Son mesaj zamanı (UTC): ${new Date(lastMessageTimestamp).toISOString()}`)
       }
+
       console.log(`🚫 Ban Durumu: ${user.isBanned ? 'BANLI' : 'Aktif'}`)
       console.log(`💰 Verilecek Puan: ${pointsPerMessage}`)
       console.log(`⭐ Mevcut Mesaj Sayısı: ${user.messageCount}`)
@@ -861,7 +890,9 @@ Siteye Butondan ulaşabilirsiniz
 
       // Spam kontrolü - Son mesajdan beri yeterli süre geçmiş mi? (ÖDÜL İÇİN)
       if (user.lastMessageAt) {
-        const timeSinceLastMessage = (Date.now() - user.lastMessageAt.getTime()) / 1000
+        const lastMessageTimestamp = new Date(user.lastMessageAt).getTime() // UTC timestamp
+        const timeSinceLastMessage = (now - lastMessageTimestamp) / 1000 // Saniye cinsinden
+
         if (timeSinceLastMessage < messageCooldown) {
           console.log(`⏳ Cooldown aktif - puan verilmedi: ${Math.floor(timeSinceLastMessage)}s / ${messageCooldown}s`)
           console.log(`❌ ÖDÜL VERİLMEDİ: Cooldown aktif (${Math.floor(timeSinceLastMessage)}s / ${messageCooldown}s)`)
@@ -894,7 +925,7 @@ Siteye Butondan ulaşabilirsiniz
       await prisma.messageStats.updateMany({
         where: {
           telegramUserId: telegramGroupUser.id,
-          createdAt: { gte: new Date(getTurkeyDate().getTime() - 2000) } // Son 2 saniyedeki mesaj (Türkiye saati)
+          createdAt: { gte: new Date(now - 2000) } // Son 2 saniyedeki mesaj (UTC)
         },
         data: {
           earnedReward: true
