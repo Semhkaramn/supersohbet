@@ -13,7 +13,8 @@ export async function GET(request: NextRequest) {
         telegramId: true,
         hadStart: true,
         firstName: true,
-        photoUrl: true
+        photoUrl: true,
+        telegramUnlinkedAt: true
       }
     })
 
@@ -24,12 +25,29 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Check if user can reconnect
+    let canReconnect = true
+    let daysUntilReconnect = 0
+
+    if (user.telegramUnlinkedAt) {
+      const daysSinceUnlink = Math.floor(
+        (Date.now() - new Date(user.telegramUnlinkedAt).getTime()) / (1000 * 60 * 60 * 24)
+      )
+
+      if (daysSinceUnlink < 1) {
+        canReconnect = false
+        daysUntilReconnect = 1 - daysSinceUnlink
+      }
+    }
+
     return NextResponse.json({
       connected: !!user.telegramId && user.hadStart,
       telegramId: user.telegramId,
       hadStart: user.hadStart,
       firstName: user.firstName,
-      photoUrl: user.photoUrl
+      photoUrl: user.photoUrl,
+      canReconnect,
+      daysUntilReconnect
     })
   } catch (error) {
     if (error instanceof Error && error.message === 'Unauthorized') {
