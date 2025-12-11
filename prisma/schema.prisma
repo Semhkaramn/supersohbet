@@ -28,6 +28,9 @@ model User {
   // Email/Password Authentication
   email            String?         @unique
   password         String?         // Hashed password (bcrypt)
+  emailVerified    Boolean         @default(false)
+  emailVerificationToken String?   @unique
+  emailVerificationTokenExpiry DateTime?
 
   // Site kullanıcı adı (kayıt sırasında girilir)
   siteUsername     String?         @unique
@@ -353,6 +356,19 @@ model Admin {
 
   @@index([username])
   @@index([isSuperAdmin])
+}
+
+// Admin sessions (JWT)
+model AdminSession {
+  id               String          @id @default(cuid())
+  adminId          String
+  token            String          @unique
+  expiresAt        DateTime
+  createdAt        DateTime        @default(now())
+
+  @@index([adminId])
+  @@index([token])
+  @@index([expiresAt])
 }
 
 // Randy Schedule - Rastgele ödül dağıtım planlaması
