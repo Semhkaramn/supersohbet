@@ -58,22 +58,11 @@ model User {
   bannedAt         DateTime?
   bannedBy         String?         // Admin kullanıcı adı
 
-  // Referans sistemi
-  referralCode     String?         @unique // Kullanıcının kendi referans kodu
-  referredById     String?         // Bu kullanıcıyı davet eden kişinin ID'si
-  referredBy       User?           @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
-  referrals        User[]          @relation("UserReferrals") // Bu kullanıcının davet ettikleri
-  totalReferrals   Int             @default(0) // Toplam davet sayısı
-  referralPoints   Int             @default(0) // Referanslardan kazanılan puanlar
-
   // TRC20 USDT Cüzdan
   trc20WalletAddress String?       // TRC20 USDT cüzdan adresi
 
   // Bot başlatma durumu
   hadStart         Boolean         @default(false) // Kullanıcı bota /start yaptı mı?
-
-  // Kanal katılım durumu
-  channelsVerified Boolean         @default(false) // Tüm kanallara katıldı mı?
 
   // Telegram bağlantı token'ı (geçici - 10 dakika)
   telegramConnectionToken String?  // 6 haneli kod
@@ -85,7 +74,6 @@ model User {
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
-  channelJoins     UserChannelJoin[]
   purchases        UserPurchase[]
   wheelSpins       WheelSpin[]
   messages         MessageStats[]
@@ -95,8 +83,6 @@ model User {
   @@index([email])
   @@index([siteUsername])
   @@index([telegramId])
-  @@index([referralCode])
-  @@index([referredById])
   @@index([isBanned])
   @@index([points, xp]) // ✅ OPTIMIZASYON: Leaderboard sorguları için composite index
   @@index([xp, points]) // ✅ OPTIMIZASYON: XP leaderboard için composite index
@@ -115,37 +101,6 @@ model MessageStats {
   @@index([userId])
   @@index([createdAt])
   @@index([userId, createdAt])
-}
-
-// Zorunlu kanallar
-model RequiredChannel {
-  id               String          @id @default(cuid())
-  channelId        String          @unique // @channel_username veya -100123456789
-  channelName      String
-  channelLink      String
-  channelType      String          @default("channel") // "channel" veya "group"
-  isActive         Boolean         @default(true)
-  order            Int             @default(0) // Gösterim sırası
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-
-  userJoins        UserChannelJoin[]
-
-  @@index([isActive])
-  @@index([channelType])
-}
-
-// Kullanıcı kanal katılım takibi
-model UserChannelJoin {
-  id               String          @id @default(cuid())
-  userId           String
-  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  channelId        String
-  channel          RequiredChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  joinedAt         DateTime        @default(now())
-
-  @@unique([userId, channelId])
-  @@index([userId])
 }
 
 // Rütbe sistemi
@@ -352,36 +307,6 @@ model TaskCompletion {
   @@unique([userId, taskId])
   @@index([userId])
   @@index([userId, isCompleted])
-}
-
-// Referans milestone'ları
-model ReferralMilestone {
-  id               String          @id @default(cuid())
-  requiredCount    Int             @unique // Gerekli referans sayısı
-  rewardPoints     Int             // Ödül puanı
-  name             String          // Örn: "5 Üye"
-  description      String?         // Açıklama
-  order            Int             @default(0)
-  isActive         Boolean         @default(true)
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-
-  completions      UserMilestoneCompletion[]
-
-  @@index([isActive, order])
-}
-
-// Kullanıcıların tamamladığı milestone'lar
-model UserMilestoneCompletion {
-  id               String          @id @default(cuid())
-  userId           String
-  milestoneId      String
-  milestone        ReferralMilestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
-  completedAt      DateTime        @default(now())
-  rewardClaimed    Boolean         @default(false)
-
-  @@unique([userId, milestoneId])
-  @@index([userId])
 }
 
 // Kullanıcıların sponsor bilgileri
