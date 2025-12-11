@@ -81,11 +81,6 @@ function TasksContent() {
         fetch('/api/referral/info')
       ])
 
-      if (tasksRes.status === 401) {
-        setShowLoginModal(true)
-        return
-      }
-
       const tasksData = await tasksRes.json()
       const referralData = await referralRes.json()
 
@@ -103,6 +98,12 @@ function TasksContent() {
   }
 
   async function claimReward(taskId: string) {
+    if (!user) {
+      toast.error('Ödül almak için giriş yapmalısınız')
+      setShowLoginModal(true)
+      return
+    }
+
     setClaiming(taskId)
     try {
       const response = await fetch('/api/task', {
@@ -312,10 +313,7 @@ function TasksContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-300">Görevler yükleniyor...</p>
-        </div>
+        <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     )
   }
