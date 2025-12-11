@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { createAdminToken, setAdminAuthCookie } from '@/lib/admin-middleware'
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,16 +37,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Basit token oluştur (production'da JWT kullanın)
-    const token = Buffer.from(`${admin.id}:${Date.now()}`).toString('base64')
-
-    return NextResponse.json({
-      success: true,
-      token,
+    // JWT token oluştur
+    const token = await createAdminToken({
       adminId: admin.id,
       username: admin.username,
       isSuperAdmin: admin.isSuperAdmin
     })
+
+    // Response oluştur ve cookie set et
+    const response = NextResponse.json({
+      success: true,
+      adminId: admin.id,
+      username: admin.username,
+      isSuperAdmin: admin.isSuperAdmin
+    })
+
+    response.headers.append('Set-Cookie', setAdminAuthCookie(token))
+
+    return response
   } catch (error) {
     console.error('Admin login error:', error)
     return NextResponse.json(
