@@ -36,9 +36,7 @@ function LeaderboardContent() {
   const [activeTab, setActiveTab] = useState('points')
 
   useEffect(() => {
-    if (user) {
-      loadLeaderboards()
-    }
+    loadLeaderboards()
   }, [user])
 
   async function loadLeaderboards() {
@@ -48,11 +46,6 @@ function LeaderboardContent() {
         fetch(`/api/leaderboard?sortBy=points&userId=${userId}`),
         fetch(`/api/leaderboard?sortBy=xp&userId=${userId}`)
       ])
-
-      if (pointsRes.status === 401) {
-        setShowLoginModal(true)
-        return
-      }
 
       const pointsData = await pointsRes.json()
       const xpData = await xpRes.json()
