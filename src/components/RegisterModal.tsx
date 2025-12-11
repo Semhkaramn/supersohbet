@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { UserPlus, Mail, Lock, User, Gift, Loader2, Eye, EyeOff } from 'lucide-react'
+import { UserPlus, Mail, Lock, User, Loader2, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/auth-context'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -14,7 +14,6 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 function RegisterModalContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const referralCodeParam = searchParams?.get('ref') || ''
 
   const { showRegisterModal, setShowRegisterModal, setShowLoginModal, setShowChannelModal, refreshUser, returnUrl, setReturnUrl } = useAuth()
   const [loading, setLoading] = useState(false)
@@ -24,15 +23,8 @@ function RegisterModalContent() {
     email: '',
     siteUsername: '',
     password: '',
-    confirmPassword: '',
-    referralCode: referralCodeParam
+    confirmPassword: ''
   })
-
-  useEffect(() => {
-    if (referralCodeParam) {
-      setFormData(prev => ({ ...prev, referralCode: referralCodeParam }))
-    }
-  }, [referralCodeParam])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -62,8 +54,7 @@ function RegisterModalContent() {
         body: JSON.stringify({
           email: formData.email,
           siteUsername: formData.siteUsername,
-          password: formData.password,
-          referralCode: formData.referralCode || undefined
+          password: formData.password
         })
       })
 
@@ -82,8 +73,7 @@ function RegisterModalContent() {
           email: '',
           siteUsername: '',
           password: '',
-          confirmPassword: '',
-          referralCode: ''
+          confirmPassword: ''
         })
       } else {
         toast.error(data.error || 'Kayıt başarısız')
@@ -213,32 +203,7 @@ function RegisterModalContent() {
                 </div>
               </div>
 
-              {referralCodeParam && (
-                <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                  <p className="text-sm text-green-400 flex items-center gap-2">
-                    <Gift className="w-4 h-4" />
-                    Bir referans kodu kullanıyorsunuz!
-                  </p>
-                </div>
-              )}
 
-              <div className="space-y-2">
-                <Label htmlFor="referralCode" className="text-gray-300">
-                  Referans Kodu (İsteğe bağlı)
-                </Label>
-                <div className="relative">
-                  <Gift className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="referralCode"
-                    type="text"
-                    placeholder="Referans kodu (varsa)"
-                    value={formData.referralCode}
-                    onChange={(e) => setFormData({ ...formData, referralCode: e.target.value })}
-                    className="pl-10 bg-gray-700/50 border-gray-600 text-white placeholder:text-gray-400"
-                    disabled={loading || !!referralCodeParam}
-                  />
-                </div>
-              </div>
             </div>
 
             <DialogFooter className="flex flex-col space-y-4 mt-4">
