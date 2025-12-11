@@ -235,6 +235,7 @@ model Sponsor {
   identifierType   String          @default("username") // "username", "id" veya "email"
 
   isActive         Boolean         @default(true)
+  showInBanner     Boolean         @default(true) // Banner'da gösterilsin mi?
   order            Int             @default(0)
   clicks           Int             @default(0)
   createdAt        DateTime        @default(now())
@@ -245,6 +246,7 @@ model Sponsor {
 
   @@index([isActive])
   @@index([category])
+  @@index([showInBanner])
 }
 
 // Görevler
