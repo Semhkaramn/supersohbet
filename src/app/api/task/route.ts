@@ -5,32 +5,37 @@ import { requireAuth } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    // Session kontrolü - artık query parametresi yerine session kullanıyoruz
-    const session = await requireAuth(request)
-    const userId = session.userId
+    // Session kontrolü - artık opsiyonel (giriş yapmadan da görevleri görebilmeli)
+    let userId: string | null = null
+    try {
+      const session = await requireAuth(request)
+      userId = session.userId
+    } catch (error) {
+      // Giriş yapmamış - görevleri gösterebiliriz ama progress 0 olacak
+      console.log('User not authenticated, showing tasks without progress')
+    }
 
-    // Kullanıcıyı getir (referral sayısı ve diğer istatistikler için)
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        messageCount: true,
-        totalMessages: true,
-        points: true,
-        xp: true,
-        rank: {
-          select: {
-            minXp: true,
-            order: true
+    // Kullanıcı yoksa default değerlerle devam et
+    let user: any = null
+    if (userId) {
+      user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          messageCount: true,
+          totalMessages: true,
+          points: true,
+          xp: true,
+          rank: {
+            select: {
+              minXp: true,
+              order: true
+            }
+          },
+          wheelSpins: {
+            select: { id: true }
           }
-        },
-        wheelSpins: {
-          select: { id: true }
         }
-      }
-    })
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      })
     }
 
     const now = getTurkeyDate() // Türkiye saati
@@ -50,17 +55,17 @@ export async function GET(request: NextRequest) {
       ]
     })
 
-    // Kullanıcının görev tamamlama kayıtlarını getir
-    const completions = await prisma.taskCompletion.findMany({
+    // Kullanıcının görev tamamlama kayıtlarını getir (sadece giriş yapmışsa)
+    const completions = userId ? await prisma.taskCompletion.findMany({
       where: { userId }
-    })
+    }) : []
 
     const completionMap = new Map(
       completions.map(c => [c.taskId, c])
     )
 
-    // Her görev için kullanıcının kaç kez tamamladığını hesapla
-    const completionCountsPromises = allTasks.map(async (task) => {
+    // Her görev için kullanıcının kaç kez tamamladığını hesapla (sadece giriş yapmışsa)
+    const completionCountsPromises = userId ? allTasks.map(async (task) => {
       const count = await prisma.taskCompletion.count({
         where: {
           userId,
@@ -69,14 +74,19 @@ export async function GET(request: NextRequest) {
         }
       })
       return [task.id, count] as const
-    })
+    }) : []
 
     const completionCounts = await Promise.all(completionCountsPromises)
     const completionCountMap = new Map(completionCounts)
 
     // Kullanıcının güncel istatistiklerine göre görev ilerlemesini hesapla
-    function calculateProgress(task: any, userData: NonNullable<typeof user>) {
+    function calculateProgress(task: any, userData: typeof user) {
       let currentProgress = 0
+
+      // Kullanıcı yoksa progress 0
+      if (!userData) {
+        return 0
+      }
 
       switch (task.taskType) {
         case 'send_messages':
@@ -165,8 +175,8 @@ export async function GET(request: NextRequest) {
       allTasks.filter(t => t.category === 'permanent')
     ).map(formatTask)
 
-    // Görev Geçmişi - Tamamlanan ve ödülü alınmış görevler
-    const taskHistory = await prisma.taskCompletion.findMany({
+    // Görev Geçmişi - Tamamlanan ve ödülü alınmış görevler (sadece giriş yapmışsa)
+    const taskHistory = userId ? await prisma.taskCompletion.findMany({
       where: {
         userId,
         isCompleted: true,
@@ -179,7 +189,7 @@ export async function GET(request: NextRequest) {
         claimedAt: 'desc'
       },
       take: 100 // Son 100 tamamlanmış görev
-    })
+    }) : []
 
     const formattedHistory = taskHistory.map(completion => ({
       id: completion.id,
@@ -200,18 +210,15 @@ export async function GET(request: NextRequest) {
       dailyTasks,
       weeklyTasks,
       permanentTasks,
-      taskHistory: formattedHistory
+      taskHistory: formattedHistory,
+      isAuthenticated: !!userId // Frontend için - kullanıcı giriş yapmış mı?
     })
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json(
-        { error: 'Oturum geçersiz. Lütfen tekrar giriş yapın.' },
-        { status: 401 }
-      )
-    }
+    // Artık Unauthorized hatası olmamalı çünkü auth opsiyonel
+    // Ama beklenmeyen hatalar için hala catch yapıyoruz
     console.error('Get tasks error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Görevler yüklenirken bir hata oluştu' },
       { status: 500 }
     )
   }
