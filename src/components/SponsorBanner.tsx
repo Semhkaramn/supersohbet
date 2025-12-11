@@ -57,21 +57,20 @@ export default function SponsorBanner() {
     }
   }
 
-  async function handleSponsorClick(sponsorId: string, websiteUrl?: string) {
+  function handleSponsorClick(sponsorId: string, websiteUrl?: string) {
     if (!websiteUrl) return
 
-    try {
-      // Tıklama kaydı
-      await fetch('/api/sponsors/click', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sponsorId })
-      })
+    // Linki hemen aç
+    window.open(websiteUrl, '_blank')
 
-      window.open(websiteUrl, '_blank')
-    } catch (error) {
+    // Tıklama kaydını arka planda yap
+    fetch('/api/sponsors/click', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sponsorId })
+    }).catch(error => {
       console.error('Error tracking sponsor click:', error)
-    }
+    })
   }
 
   // Banner kapalıysa veya sponsor yoksa gösterme
@@ -134,13 +133,19 @@ export default function SponsorBanner() {
           0% {
             transform: translateX(0);
           }
+          45% {
+            transform: translateX(-50%);
+          }
+          55% {
+            transform: translateX(-50%);
+          }
           100% {
             transform: translateX(-50%);
           }
         }
 
         .animate-scroll {
-          animation: scroll 30s linear infinite;
+          animation: scroll 35s ease-in-out infinite;
         }
 
         .hover\\:pause-animation:hover {
