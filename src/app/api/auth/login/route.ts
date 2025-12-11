@@ -28,12 +28,20 @@ export async function POST(request: NextRequest) {
 
     const { emailOrUsername, password } = validation.data
 
+    // Trim ve lowercase işlemi
+    const trimmedInput = emailOrUsername.trim().toLowerCase()
+
     // Kullanıcıyı bul (email veya siteUsername ile)
     const user = await prisma.user.findFirst({
       where: {
         OR: [
-          { email: emailOrUsername },
-          { siteUsername: emailOrUsername }
+          { email: trimmedInput },
+          {
+            siteUsername: {
+              mode: 'insensitive',
+              equals: trimmedInput
+            }
+          }
         ],
         loginMethod: 'email' // Sadece email ile kayıtlı kullanıcılar
       },
