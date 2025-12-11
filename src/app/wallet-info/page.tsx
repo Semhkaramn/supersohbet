@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import BottomNav from '@/components/BottomNav'
+import DashboardLayout from '@/components/DashboardLayout'
+import ProtectedRoute from '@/components/ProtectedRoute'
 import {
   Wallet,
   Building2,
@@ -559,20 +560,22 @@ function WalletInfoContent() {
           </div>
         </Card>
       </div>
-
-      <BottomNav />
     </div>
   )
 }
 
 export default function WalletInfoPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    }>
-      <WalletInfoContent />
-    </Suspense>
+    <ProtectedRoute>
+      <DashboardLayout>
+        <Suspense fallback={
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        }>
+          <WalletInfoContent />
+        </Suspense>
+      </DashboardLayout>
+    </ProtectedRoute>
   )
 }
