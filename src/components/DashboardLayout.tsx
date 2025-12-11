@@ -11,12 +11,12 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <div className="min-h-screen">
-      {/* Desktop Sidebar */}
+    <div className="min-h-screen bg-slate-950">
+      {/* Sidebar - collapsible */}
       <Sidebar />
 
-      {/* Main Content Area */}
-      <div className="lg:ml-64">
+      {/* Main Content Area - no fixed margin, sidebar handles its own width */}
+      <div className="lg:pl-20 transition-all duration-300">
         {/* Desktop Header */}
         <Header />
 
