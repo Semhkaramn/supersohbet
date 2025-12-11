@@ -82,6 +82,7 @@ model User {
   messages         MessageStats[]
   pointHistory     PointHistory[]
   sponsorInfos     UserSponsorInfo[] // Kullanıcının sponsor bilgileri
+  telegramGroupUser TelegramGroupUser? // Telegram grup kullanıcısı bağlantısı
 
   @@index([email])
   @@index([siteUsername])
@@ -432,4 +433,48 @@ model SiteVisit {
   @@index([createdAt])
   @@index([page])
   @@index([userId])
+}
+
+// Telegram Grup Kullanıcıları - Grupta mesaj yazan herkes (siteye kayıtlı olmasalar bile)
+model TelegramGroupUser {
+  id               String          @id @default(cuid())
+  telegramId       String          @unique // Telegram kullanıcı ID
+  username         String?         // Telegram username
+  firstName        String?         // Telegram first name
+  lastName         String?         // Telegram last name
+  photoUrl         String?         // Profil fotoğrafı URL
+
+  // Site bağlantısı
+  linkedUserId     String?         @unique // Bağlı site kullanıcısı (null = siteye kayıtlı değil)
+  linkedUser       User?           @relation(fields: [linkedUserId], references: [id], onDelete: SetNull)
+
+  // İstatistikler
+  messageCount     Int             @default(0) // Toplam mesaj sayısı
+  lastMessageAt    DateTime?       // Son mesaj zamanı
+  firstSeenAt      DateTime        @default(now()) // İlk görülme zamanı
+
+  // Telegram mesajları
+  groupMessages    TelegramGroupMessage[]
+
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([telegramId])
+  @@index([linkedUserId])
+  @@index([messageCount])
+  @@index([lastMessageAt])
+}
+
+// Telegram Grup Mesajları - Grupta yazılan tüm mesajlar
+model TelegramGroupMessage {
+  id               String          @id @default(cuid())
+  telegramUserId   String
+  telegramUser     TelegramGroupUser @relation(fields: [telegramUserId], references: [id], onDelete: Cascade)
+  content          String?         // Mesaj içeriği (ilk 500 karakter)
+  messageLength    Int             @default(0) // Mesaj uzunluğu
+  createdAt        DateTime        @default(now())
+
+  @@index([telegramUserId])
+  @@index([createdAt])
+  @@index([telegramUserId, createdAt])
 }
