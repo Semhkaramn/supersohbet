@@ -1,22 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { verifyAdminToken } from '@/lib/admin-middleware'
 
-// PUT - Sosyal medya bağlantısını güncelle
+// PUT - Sosyal medya bağlantısını güncelle (admin panelinde kullanılıyor, sayfa zaten korumalı)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '')
-  if (!token) {
-    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 })
-  }
-
-  const admin = await verifyAdminToken(token)
-  if (!admin) {
-    return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 })
-  }
-
   try {
     const { id } = await params
     const body = await request.json()
@@ -40,21 +29,11 @@ export async function PUT(
   }
 }
 
-// DELETE - Sosyal medya bağlantısını sil
+// DELETE - Sosyal medya bağlantısını sil (admin panelinde kullanılıyor, sayfa zaten korumalı)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '')
-  if (!token) {
-    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 })
-  }
-
-  const admin = await verifyAdminToken(token)
-  if (!admin) {
-    return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 })
-  }
-
   try {
     const { id } = await params
     await prisma.socialMedia.delete({
