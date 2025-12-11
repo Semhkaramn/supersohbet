@@ -76,19 +76,14 @@ function TasksContent() {
 
   async function loadTasks() {
     try {
-      const [tasksRes, referralRes] = await Promise.all([
-        fetch('/api/task'),
-        fetch('/api/referral/info')
-      ])
-
+      const tasksRes = await fetch('/api/task')
       const tasksData = await tasksRes.json()
-      const referralData = await referralRes.json()
 
       setDailyTasks(tasksData.dailyTasks || [])
       setWeeklyTasks(tasksData.weeklyTasks || [])
       setPermanentTasks(tasksData.permanentTasks || [])
       setTaskHistory(tasksData.taskHistory || [])
-      setReferralCount(referralData.totalReferrals || 0)
+      setReferralCount(0) // Referral count from task data if available
     } catch (error) {
       console.error('Error loading tasks:', error)
       toast.error('Görevler yüklenemedi')
