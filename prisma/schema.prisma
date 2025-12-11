@@ -79,7 +79,6 @@ model User {
 
   purchases        UserPurchase[]
   wheelSpins       WheelSpin[]
-  messages         MessageStats[]
   pointHistory     PointHistory[]
   sponsorInfos     UserSponsorInfo[] // Kullanıcının sponsor bilgileri
   telegramGroupUser TelegramGroupUser? // Telegram grup kullanıcısı bağlantısı
@@ -93,18 +92,19 @@ model User {
 }
 
 // Tüm mesajlar - istatistikler için (KURALLARDAN BAĞIMSIZ)
+// HERKES için tutulur (siteye kayıtlı olmasalar bile)
 model MessageStats {
   id               String          @id @default(cuid())
-  userId           String
-  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  telegramUserId   String          // TelegramGroupUser.id
+  telegramUser     TelegramGroupUser @relation(fields: [telegramUserId], references: [id], onDelete: Cascade)
   content          String?
   messageLength    Int             @default(0)
-  earnedReward     Boolean         @default(false) // Bu mesaj ödül kazandırdı mı?
+  earnedReward     Boolean         @default(false) // Bu mesaj ödül kazandırdı mı? (sadece site kayıtlı kullanıcılar için)
   createdAt        DateTime        @default(now())
 
-  @@index([userId])
+  @@index([telegramUserId])
   @@index([createdAt])
-  @@index([userId, createdAt])
+  @@index([telegramUserId, createdAt])
 }
 
 // Rütbe sistemi
@@ -456,6 +456,7 @@ model TelegramGroupUser {
 
   // Telegram mesajları
   groupMessages    TelegramGroupMessage[]
+  messageStats     MessageStats[] // Mesaj istatistikleri (ödül sistemi için)
 
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
