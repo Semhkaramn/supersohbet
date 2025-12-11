@@ -34,6 +34,9 @@ export default function AdminSettingsPage() {
   // Roll sistemi
   const [rollEnabled, setRollEnabled] = useState(true)
 
+  // Aktif grup için local state
+  const [activeGroupInput, setActiveGroupInput] = useState('')
+
   useEffect(() => {
     const token = localStorage.getItem('admin_token')
     if (!token) {
@@ -63,6 +66,10 @@ export default function AdminSettingsPage() {
       // Roll sistemi ayarını yükle
       const rollEnabledSetting = data.settings.find((s: Setting) => s.key === 'roll_enabled')
       setRollEnabled(rollEnabledSetting?.value === 'true')
+
+      // Aktif grup ayarını yükle
+      const activeGroupSetting = data.settings.find((s: Setting) => s.key === 'activity_group_id')
+      setActiveGroupInput(activeGroupSetting?.value || '')
 
     } catch (error) {
       console.error('Error loading settings:', error)
@@ -532,14 +539,14 @@ export default function AdminSettingsPage() {
             <div className="flex gap-2">
               <Input
                 id="active_group"
-                value={activityGroupId?.value || ''}
-                onChange={(e) => handleInputChange('activity_group_id', e.target.value)}
+                value={activeGroupInput}
+                onChange={(e) => setActiveGroupInput(e.target.value)}
                 className="bg-white/10 border-white/20 text-white flex-1"
                 placeholder="@grupadi veya -100123456789"
               />
               <Button
                 onClick={async () => {
-                  const value = activityGroupId?.value || ''
+                  const value = activeGroupInput.trim()
                   if (!value) {
                     toast.error('Grup bilgisi giriniz')
                     return
@@ -566,8 +573,8 @@ export default function AdminSettingsPage() {
                         const result = await saveSetting('activity_group_id', data.chatId, false)
                         if (result.success) {
                           toast.success(`Aktif grup ayarlandı: ${data.chatTitle} (ID: ${data.chatId})`)
-                          // State'i güncelle
-                          handleInputChange('activity_group_id', data.chatId)
+                          // Local state'i güncelle
+                          setActiveGroupInput(data.chatId)
                         } else {
                           toast.error(result.error || 'Ayar kaydedilemedi')
                         }
@@ -579,6 +586,8 @@ export default function AdminSettingsPage() {
                       const result = await saveSetting('activity_group_id', value, false)
                       if (result.success) {
                         toast.success(`Aktif grup ayarlandı (ID: ${value})`)
+                        // Local state'i güncelle
+                        setActiveGroupInput(value)
                       } else {
                         toast.error(result.error || 'Ayar kaydedilemedi')
                       }
@@ -599,9 +608,9 @@ export default function AdminSettingsPage() {
             <p className="text-xs text-gray-400 mt-2">
               Bot sadece bu grupta mesaj dinler ve puan verir. @ ile username girerseniz otomatik ID'ye çevrilir.
             </p>
-            {activityGroupId?.value && (
+            {activeGroupInput && (
               <p className="text-xs text-green-400 mt-2">
-                ✅ Aktif grup ID: {activityGroupId.value}
+                ✅ Aktif grup ID: {activeGroupInput}
               </p>
             )}
           </div>
