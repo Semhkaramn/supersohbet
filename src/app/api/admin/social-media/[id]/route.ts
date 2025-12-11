@@ -5,7 +5,7 @@ import { verifyAdminToken } from '@/lib/admin-middleware'
 // PUT - Sosyal medya bağlantısını güncelle
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '')
   if (!token) {
@@ -18,11 +18,12 @@ export async function PUT(
   }
 
   try {
+    const { id } = await params
     const body = await request.json()
     const { name, platform, username, isActive, order } = body
 
     const socialMedia = await prisma.socialMedia.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name,
         platform,
@@ -42,7 +43,7 @@ export async function PUT(
 // DELETE - Sosyal medya bağlantısını sil
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '')
   if (!token) {
@@ -55,8 +56,9 @@ export async function DELETE(
   }
 
   try {
+    const { id } = await params
     await prisma.socialMedia.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({ success: true })
