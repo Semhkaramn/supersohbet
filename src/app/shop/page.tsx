@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth-context'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -50,6 +51,7 @@ interface Purchase {
 
 function ShopContent() {
   const router = useRouter()
+  const { setShowLoginModal } = useAuth()
 
   const [items, setItems] = useState<ShopItem[]>([])
   const [userData, setUserData] = useState<UserData | null>(null)
@@ -75,8 +77,8 @@ function ShopContent() {
       ])
 
       if (userRes.status === 401) {
-        // Session expired, redirect to login
-        router.push('/login')
+        // Session expired, show login modal instead of redirect
+        setShowLoginModal(true)
         return
       }
 
