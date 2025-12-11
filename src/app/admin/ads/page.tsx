@@ -144,14 +144,10 @@ export default function AdminAdsPage() {
 
   async function loadSocialMedia() {
     try {
-      const token = localStorage.getItem('admin_token')
-      const response = await fetch('/api/admin/social-media', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
+      const response = await fetch('/api/admin/social-media')
       const data = await response.json()
-      setSocialMedia(data || [])
+      // Array olduğundan emin ol
+      setSocialMedia(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error loading social media:', error)
       toast.error('Sosyal medya bağlantıları yüklenemedi')
@@ -166,7 +162,6 @@ export default function AdminAdsPage() {
 
     setSaving(true)
     try {
-      const token = localStorage.getItem('admin_token')
       const url = editingSocial
         ? `/api/admin/social-media/${editingSocial.id}`
         : '/api/admin/social-media'
@@ -174,8 +169,7 @@ export default function AdminAdsPage() {
       const response = await fetch(url, {
         method: editingSocial ? 'PUT' : 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           ...socialForm,
@@ -207,12 +201,8 @@ export default function AdminAdsPage() {
     if (!confirm('Bu sosyal medya bağlantısını silmek istediğinize emin misiniz?')) return
 
     try {
-      const token = localStorage.getItem('admin_token')
       const response = await fetch(`/api/admin/social-media/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        method: 'DELETE'
       })
 
       const data = await response.json()
@@ -231,15 +221,13 @@ export default function AdminAdsPage() {
 
   async function toggleSocialActive(id: string, currentValue: boolean) {
     try {
-      const token = localStorage.getItem('admin_token')
       const item = socialMedia.find(s => s.id === id)
       if (!item) return
 
       const response = await fetch(`/api/admin/social-media/${id}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           ...item,
@@ -289,12 +277,10 @@ export default function AdminAdsPage() {
         order: index
       }))
 
-      const token = localStorage.getItem('admin_token')
       const response = await fetch('/api/admin/social-media/reorder', {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ items: updates })
       })
