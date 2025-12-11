@@ -387,6 +387,7 @@ model RandySchedule {
   onePerUser           Boolean         @default(true) // Kullanıcı başına bir kez
   minMessages          Int             @default(0) // Minimum mesaj sayısı
   messagePeriod        String          @default("none") // "none", "today", "week", "all"
+  allowAdmins          Boolean         @default(false) // Grup adminleri kazanabilir mi
   status               String          @default("active") // "active", "completed", "cancelled"
   startTime            DateTime        @default(now())
   createdAt            DateTime        @default(now())
