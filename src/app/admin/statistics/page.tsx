@@ -125,7 +125,6 @@ export default function AdminStatisticsPage() {
     const translations: Record<string, string> = {
       'spin_wheel': 'Çark Çevir',
       'send_messages': 'Mesaj Gönder',
-      'invite_users': 'Kullanıcı Davet Et',
       'earn_points': 'Puan Kazan',
       'reach_level': 'Seviye Ulaş'
     }
@@ -571,12 +570,6 @@ export default function AdminStatisticsPage() {
                     <p className="text-gray-400 text-sm">XP</p>
                     <p className="text-purple-400 font-bold text-lg">{selectedUser.xp}</p>
                   </div>
-                  {userDetail.user.referrals?.length > 0 && (
-                    <div>
-                      <p className="text-gray-400 text-sm">Referanslar</p>
-                      <p className="text-green-400 font-bold text-lg">{userDetail.user.referrals.length}</p>
-                    </div>
-                  )}
                 </div>
               </Card>
 
@@ -585,7 +578,6 @@ export default function AdminStatisticsPage() {
                 <TabsList className="bg-white/5 border-white/10 w-full grid grid-cols-6">
                   <TabsTrigger value="messages">Mesajlar</TabsTrigger>
                   <TabsTrigger value="points">Puan</TabsTrigger>
-                  <TabsTrigger value="referrals">Referanslar</TabsTrigger>
                   <TabsTrigger value="tasks">Görevler</TabsTrigger>
                   <TabsTrigger value="wheel">Çark</TabsTrigger>
                   <TabsTrigger value="purchases">Market</TabsTrigger>
@@ -637,86 +629,6 @@ export default function AdminStatisticsPage() {
                   </Card>
                 </TabsContent>
 
-                <TabsContent value="referrals" className="space-y-2">
-                  <Card className="bg-white/5 border-white/10 p-6">
-                    <h4 className="text-lg font-bold text-white mb-4">Referans Bilgileri</h4>
-
-                    {/* Referans İstatistikleri */}
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                      <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 border-green-500/30 border rounded-lg p-4">
-                        <p className="text-green-300 text-sm mb-1">Toplam Referanslar</p>
-                        <p className="text-3xl font-bold text-white">{userDetail.user.totalReferrals || 0}</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-orange-500/20 to-orange-600/20 border-orange-500/30 border rounded-lg p-4">
-                        <p className="text-orange-300 text-sm mb-1">Referans Puanları</p>
-                        <p className="text-3xl font-bold text-white">{userDetail.user.referralPoints || 0}</p>
-                      </div>
-                    </div>
-
-                    {/* Davet Eden Kişi */}
-                    {userDetail.user.referredBy && (
-                      <div className="mb-6">
-                        <h5 className="text-md font-semibold text-white mb-3">Davet Eden Kişi</h5>
-                        <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10">
-                              {userDetail.user.referredBy.photoUrl && <AvatarImage src={userDetail.user.referredBy.photoUrl} alt={userDetail.user.referredBy.firstName || userDetail.user.referredBy.username || 'User'} />}
-                              <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white font-bold">
-                                {(userDetail.user.referredBy.firstName || userDetail.user.referredBy.username || 'U').charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="text-white font-semibold">
-                                {userDetail.user.referredBy.firstName || userDetail.user.referredBy.username || 'Kullanıcı'}
-                              </p>
-                              <p className="text-gray-400 text-sm">@{userDetail.user.referredBy.username || userDetail.user.referredBy.id}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Davet Ettikleri */}
-                    <div>
-                      <h5 className="text-md font-semibold text-white mb-3">
-                        Davet Ettikleri ({userDetail.user.referrals?.length || 0})
-                      </h5>
-                      <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {userDetail.user.referrals && userDetail.user.referrals.length > 0 ? (
-                          userDetail.user.referrals.map((ref: any) => (
-                            <div key={ref.id} className="bg-white/5 border border-white/10 rounded-lg p-3">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <Avatar className="h-10 w-10">
-                                    {ref.photoUrl && <AvatarImage src={ref.photoUrl} alt={ref.firstName || ref.username || 'User'} />}
-                                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold">
-                                      {(ref.firstName || ref.username || 'U').charAt(0).toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <p className="text-white font-semibold">
-                                      {ref.firstName || ref.username || 'Kullanıcı'}
-                                    </p>
-                                    <p className="text-gray-400 text-sm">@{ref.username || ref.id}</p>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <p className="text-gray-400 text-xs">
-                                    {new Date(ref.createdAt).toLocaleDateString('tr-TR')}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-center py-8">
-                            <p className="text-gray-400">Henüz kimseyi davet etmemiş</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </Card>
-                </TabsContent>
 
                 <TabsContent value="tasks" className="space-y-2">
                   <Card className="bg-white/5 border-white/10 p-6">
