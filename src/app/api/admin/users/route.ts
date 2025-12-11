@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     const where = search
       ? {
           OR: [
+            { siteUsername: { contains: search, mode: 'insensitive' as const } },
             { username: { contains: search, mode: 'insensitive' as const } },
             { firstName: { contains: search, mode: 'insensitive' as const } },
             { telegramId: { contains: search } }
