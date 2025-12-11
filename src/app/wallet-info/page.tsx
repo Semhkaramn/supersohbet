@@ -2,54 +2,51 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth-context'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import DashboardLayout from '@/components/DashboardLayout'
 import ProtectedRoute from '@/components/ProtectedRoute'
-import {
-  Wallet,
-  Building2,
-  Plus,
-  Edit2,
-  Trash2,
-  Save,
-  X,
-  CheckCircle,
-  AlertCircle,
-  Search
-} from 'lucide-react'
+import { Ticket, Gift, TrendingUp, Trophy } from 'lucide-react'
 import { toast } from 'sonner'
 
-interface Sponsor {
+interface WheelPrize {
   id: string
   name: string
-  identifierType: string
-  logoUrl?: string
+  points: number
+  color: string
+  order: number
 }
 
-interface UserSponsorInfo {
+interface UserData {
+  dailySpinsLeft: number
+}
+
+interface RecentWinner {
   id: string
-  identifier: string
-  sponsor: Sponsor
+  user: {
+    firstName?: string
+    username?: string
+    photoUrl?: string
+  }
+  prize: {
+    name: string
+  }
+  pointsWon: number
+  spunAt: string
 }
 
-function WalletInfoContent() {
+function WheelContent() {
   const router = useRouter()
+  const { setShowLoginModal } = useAuth()
 
+  const [prizes, setPrizes] = useState<WheelPrize[]>([])
+  const [userData, setUserData] = useState<UserData | null>(null)
+  const [recentWinners, setRecentWinners] = useState<RecentWinner[]>([])
+  const [spinning, setSpinning] = useState(false)
+  const [rotation, setRotation] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [walletAddress, setWalletAddress] = useState('')
-  const [editingWallet, setEditingWallet] = useState(false)
-  const [walletInput, setWalletInput] = useState('')
-
-  const [sponsorInfos, setSponsorInfos] = useState<UserSponsorInfo[]>([])
-  const [allSponsors, setAllSponsors] = useState<Sponsor[]>([])
-  const [editingSponsor, setEditingSponsor] = useState<string | null>(null)
-  const [sponsorInput, setSponsorInput] = useState('')
-  const [selectedSponsor, setSelectedSponsor] = useState<string | null>(null)
-  const [sponsorSearch, setSponsorSearch] = useState('')
 
   useEffect(() => {
     loadData()
@@ -57,202 +54,100 @@ function WalletInfoContent() {
 
   async function loadData() {
     try {
-      const [walletRes, sponsorInfoRes, sponsorsRes] = await Promise.all([
-        fetch('/api/user/wallet'),
-        fetch('/api/user/sponsor-info'),
-        fetch('/api/sponsors')
+      const [prizesRes, userRes, winnersRes] = await Promise.all([
+        fetch('/api/wheel/prizes'),
+        fetch('/api/user/me'),
+        fetch('/api/wheel/recent-winners')
       ])
 
-      if (walletRes.status === 401) {
-        // Session expired, redirect to login
-        router.push('/login')
+      if (userRes.status === 401) {
+        setShowLoginModal(true)
         return
       }
 
-      if (walletRes.ok) {
-        const walletData = await walletRes.json()
-        setWalletAddress(walletData.walletAddress || '')
-        setWalletInput(walletData.walletAddress || '')
-      }
+      const prizesData = await prizesRes.json()
+      const userData = await userRes.json()
+      const winnersData = await winnersRes.json()
 
-      if (sponsorInfoRes.ok) {
-        const sponsorData = await sponsorInfoRes.json()
-        setSponsorInfos(sponsorData.sponsorInfos || [])
-      }
-
-      if (sponsorsRes.ok) {
-        const sponsorsData = await sponsorsRes.json()
-        setAllSponsors(sponsorsData.sponsors || [])
-      }
+      setPrizes(prizesData.prizes || [])
+      setUserData(userData)
+      setRecentWinners(winnersData.winners || [])
     } catch (error) {
-      console.error('Veri yükleme hatası:', error)
-      toast.error('Veriler yüklenirken hata oluştu')
+      console.error('Error loading wheel data:', error)
+      setShowLoginModal(true)
     } finally {
       setLoading(false)
     }
   }
 
-  async function saveWallet() {
-    if (!walletInput.trim()) {
-      toast.error('Cüzdan adresi boş olamaz')
+  async function spinWheel() {
+    if (!userData || userData.dailySpinsLeft <= 0) {
+      toast.error('Günlük çark hakkınız kalmadı!')
       return
     }
 
-    if (!walletInput.startsWith('T') || walletInput.length !== 34) {
-      toast.error('Geçersiz TRC20 cüzdan adresi. T ile başlamalı ve 34 karakter olmalıdır.')
-      return
-    }
+    setSpinning(true)
 
     try {
-      const response = await fetch('/api/user/wallet', {
+      const response = await fetch('/api/wheel/spin', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ walletAddress: walletInput })
+        headers: { 'Content-Type': 'application/json' }
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        setWalletAddress(data.walletAddress)
-        setEditingWallet(false)
-        toast.success('Cüzdan adresi kaydedildi')
-      } else {
-        const error = await response.json()
-        toast.error(error.error || 'Kaydetme başarısız')
-      }
-    } catch (error) {
-      console.error('Cüzdan kaydetme hatası:', error)
-      toast.error('Bir hata oluştu')
-    }
-  }
-
-  async function deleteWallet() {
-    try {
-      const response = await fetch('/api/user/wallet', {
-        method: 'DELETE'
-      })
-
-      if (response.ok) {
-        setWalletAddress('')
-        setWalletInput('')
-        setEditingWallet(false)
-        toast.success('Cüzdan adresi silindi')
-      } else {
-        toast.error('Silme başarısız')
-      }
-    } catch (error) {
-      console.error('Cüzdan silme hatası:', error)
-      toast.error('Bir hata oluştu')
-    }
-  }
-
-  async function saveSponsorInfo(sponsorId: string) {
-    if (!sponsorInput.trim()) {
-      toast.error('Bilgi boş olamaz')
-      return
-    }
-
-    // Sponsor tipini bul
-    const sponsor = allSponsors.find(s => s.id === sponsorId)
-    if (!sponsor) {
-      toast.error('Sponsor bulunamadı')
-      return
-    }
-
-    // Identifier tipine göre validasyon
-    if (sponsor.identifierType === 'id') {
-      // ID ise sadece sayı kabul et
-      if (!/^\d+$/.test(sponsorInput.trim())) {
-        toast.error('ID sadece sayılardan oluşmalıdır')
+      if (response.status === 401) {
+        toast.error('Oturum süreniz doldu. Lütfen tekrar giriş yapın.')
+        setShowLoginModal(true)
         return
       }
-    } else if (sponsor.identifierType === 'email') {
-      // Email ise email formatı kontrol et
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(sponsorInput.trim())) {
-        toast.error('Geçerli bir email adresi giriniz')
-        return
-      }
-    }
 
-    try {
-      const response = await fetch('/api/user/sponsor-info', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          sponsorId,
-          identifier: sponsorInput.trim()
-        })
-      })
+      const data = await response.json()
 
-      if (response.ok) {
-        await loadData()
-        setEditingSponsor(null)
-        setSponsorInput('')
-        setSelectedSponsor(null)
-        toast.success('Sponsor bilgisi kaydedildi')
+      if (data.success) {
+        const prizeIndex = data.prizeIndex
+
+        // Profesyonel çark hesaplaması
+        // Her segment kaç derece?
+        const segmentAngle = 360 / prizes.length
+
+        // Kazanan segment'in başlangıç açısı (SVG -90°'den başlıyor)
+        const prizeStartAngle = -90 + (prizeIndex * segmentAngle)
+
+        // Segment'in ortasını bul
+        const prizeMidAngle = prizeStartAngle + (segmentAngle / 2)
+
+        // Ok üstte (-90°) sabit, kazanan dilimi ok altına getir
+        // Çarkı saat yönünde döndüreceğiz
+        let targetAngle = -90 - prizeMidAngle
+
+        // Açıyı normalize et (pozitif yap)
+        while (targetAngle < 0) {
+          targetAngle += 360
+        }
+        targetAngle = targetAngle % 360
+
+        // 5-10 tam tur random
+        const randomSpins = 5 + Math.floor(Math.random() * 5)
+
+        // Toplam rotasyon
+        const totalRotation = (randomSpins * 360) + targetAngle
+
+        // Animasyonu başlat
+        setRotation(totalRotation)
+
+        // 4 saniye sonra sonuç göster
+        setTimeout(() => {
+          toast.success(`🎉 Tebrikler! ${data.pointsWon} puan kazandınız!`)
+          setSpinning(false)
+          loadData()
+        }, 4000)
       } else {
-        const error = await response.json()
-        toast.error(error.error || 'Kaydetme başarısız')
+        toast.error(data.error || 'Çark çevrilemedi')
+        setSpinning(false)
       }
     } catch (error) {
-      console.error('Sponsor bilgisi kaydetme hatası:', error)
+      console.error('Spin error:', error)
       toast.error('Bir hata oluştu')
-    }
-  }
-
-  async function deleteSponsorInfo(sponsorId: string) {
-    try {
-      const response = await fetch('/api/user/sponsor-info', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ sponsorId })
-      })
-
-      if (response.ok) {
-        await loadData()
-        toast.success('Sponsor bilgisi silindi')
-      } else {
-        toast.error('Silme başarısız')
-      }
-    } catch (error) {
-      console.error('Sponsor bilgisi silme hatası:', error)
-      toast.error('Bir hata oluştu')
-    }
-  }
-
-  function startEditSponsor(info: UserSponsorInfo) {
-    setEditingSponsor(info.sponsor.id)
-    setSponsorInput(info.identifier)
-  }
-
-  function startAddSponsor(sponsorId: string) {
-    setSelectedSponsor(sponsorId)
-    setEditingSponsor(sponsorId)
-    setSponsorInput('')
-  }
-
-  function cancelEdit() {
-    setEditingSponsor(null)
-    setSponsorInput('')
-    setSelectedSponsor(null)
-  }
-
-  const getIdentifierLabel = (type: string) => {
-    switch (type) {
-      case 'username':
-        return 'Kullanıcı Adı'
-      case 'id':
-        return 'ID'
-      case 'email':
-        return 'Email'
-      default:
-        return 'Bilgi'
+      setSpinning(false)
     }
   }
 
@@ -264,307 +159,177 @@ function WalletInfoContent() {
     )
   }
 
+  const segmentAngle = 360 / (prizes.length || 8)
+
   return (
-    <div className="min-h-screen pb-24 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen pb-24">
       {/* Header */}
-      <div className="bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 p-6 shadow-xl sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center gap-3">
-            <Wallet className="w-6 h-6 text-white" />
-            <h1 className="text-2xl font-bold text-white">Cüzdan Bilgileri</h1>
-          </div>
-          <p className="text-white/60 text-sm mt-2">
-            Cüzdan ve sponsor bilgilerinizi yönetin
-          </p>
+      <div className="bg-gradient-to-br from-purple-600 to-indigo-600 p-4">
+        <div className="max-w-2xl mx-auto text-center">
+          <h1 className="text-xl font-bold text-white flex items-center justify-center gap-2">
+            <Ticket className="w-5 h-5" />
+            Şans Çarkı
+          </h1>
         </div>
       </div>
 
+      {/* Wheel Section */}
       <div className="max-w-2xl mx-auto px-4 py-6">
-        {/* TRC20 Cüzdan Adresi */}
-        <Card className="bg-white/5 border-white/10 p-5 mb-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                <Wallet className="w-5 h-5 text-green-400" />
-              </div>
-              <div>
-                <h2 className="text-white font-semibold">TRC20 Cüzdan Adresi</h2>
-                <p className="text-white/60 text-xs">Nakit ürünler için gerekli</p>
-              </div>
-            </div>
-            {walletAddress && !editingWallet && (
-              <CheckCircle className="w-5 h-5 text-green-400" />
-            )}
-          </div>
-
-          {!editingWallet ? (
-            <div>
-              {walletAddress ? (
-                <div className="bg-white/5 border border-white/10 rounded-lg p-3 mb-3">
-                  <p className="text-white/40 text-xs mb-1">Kayıtlı Adres</p>
-                  <p className="text-white font-mono text-sm break-all">{walletAddress}</p>
-                </div>
-              ) : (
-                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-3 flex items-start gap-2">
-                  <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-yellow-400 text-sm font-medium">Cüzdan adresi eklenmemiş</p>
-                    <p className="text-yellow-400/70 text-xs mt-1">
-                      Nakit kategorisindeki ürünleri satın alabilmek için cüzdan adresinizi ekleyin.
-                    </p>
-                  </div>
-                </div>
-              )}
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => setEditingWallet(true)}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
-                >
-                  <Edit2 className="w-4 h-4 mr-2" />
-                  {walletAddress ? 'Düzenle' : 'Ekle'}
-                </Button>
-                {walletAddress && (
-                  <Button
-                    onClick={deleteWallet}
-                    variant="outline"
-                    className="border-red-500/50 text-red-400 hover:bg-red-500/20"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div>
-                <Label className="text-white/80 text-sm mb-2 block">
-                  TRC20 Cüzdan Adresi
-                </Label>
-                <Input
-                  value={walletInput}
-                  onChange={(e) => setWalletInput(e.target.value)}
-                  placeholder="T ile başlayan 34 karakterlik adres"
-                  className="bg-white/5 border-white/20 text-white"
-                  maxLength={34}
-                />
-                <p className="text-white/40 text-xs mt-1">
-                  Örnek: TYs7Kza9mCTUF5JMi1234567890abcdefgh
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={saveWallet}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  Kaydet
-                </Button>
-                <Button
-                  onClick={() => {
-                    setEditingWallet(false)
-                    setWalletInput(walletAddress)
-                  }}
-                  variant="outline"
-                  className="border-white/20 text-white hover:bg-white/10"
-                >
-                  <X className="w-4 h-4 mr-2" />
-                  İptal
-                </Button>
-              </div>
-            </div>
+        {/* Spin Info */}
+        <div className="text-center mb-6">
+          <p className="text-green-400 font-semibold text-sm mb-1">✨ Tamamen Ücretsiz</p>
+          {userData && (
+            <p className="text-white/60 text-xs">
+              Kalan hak: {userData.dailySpinsLeft} çevirme
+            </p>
           )}
-        </Card>
+        </div>
 
-        {/* Sponsor Bilgileri */}
-        <Card className="bg-white/5 border-white/10 p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-purple-400" />
+        {/* Wheel */}
+        <div className="relative mb-6">
+          <div className="relative w-80 h-80 mx-auto">
+            {/* Arrow Pointer */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-4 z-10">
+              <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-t-[35px] border-t-white drop-shadow-2xl"></div>
             </div>
-            <div className="flex-1">
-              <h2 className="text-white font-semibold">Sponsor Bilgilerim</h2>
-              <p className="text-white/60 text-xs">Sponsor ürünleri için gerekli</p>
-            </div>
-          </div>
 
-          {/* Arama Çubuğu */}
-          {allSponsors.length > 0 && (
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-              <Input
-                type="text"
-                placeholder="Sponsor ara..."
-                value={sponsorSearch}
-                onChange={(e) => setSponsorSearch(e.target.value)}
-                className="pl-10 bg-white/5 border-white/20 text-white placeholder:text-white/40"
-              />
-            </div>
-          )}
+            {/* Wheel Container with border */}
+            <div className="w-full h-full rounded-full border-8 border-white shadow-2xl relative overflow-hidden bg-slate-900">
+              {/* Spinning wheel */}
+              <svg
+                viewBox="0 0 200 200"
+                className="w-full h-full"
+                style={{
+                  transform: `rotate(${rotation}deg)`,
+                  transition: spinning ? 'transform 4s cubic-bezier(0.25, 0.1, 0.25, 1)' : 'none'
+                }}
+              >
+                {prizes.map((prize, index) => {
+                  const startAngle = index * segmentAngle - 90
+                  const endAngle = (index + 1) * segmentAngle - 90
+                  const midAngle = (startAngle + endAngle) / 2
 
-          <div className="space-y-3">
-            {allSponsors.length === 0 ? (
-              <div className="text-center py-8 text-white/60">
-                <Building2 className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p className="text-sm">Henüz sponsor bulunmuyor</p>
-              </div>
-            ) : (
-              allSponsors
-                .filter(sponsor =>
-                  sponsor.name.toLowerCase().includes(sponsorSearch.toLowerCase())
-                )
-                .map((sponsor) => {
-                  const userInfo = sponsorInfos.find(info => info.sponsor.id === sponsor.id)
-                  const isEditing = editingSponsor === sponsor.id
+                  // Calculate path for segment
+                  const startX = 100 + 100 * Math.cos((startAngle * Math.PI) / 180)
+                  const startY = 100 + 100 * Math.sin((startAngle * Math.PI) / 180)
+                  const endX = 100 + 100 * Math.cos((endAngle * Math.PI) / 180)
+                  const endY = 100 + 100 * Math.sin((endAngle * Math.PI) / 180)
+
+                  // Calculate text position
+                  const textRadius = 65
+                  const textX = 100 + textRadius * Math.cos((midAngle * Math.PI) / 180)
+                  const textY = 100 + textRadius * Math.sin((midAngle * Math.PI) / 180)
 
                   return (
-                    <div
-                      key={sponsor.id}
-                      className="bg-white/5 border border-white/10 rounded-lg p-4"
-                    >
-                      {/* Logo - Ortada */}
-                      {sponsor.logoUrl && (
-                        <div className="flex justify-center mb-4">
-                          <img
-                            src={sponsor.logoUrl}
-                            alt={sponsor.name}
-                            className="w-20 h-20 rounded-lg object-contain bg-white/5 p-2"
-                          />
-                        </div>
-                      )}
+                    <g key={prize.id}>
+                      {/* Segment */}
+                      <path
+                        d={`M 100 100 L ${startX} ${startY} A 100 100 0 0 1 ${endX} ${endY} Z`}
+                        fill={prize.color}
+                        stroke="rgba(255,255,255,0.1)"
+                        strokeWidth="0.5"
+                      />
 
-                      {/* Durum Badge */}
-                      <div className="flex justify-center mb-3">
-                        {userInfo && !isEditing ? (
-                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            Bilgi Kaydedildi
-                          </Badge>
-                        ) : (
-                          <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-                            <AlertCircle className="w-3 h-3 mr-1" />
-                            Bilgi Eklenmemiş
-                          </Badge>
-                        )}
-                      </div>
-
-                      {!isEditing ? (
-                        <div>
-                          {userInfo ? (
-                            <div className="bg-white/5 border border-white/10 rounded-lg p-3 mb-3">
-                              <p className="text-white/40 text-xs mb-1 text-center">
-                                {getIdentifierLabel(sponsor.identifierType)}
-                              </p>
-                              <p className="text-white font-medium text-center">{userInfo.identifier}</p>
-                            </div>
-                          ) : (
-                            <div className="mb-3 text-center">
-                              <p className="text-white/60 text-sm">
-                                {sponsor.name}
-                              </p>
-                              <p className="text-white/40 text-xs mt-1">
-                                {getIdentifierLabel(sponsor.identifierType)} gerekli
-                              </p>
-                            </div>
-                          )}
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() => userInfo ? startEditSponsor(userInfo) : startAddSponsor(sponsor.id)}
-                              size="sm"
-                              className="flex-1 bg-blue-600 hover:bg-blue-700"
-                            >
-                              {userInfo ? (
-                                <>
-                                  <Edit2 className="w-3 h-3 mr-1" />
-                                  Düzenle
-                                </>
-                              ) : (
-                                <>
-                                  <Plus className="w-3 h-3 mr-1" />
-                                  Bilgi Ekle
-                                </>
-                              )}
-                            </Button>
-                            {userInfo && (
-                              <Button
-                                onClick={() => deleteSponsorInfo(sponsor.id)}
-                                size="sm"
-                                variant="outline"
-                                className="border-red-500/50 text-red-400 hover:bg-red-500/20"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          <div className="text-center mb-3">
-                            <p className="text-white text-sm font-medium">{sponsor.name}</p>
-                            <p className="text-white/60 text-xs mt-1">
-                              {getIdentifierLabel(sponsor.identifierType)} bilgisi girin
-                            </p>
-                          </div>
-                          <div>
-                            <Input
-                              value={sponsorInput}
-                              onChange={(e) => setSponsorInput(e.target.value)}
-                              placeholder={
-                                sponsor.identifierType === 'id'
-                                  ? 'Örn: 123456789'
-                                  : sponsor.identifierType === 'email'
-                                  ? 'Örn: kullanici@example.com'
-                                  : 'Örn: kullaniciadi'
-                              }
-                              type={sponsor.identifierType === 'email' ? 'email' : sponsor.identifierType === 'id' ? 'tel' : 'text'}
-                              inputMode={sponsor.identifierType === 'id' ? 'numeric' : sponsor.identifierType === 'email' ? 'email' : 'text'}
-                              className="bg-white/5 border-white/20 text-white"
-                            />
-                            <p className="text-white/40 text-xs mt-1">
-                              {sponsor.identifierType === 'id' && 'Sadece rakamlar girebilirsiniz'}
-                              {sponsor.identifierType === 'email' && 'Geçerli bir email adresi giriniz'}
-                              {sponsor.identifierType === 'username' && 'Kullanıcı adınızı giriniz'}
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() => saveSponsorInfo(sponsor.id)}
-                              size="sm"
-                              className="flex-1 bg-green-600 hover:bg-green-700"
-                            >
-                              <Save className="w-3 h-3 mr-1" />
-                              Kaydet
-                            </Button>
-                            <Button
-                              onClick={cancelEdit}
-                              size="sm"
-                              variant="outline"
-                              className="border-white/20 text-white hover:bg-white/10"
-                            >
-                              <X className="w-3 h-3 mr-1" />
-                              İptal
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                      {/* Text */}
+                      <text
+                        x={textX}
+                        y={textY}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fill="white"
+                        fontWeight="bold"
+                        fontSize="10"
+                        style={{
+                          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
+                          transform: `rotate(${midAngle + 90}deg)`,
+                          transformOrigin: `${textX}px ${textY}px`
+                        }}
+                      >
+                        <tspan x={textX} dy="-6">{prize.name}</tspan>
+                        <tspan x={textX} dy="12" fontSize="12" fontWeight="900">{prize.points}</tspan>
+                      </text>
+                    </g>
                   )
-                })
-            )}
+                })}
+              </svg>
 
-            {allSponsors.length > 0 && allSponsors.filter(s => s.name.toLowerCase().includes(sponsorSearch.toLowerCase())).length === 0 && (
-              <div className="text-center py-8 text-white/60">
-                <Search className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p className="text-sm">Arama sonucu bulunamadı</p>
+              {/* Center Circle */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-gradient-to-br from-yellow-400 via-orange-400 to-orange-500 rounded-full border-4 border-white flex items-center justify-center shadow-2xl">
+                <Gift className="w-10 h-10 text-white drop-shadow-lg" />
               </div>
-            )}
+            </div>
           </div>
-        </Card>
+        </div>
+
+        {/* Spin Button */}
+        <Button
+          onClick={spinWheel}
+          disabled={spinning || !userData || userData.dailySpinsLeft <= 0}
+          className="w-full bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 text-white font-bold py-6 text-lg disabled:opacity-50 disabled:cursor-not-allowed shadow-xl"
+        >
+          {spinning ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+              Çark Dönüyor...
+            </>
+          ) : userData && userData.dailySpinsLeft > 0 ? (
+            <>
+              <TrendingUp className="w-6 h-6 mr-2" />
+              Çarkı Çevir
+            </>
+          ) : (
+            'Günlük Hakkınız Kalmadı'
+          )}
+        </Button>
+
+        {/* Recent Wins */}
+        <div className="mt-8">
+          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-yellow-400" />
+            Son Kazananlar
+          </h3>
+          {recentWinners.length === 0 ? (
+            <Card className="bg-slate-800/50 border-slate-700 p-6 text-center">
+              <p className="text-slate-400 text-sm">Henüz kazanan yok</p>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {recentWinners.map((winner) => (
+                <Card key={winner.id} className="bg-slate-800/80 border-slate-700 p-3 hover:bg-slate-800 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-10 h-10 border-2 border-yellow-400/50">
+                      {winner.user.photoUrl && <AvatarImage src={winner.user.photoUrl} alt={winner.user.firstName || winner.user.username || 'User'} />}
+                      <AvatarFallback className="bg-gradient-to-br from-yellow-500 to-orange-500 text-white font-bold text-sm">
+                        {winner.user.firstName?.[0] || winner.user.username?.[0] || '?'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <p className="text-white font-semibold text-sm">
+                        {winner.user.firstName || winner.user.username || 'Kullanıcı'}
+                      </p>
+                      <p className="text-slate-400 text-xs">{winner.prize.name}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-yellow-400 font-bold text-lg">+{winner.pointsWon}</p>
+                      <p className="text-slate-500 text-xs">
+                        {new Date(winner.spunAt).toLocaleDateString('tr-TR', {
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
 }
 
-export default function WalletInfoPage() {
+export default function WheelPage() {
   return (
     <ProtectedRoute>
       <DashboardLayout>
@@ -573,7 +338,7 @@ export default function WalletInfoPage() {
             <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
         }>
-          <WalletInfoContent />
+          <WheelContent />
         </Suspense>
       </DashboardLayout>
     </ProtectedRoute>
