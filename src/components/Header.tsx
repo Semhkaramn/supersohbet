@@ -15,7 +15,7 @@ export default function Header() {
   const handleLogout = async () => {
     await logout()
     toast.success('Çıkış yapıldı')
-    router.push('/dashboard')
+    router.push('/')
   }
 
   return (
