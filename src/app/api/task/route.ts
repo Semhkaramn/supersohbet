@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
       where: { id: userId },
       select: {
         messageCount: true,
+        totalMessages: true,
         points: true,
         xp: true,
         rank: {
