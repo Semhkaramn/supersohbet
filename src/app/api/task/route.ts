@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getTurkeyDate } from '@/lib/utils'
 import { requireAuth } from '@/lib/auth'
+import { invalidateLeaderboardCache } from '@/lib/cache'
 
 export async function GET(request: NextRequest) {
   try {
@@ -64,6 +65,43 @@ export async function GET(request: NextRequest) {
       completions.map(c => [c.taskId, c])
     )
 
+    // Yeni görevler için TaskCompletion kayıtları oluştur (sadece giriş yapmışsa)
+    if (userId && user) {
+      for (const task of allTasks) {
+        if (!completionMap.has(task.id)) {
+          // Kullanıcının şu anki değerini al (başlangıç değeri olarak)
+          let startingValue = 0
+          switch (task.taskType) {
+            case 'send_messages':
+              startingValue = user.totalMessages || 0
+              break
+            case 'spin_wheel':
+              startingValue = user.wheelSpins?.length || 0
+              break
+            case 'earn_points':
+              startingValue = user.points || 0
+              break
+            case 'reach_level':
+              startingValue = user.rank?.order || 0
+              break
+          }
+
+          // TaskCompletion kaydı oluştur
+          const newCompletion = await prisma.taskCompletion.create({
+            data: {
+              userId,
+              taskId: task.id,
+              targetProgress: task.targetValue,
+              startingValue, // Başlangıç değerini kaydet
+              expiresAt: task.expiresAt
+            }
+          })
+
+          completionMap.set(task.id, newCompletion)
+        }
+      }
+    }
+
     // Her görev için kullanıcının kaç kez tamamladığını hesapla (sadece giriş yapmışsa)
     const completionCountsPromises = userId ? allTasks.map(async (task) => {
       const count = await prisma.taskCompletion.count({
@@ -81,33 +119,40 @@ export async function GET(request: NextRequest) {
 
     // Kullanıcının güncel istatistiklerine göre görev ilerlemesini hesapla
     function calculateProgress(task: any, userData: typeof user) {
-      let currentProgress = 0
+      let currentValue = 0
 
       // Kullanıcı yoksa progress 0
       if (!userData) {
         return 0
       }
 
+      // Kullanıcının şu anki değerini al
       switch (task.taskType) {
         case 'send_messages':
           // NOT: totalMessages kullanılıyor - TÜM mesajlar (ödül almasa bile)
-          currentProgress = userData.totalMessages || 0
+          currentValue = userData.totalMessages || 0
           break
         case 'spin_wheel':
-          currentProgress = userData.wheelSpins?.length || 0
+          currentValue = userData.wheelSpins?.length || 0
           break
         case 'earn_points':
-          currentProgress = userData.points || 0
+          currentValue = userData.points || 0
           break
         case 'reach_level':
-          currentProgress = userData.rank?.order || 0
+          currentValue = userData.rank?.order || 0
           break
         default:
           const completion = completionMap.get(task.id)
-          currentProgress = completion?.currentProgress || 0
+          return completion?.currentProgress || 0
       }
 
-      return currentProgress
+      // TaskCompletion kaydını kontrol et - startingValue varsa kullan
+      const completion = completionMap.get(task.id)
+      const startingValue = completion?.startingValue || 0
+
+      // İlerleme = şu anki değer - başlangıç değeri
+      // Bu sayede sadece görev oluşturulduktan SONRA yapılan aktiviteler sayılır
+      return Math.max(0, currentValue - startingValue)
     }
 
     // Görevleri kategorilere ayır ve formatla
@@ -259,6 +304,7 @@ export async function POST(request: NextRequest) {
       select: {
         id: true,
         messageCount: true,
+        totalMessages: true,
         points: true,
         xp: true,
         rank: {
@@ -276,24 +322,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // İlerlemeyi hesapla
-    let currentProgress = 0
+    // TaskCompletion kaydını al (startingValue için)
+    const existingCompletion = await prisma.taskCompletion.findUnique({
+      where: {
+        userId_taskId: {
+          userId,
+          taskId
+        }
+      }
+    })
+
+    // Kullanıcının şu anki değerini al
+    let currentValue = 0
     switch (task.taskType) {
       case 'send_messages':
-        // NOT: messageCount kullanılıyor çünkü ödül alan mesajları sayar
-        // Eğer TÜM mesajlar sayılsın istenirse totalMessages kullanılmalı
-        currentProgress = user.messageCount
+        currentValue = user.totalMessages
         break
       case 'spin_wheel':
-        currentProgress = user.wheelSpins.length
+        currentValue = user.wheelSpins.length
         break
       case 'earn_points':
-        currentProgress = user.points
+        currentValue = user.points
         break
       case 'reach_level':
-        currentProgress = user.rank?.order || 0
+        currentValue = user.rank?.order || 0
         break
     }
+
+    // İlerlemeyi hesapla (şu anki değer - başlangıç değeri)
+    const startingValue = existingCompletion?.startingValue || 0
+    const currentProgress = Math.max(0, currentValue - startingValue)
 
     // Hedef tamamlanmış mı kontrol et
     if (currentProgress < task.targetValue) {
@@ -321,16 +379,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Daha önce ödül alınmış mı kontrol et
-    const existingCompletion = await prisma.taskCompletion.findUnique({
-      where: {
-        userId_taskId: {
-          userId,
-          taskId
-        }
-      }
-    })
-
+    // Daha önce ödül alınmış mı kontrol et (existingCompletion yukarıda zaten alındı)
     if (existingCompletion?.rewardClaimed) {
       return NextResponse.json(
         { error: 'Reward already claimed' },
@@ -389,6 +438,10 @@ export async function POST(request: NextRequest) {
 
       return { updatedUser, completion }
     })
+
+    // ✅ Puan/XP değiştiği için leaderboard cache'ini temizle
+    invalidateLeaderboardCache()
+    console.log('🔄 Leaderboard cache temizlendi (görev tamamlama)')
 
     return NextResponse.json({
       success: true,
