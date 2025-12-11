@@ -1,12 +1,14 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Star, TrendingUp, LogIn, UserPlus } from 'lucide-react'
+import { Star, TrendingUp, LogIn, UserPlus, User } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 
 export default function Header() {
+  const router = useRouter()
   const { user, loading, isAuthenticated, setShowLoginModal, setShowRegisterModal } = useAuth()
 
   return (
@@ -62,6 +64,13 @@ export default function Header() {
                   </div>
                   <p className="text-xs text-gray-400">XP</p>
                 </div>
+                <Button
+                  onClick={() => router.push('/profile')}
+                  className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+                >
+                  <User className="w-4 h-4 mr-2" />
+                  Profil
+                </Button>
               </div>
             </>
           ) : (
