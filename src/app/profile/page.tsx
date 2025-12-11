@@ -343,54 +343,56 @@ function ProfileContent() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
         {/* Header Card - Kullanıcı Bilgileri */}
-        <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50 backdrop-blur-sm">
-          <div className="p-6">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-              <div className="relative">
-                <Avatar className="w-24 h-24 border-4 border-white/10 shadow-xl ring-4 ring-slate-800/50">
+        <Card className="bg-gradient-to-br from-slate-800/60 via-slate-800/40 to-slate-900/60 border-slate-700/50 backdrop-blur-sm shadow-2xl shadow-blue-500/10 hover:shadow-blue-500/20 transition-all duration-300">
+          <div className="p-8">
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full opacity-70 group-hover:opacity-100 blur-lg transition-all duration-300"></div>
+                <Avatar className="relative w-28 h-28 border-4 border-white/20 shadow-2xl ring-4 ring-slate-800/50">
                   {userData.photoUrl && <AvatarImage src={userData.photoUrl} />}
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-3xl font-bold">
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white text-4xl font-bold">
                     {userData.firstName?.[0] || userData.username?.[0] || '?'}
                   </AvatarFallback>
                 </Avatar>
               </div>
 
-              <div className="flex-1 text-center md:text-left space-y-3">
+              <div className="flex-1 text-center md:text-left space-y-4">
                 <div>
-                  <h1 className="text-3xl font-bold text-white mb-1">
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent mb-2">
                     {userData.firstName || userData.username || 'Kullanıcı'}
                   </h1>
-                  <p className="text-slate-400">@{userData.username || 'kullanici'}</p>
+                  <p className="text-slate-400 text-lg">@{userData.username || 'kullanici'}</p>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
                   {userData.rank && (
-                    <Badge className="text-sm font-semibold" style={{ backgroundColor: userData.rank.color }}>
-                      {userData.rank.icon} {userData.rank.name}
+                    <Badge className="text-sm font-semibold py-1.5 px-3 shadow-lg" style={{ backgroundColor: userData.rank.color }}>
+                      <span className="text-base mr-1">{userData.rank.icon}</span>
+                      {userData.rank.name}
                     </Badge>
                   )}
                   {userData.leaderboardRank && userData.leaderboardRank <= 10 && (
-                    <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0">
-                      <Crown className="w-4 h-4 mr-1" />
+                    <Badge className="bg-gradient-to-r from-yellow-500 via-yellow-400 to-orange-500 text-white border-0 shadow-lg shadow-yellow-500/50 py-1.5 px-3">
+                      <Crown className="w-4 h-4 mr-1.5" />
                       #{userData.leaderboardRank} Sırada
                     </Badge>
                   )}
-                  <Badge variant="outline" className="border-slate-600 text-slate-400">
-                    <Clock className="w-3 h-3 mr-1" />
+                  <Badge variant="outline" className="border-slate-600/60 text-slate-400 bg-slate-800/30 py-1.5 px-3">
+                    <Clock className="w-3.5 h-3.5 mr-1.5" />
                     {new Date(userData.createdAt).toLocaleDateString('tr-TR')}
                   </Badge>
                 </div>
 
                 {/* Rank Progress */}
                 {userData.nextRank && (
-                  <div className="max-w-md">
+                  <div className="max-w-md bg-slate-900/40 rounded-lg p-4 border border-slate-700/30">
                     <div className="flex justify-between text-sm mb-2">
-                      <span className="text-slate-400">Seviye İlerlemesi</span>
-                      <span className="text-white font-medium">{userData.xp} / {userData.nextRank.minXp} XP</span>
+                      <span className="text-slate-400 font-medium">Seviye İlerlemesi</span>
+                      <span className="text-white font-bold">{userData.xp.toLocaleString()} / {userData.nextRank.minXp.toLocaleString()} XP</span>
                     </div>
-                    <Progress value={xpProgress} className="h-2 bg-slate-700" />
-                    <p className="text-xs text-slate-500 mt-1">
-                      {userData.nextRank.minXp - userData.xp} XP kaldı
+                    <Progress value={xpProgress} className="h-3 bg-slate-700/50" />
+                    <p className="text-xs text-slate-500 mt-2 font-medium">
+                      🎯 {(userData.nextRank.minXp - userData.xp).toLocaleString()} XP kaldı • {userData.nextRank.name} seviyesine yüksel
                     </p>
                   </div>
                 )}
@@ -1011,7 +1013,7 @@ function ProfileContent() {
 
 export default function ProfilePage() {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requireAuth={true}>
       <DashboardLayout>
         <Suspense fallback={
           <div className="flex items-center justify-center min-h-screen">
