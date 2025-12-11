@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getTurkeyDate } from '@/lib/utils'
+import { invalidateLeaderboardCache } from '@/lib/cache'
 
 export async function POST(
   request: NextRequest,
@@ -21,6 +22,10 @@ export async function POST(
         }
       })
 
+      // ✅ Ban durumu değiştiği için leaderboard cache'ini temizle
+      invalidateLeaderboardCache()
+      console.log('🔄 Leaderboard cache temizlendi (kullanıcı banlandı)')
+
       return NextResponse.json({
         success: true,
         message: 'Kullanıcı banlandı',
@@ -36,6 +41,10 @@ export async function POST(
           bannedBy: null
         }
       })
+
+      // ✅ Ban durumu değiştiği için leaderboard cache'ini temizle
+      invalidateLeaderboardCache()
+      console.log('🔄 Leaderboard cache temizlendi (ban kaldırıldı)')
 
       return NextResponse.json({
         success: true,
