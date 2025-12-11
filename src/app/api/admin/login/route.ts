@@ -15,9 +15,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Trim ve lowercase işlemi
+    const trimmedUsername = username.trim().toLowerCase()
+
     // Admin kullanıcısını bul
-    const admin = await prisma.admin.findUnique({
-      where: { username }
+    const admin = await prisma.admin.findFirst({
+      where: {
+        username: {
+          mode: 'insensitive',
+          equals: trimmedUsername
+        }
+      }
     })
 
     if (!admin) {
