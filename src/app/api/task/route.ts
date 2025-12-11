@@ -79,9 +79,8 @@ export async function GET(request: NextRequest) {
 
       switch (task.taskType) {
         case 'send_messages':
-          // NOT: messageCount kullanılıyor (ödül alan mesajlar)
-          // TÜM mesajları saymak için totalMessages kullanılabilir
-          currentProgress = userData.messageCount || 0
+          // NOT: totalMessages kullanılıyor - TÜM mesajlar (ödül almasa bile)
+          currentProgress = userData.totalMessages || 0
           break
         case 'spin_wheel':
           currentProgress = userData.wheelSpins?.length || 0
