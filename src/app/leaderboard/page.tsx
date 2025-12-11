@@ -7,7 +7,6 @@ import { Card } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import DashboardLayout from '@/components/DashboardLayout'
-import ProtectedRoute from '@/components/ProtectedRoute'
 import { Trophy, Crown, Medal, Star } from 'lucide-react'
 
 interface LeaderboardUser {
@@ -282,16 +281,14 @@ function LeaderboardContent() {
 
 export default function LeaderboardPage() {
   return (
-    <ProtectedRoute>
-      <DashboardLayout>
-        <Suspense fallback={
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        }>
-          <LeaderboardContent />
-        </Suspense>
-      </DashboardLayout>
-    </ProtectedRoute>
+    <DashboardLayout>
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      }>
+        <LeaderboardContent />
+      </Suspense>
+    </DashboardLayout>
   )
 }
