@@ -8,6 +8,7 @@ interface RandySlotCheckResult {
     userId: string
     username?: string
     firstName?: string
+    siteUsername?: string
   }
   prizeText?: string
   slotId?: string
@@ -61,6 +62,7 @@ export async function checkRandySlots(): Promise<RandySlotCheckResult[]> {
               assignedUser: winner.userId,
               assignedUsername: winner.username,
               assignedFirstName: winner.firstName,
+              assignedSiteUsername: winner.siteUsername,
               assignedAt: now
             }
           })
@@ -73,7 +75,7 @@ export async function checkRandySlots(): Promise<RandySlotCheckResult[]> {
             scheduleId: schedule.id
           })
 
-          console.log(`✅ Randy kazanan atandı: ${winner.firstName || winner.username} (${winner.userId})`)
+          console.log(`✅ Randy kazanan atandı: ${winner.siteUsername || winner.firstName || winner.username} (${winner.userId})`)
         } else {
           console.log(`⚠️ Randy slot için uygun kullanıcı bulunamadı: ${slot.id}`)
           results.push({ assigned: false })
@@ -113,7 +115,7 @@ async function findEligibleWinner(
   schedule: any,
   slotId: string,
   slotTime: Date
-): Promise<{ userId: string; username?: string; firstName?: string } | null> {
+): Promise<{ userId: string; username?: string; firstName?: string; siteUsername?: string } | null> {
   try {
     // Slot zamanı civarında mesaj yazmış kullanıcıları bul (slot zamanından önce 5 dk ve sonrası 5 dk içinde)
     const timeWindowStart = new Date(slotTime.getTime() - 5 * 60 * 1000) // 5 dk önce
@@ -229,11 +231,12 @@ async function findEligibleWinner(
       const isEligible = eligibleUsers.some(u => u.id === message.userId)
 
       if (isEligible && message.user && message.user.telegramId) {
-        console.log(`✅ İlk uygun kazanan bulundu: ${message.user.firstName || message.user.username} (${message.user.telegramId}) - Mesaj zamanı: ${message.createdAt.toISOString()}`)
+        console.log(`✅ İlk uygun kazanan bulundu: ${message.user.siteUsername || message.user.firstName || message.user.username} (${message.user.telegramId}) - Mesaj zamanı: ${message.createdAt.toISOString()}`)
         return {
           userId: message.user.telegramId,
           username: message.user.username || undefined,
-          firstName: message.user.firstName || undefined
+          firstName: message.user.firstName || undefined,
+          siteUsername: message.user.siteUsername || undefined
         }
       }
     }
@@ -250,7 +253,8 @@ async function findEligibleWinner(
     return {
       userId: winner.telegramId,
       username: winner.username || undefined,
-      firstName: winner.firstName || undefined
+      firstName: winner.firstName || undefined,
+      siteUsername: winner.siteUsername || undefined
     }
   } catch (error) {
     console.error('Find eligible winner error:', error)
@@ -290,7 +294,7 @@ function getMessagePeriodFilter(period: string): any {
 export async function announceRandyWinner(
   botToken: string,
   chatId: number,
-  winner: { userId: string; username?: string; firstName?: string },
+  winner: { userId: string; username?: string; firstName?: string; siteUsername?: string },
   prizeText: string,
   pinMessage: boolean = true,
   customTemplate?: string
