@@ -40,7 +40,6 @@ const TASK_CATEGORIES = [
 ]
 
 const TASK_TYPES = [
-  { value: 'invite_users', label: 'Üye Davet Et', icon: Users, description: 'Kullanıcıların belirli sayıda arkadaş davet etmesi' },
   { value: 'send_messages', label: 'Mesaj Gönder', icon: MessageSquare, description: 'Belirli sayıda mesaj göndermek' },
   { value: 'spin_wheel', label: 'Çark Çevir', icon: Target, description: 'Belirli sayıda çark çevirmek' },
   { value: 'earn_points', label: 'Puan Kazan', icon: Award, description: 'Belirli miktarda puan kazanmak' },
@@ -403,7 +402,6 @@ export default function AdminTasksPage() {
                   required
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  {formData.taskType === 'invite_users' && `${formData.targetValue} arkadaş davet etmek gerekir`}
                   {formData.taskType === 'send_messages' && `${formData.targetValue} mesaj göndermek gerekir`}
                   {formData.taskType === 'spin_wheel' && `${formData.targetValue} kez çark çevirmek gerekir`}
                   {formData.taskType === 'earn_points' && `${formData.targetValue} puan kazanmak gerekir`}
