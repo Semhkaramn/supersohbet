@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
       sendAnnouncement = true,
       pinMessage = true,
       onePerUser = true,
+      allowAdmins = false,
       minMessages = 0,
       messagePeriod = 'none',
       startTime
@@ -69,6 +70,7 @@ export async function POST(request: NextRequest) {
         sendAnnouncement,
         pinMessage,
         onePerUser,
+        allowAdmins,
         minMessages,
         messagePeriod,
         startTime: start
