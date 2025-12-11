@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { Card } from '@/components/ui/card'
@@ -310,16 +310,13 @@ function TasksContent() {
     )
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    )
-  }
-
   return (
     <DashboardLayout>
+      {loading ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : (
       <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
         {/* Tabs */}
         <div className="max-w-4xl mx-auto px-4 py-6">
@@ -484,18 +481,11 @@ function TasksContent() {
           </Tabs>
         </div>
       </div>
+      )}
     </DashboardLayout>
   )
 }
 
 export default function TasksPage() {
-  return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    }>
-      <TasksContent />
-    </Suspense>
-  )
+  return <TasksContent />
 }
