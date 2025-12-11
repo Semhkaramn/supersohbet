@@ -571,11 +571,6 @@ Bot özelliklerini kullanmanız engellenmiştir.
 ✅ **Hesabınız Başarıyla Bağlandı!**
 
 Merhaba ${firstName || webUser.firstName}!
-
-Web sitemizden kayıt olan hesabınız Telegram'a bağlandı.
-Şimdi web sitesine dönebilir ve kanal kontrolünü tamamlayabilirsiniz.
-
-🌐 Web sitesine gitmek için menü butonuna tıklayın!
             `.trim())
 
             console.log('✅ Web kullanıcısı Telegram ile bağlandı:', {
@@ -632,16 +627,12 @@ Lütfen web sitesinden yeni bir kod alın ve tekrar deneyin.
 🎉 **SüperSohbet Bot'a Hoş Geldin!**
 
 Merhaba ${firstName}!
-
-Bu bot ile:
 ✨ Mesaj göndererek puan kazan
 🏆 Rütbe atla
 🎁 Günlük şans çarkını çevir
 🛍️ Puanlarınla ödüller satın al
-💰 Sponsor olarak platformu destekle
-👥 Arkadaşlarını davet et, bonus kazan
 
-Başlamak için yanındaki menü butonuna tıkla! 👆
+Siteye Butondan ulaşabilirsiniz
         `.trim()
 
         await sendTelegramMessage(chatId, welcomeMessage)
@@ -663,24 +654,7 @@ Başlamak için yanındaki menü butonuna tıkla! 👆
               hadStart: true // Kullanıcı /start yaptı
             }
           })
-        } else {
-          // Telegram ile kayıt kapatıldı - kullanıcıyı web'den kayıt olmaya yönlendir
-          const webAppUrl = getSetting('telegram_webhook_url', '').replace('/api/telegram/webhook', '') || process.env.NEXT_PUBLIC_APP_URL || 'https://soft-fairy-c52849.netlify.app'
-
-          await sendTelegramMessage(chatId, `
-⚠️ **Web'den Kayıt Gerekli**
-
-Merhaba ${firstName}!
-
-Artık doğrudan Telegram'dan kayıt yapılamıyor.
-Lütfen önce web sitemizden kayıt olun, sonra hesabınızı Telegram'a bağlayın.
-
-🌐 **Kayıt için:** ${webAppUrl}/register
-          `.trim())
-        }
-
-        return NextResponse.json({ ok: true })
-      }
+        } 
 
       // Ayarları al
       const minMessageLength = parseInt(getSetting('min_message_length', '3'))
@@ -818,3 +792,4 @@ Lütfen önce web sitemizden kayıt olun, sonra hesabınızı Telegram'a bağlay
     return NextResponse.json({ ok: true })
   }
 }
+
