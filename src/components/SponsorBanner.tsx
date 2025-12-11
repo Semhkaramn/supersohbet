@@ -133,19 +133,13 @@ export default function SponsorBanner() {
           0% {
             transform: translateX(0);
           }
-          45% {
-            transform: translateX(-50%);
-          }
-          55% {
-            transform: translateX(-50%);
-          }
           100% {
             transform: translateX(-50%);
           }
         }
 
         .animate-scroll {
-          animation: scroll 35s ease-in-out infinite;
+          animation: scroll 30s linear infinite;
         }
 
         .hover\\:pause-animation:hover {
