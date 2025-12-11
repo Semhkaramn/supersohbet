@@ -131,31 +131,44 @@ export async function GET(
     const weekAgo = getTurkeyDateAgo(7) // 7 gün önce
     const monthAgo = getTurkeyDateAgo(30) // 30 gün önce
 
-    const [dailyMessages, weeklyMessages, monthlyMessages, totalAllMessages] = await Promise.all([
-      prisma.messageStats.count({
-        where: {
-          userId: user.id,
-          createdAt: { gte: today }
-        }
-      }),
-      prisma.messageStats.count({
-        where: {
-          userId: user.id,
-          createdAt: { gte: weekAgo }
-        }
-      }),
-      prisma.messageStats.count({
-        where: {
-          userId: user.id,
-          createdAt: { gte: monthAgo }
-        }
-      }),
-      prisma.messageStats.count({
-        where: {
-          userId: user.id
-        }
-      })
-    ])
+    // Kullanıcının TelegramGroupUser kaydını bul
+    const telegramGroupUser = await prisma.telegramGroupUser.findUnique({
+      where: { linkedUserId: user.id }
+    })
+
+    // Eğer kullanıcının Telegram hesabı bağlıysa mesaj istatistiklerini al
+    let dailyMessages = 0
+    let weeklyMessages = 0
+    let monthlyMessages = 0
+    let totalAllMessages = 0
+
+    if (telegramGroupUser) {
+      [dailyMessages, weeklyMessages, monthlyMessages, totalAllMessages] = await Promise.all([
+        prisma.messageStats.count({
+          where: {
+            telegramUserId: telegramGroupUser.id,
+            createdAt: { gte: today }
+          }
+        }),
+        prisma.messageStats.count({
+          where: {
+            telegramUserId: telegramGroupUser.id,
+            createdAt: { gte: weekAgo }
+          }
+        }),
+        prisma.messageStats.count({
+          where: {
+            telegramUserId: telegramGroupUser.id,
+            createdAt: { gte: monthAgo }
+          }
+        }),
+        prisma.messageStats.count({
+          where: {
+            telegramUserId: telegramGroupUser.id
+          }
+        })
+      ])
+    }
 
     return NextResponse.json({
       id: user.id,
