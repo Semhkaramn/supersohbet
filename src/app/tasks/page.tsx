@@ -323,19 +323,6 @@ function TasksContent() {
   return (
     <DashboardLayout>
       <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
-        {/* Header */}
-        <div className="bg-gradient-to-br from-purple-800 via-blue-700 to-indigo-900 p-6 shadow-xl sticky top-0 z-10">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-xl bg-white/10 backdrop-blur-sm">
-                <FileText className="w-6 h-6 text-white" />
-              </div>
-              <h1 className="text-2xl font-bold text-white">Görevler</h1>
-            </div>
-            <p className="text-blue-100">Görevleri tamamla, ödül kazan!</p>
-          </div>
-        </div>
-
         {/* Tabs */}
         <div className="max-w-4xl mx-auto px-4 py-6">
           <Tabs defaultValue="active" value={activeTab} onValueChange={setActiveTab}>
