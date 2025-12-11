@@ -25,6 +25,7 @@ interface UserData {
 interface RecentWinner {
   id: string
   user: {
+    siteUsername?: string
     firstName?: string
     username?: string
     photoUrl?: string
@@ -297,16 +298,19 @@ function WheelContent() {
                 <Card key={winner.id} className="bg-slate-800/80 border-slate-700 p-3 hover:bg-slate-800 transition-colors">
                   <div className="flex items-center gap-3">
                     <Avatar className="w-10 h-10 border-2 border-yellow-400/50">
-                      {winner.user.photoUrl && <AvatarImage src={winner.user.photoUrl} alt={winner.user.firstName || winner.user.username || 'User'} />}
+                      {winner.user.photoUrl && <AvatarImage src={winner.user.photoUrl} alt={winner.user.siteUsername || winner.user.firstName || winner.user.username || 'User'} />}
                       <AvatarFallback className="bg-gradient-to-br from-yellow-500 to-orange-500 text-white font-bold text-sm">
-                        {winner.user.firstName?.[0] || winner.user.username?.[0] || '?'}
+                        {winner.user.siteUsername?.[0] || winner.user.firstName?.[0] || winner.user.username?.[0] || '?'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <p className="text-white font-semibold text-sm">
-                        {winner.user.firstName || winner.user.username || 'Kullanıcı'}
+                      <p className="text-white font-bold text-sm">
+                        {winner.user.siteUsername || 'Kullanıcı'}
                       </p>
-                      <p className="text-slate-400 text-xs">{winner.prize.name}</p>
+                      <div className="flex flex-col text-[10px] text-slate-400 leading-tight">
+                        {winner.user.firstName && <span className="truncate">{winner.user.firstName}</span>}
+                        {winner.user.username && <span className="truncate">@{winner.user.username}</span>}
+                      </div>
                     </div>
                     <div className="text-right">
                       <p className="text-yellow-400 font-bold text-lg">+{winner.pointsWon}</p>
