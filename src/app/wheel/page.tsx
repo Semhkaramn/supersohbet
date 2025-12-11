@@ -265,7 +265,7 @@ function WheelContent() {
         {/* Spin Button */}
         <Button
           onClick={spinWheel}
-          disabled={spinning || !userData || userData.dailySpinsLeft <= 0}
+          disabled={spinning}
           className="w-full bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 text-white font-bold py-6 text-lg disabled:opacity-50 disabled:cursor-not-allowed shadow-xl"
         >
           {spinning ? (
@@ -273,13 +273,11 @@ function WheelContent() {
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
               Çark Dönüyor...
             </>
-          ) : userData && userData.dailySpinsLeft > 0 ? (
+          ) : (
             <>
               <TrendingUp className="w-6 h-6 mr-2" />
               Çarkı Çevir
             </>
-          ) : (
-            'Günlük Hakkınız Kalmadı'
           )}
         </Button>
 
