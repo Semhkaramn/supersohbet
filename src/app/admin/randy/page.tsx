@@ -37,6 +37,7 @@ interface RandySlot {
   schedTime: string
   assigned: boolean
   assignedUser?: string
+  assignedSiteUsername?: string
   assignedUsername?: string
   assignedFirstName?: string
   assignedAt?: string
