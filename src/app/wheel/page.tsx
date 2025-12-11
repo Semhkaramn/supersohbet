@@ -7,7 +7,6 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import DashboardLayout from '@/components/DashboardLayout'
-import ProtectedRoute from '@/components/ProtectedRoute'
 import { Ticket, Gift, TrendingUp, Trophy } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -39,7 +38,7 @@ interface RecentWinner {
 
 function WheelContent() {
   const router = useRouter()
-  const { setShowLoginModal } = useAuth()
+  const { user, setShowLoginModal } = useAuth()
 
   const [prizes, setPrizes] = useState<WheelPrize[]>([])
   const [userData, setUserData] = useState<UserData | null>(null)
@@ -50,37 +49,43 @@ function WheelContent() {
 
   useEffect(() => {
     loadData()
-  }, [])
+  }, [user])
 
   async function loadData() {
     try {
-      const [prizesRes, userRes, winnersRes] = await Promise.all([
-        fetch('/api/wheel/prizes'),
-        fetch('/api/user/me'),
-        fetch('/api/wheel/recent-winners')
-      ])
-
-      if (userRes.status === 401) {
-        setShowLoginModal(true)
-        return
-      }
+      const prizesRes = await fetch('/api/wheel/prizes')
+      const winnersRes = await fetch('/api/wheel/recent-winners')
 
       const prizesData = await prizesRes.json()
-      const userData = await userRes.json()
       const winnersData = await winnersRes.json()
 
       setPrizes(prizesData.prizes || [])
-      setUserData(userData)
       setRecentWinners(winnersData.winners || [])
+
+      // Only load user data if logged in
+      if (user) {
+        const userRes = await fetch('/api/user/me')
+        if (userRes.ok) {
+          const userData = await userRes.json()
+          setUserData(userData)
+        }
+      }
     } catch (error) {
       console.error('Error loading wheel data:', error)
-      setShowLoginModal(true)
+      toast.error('Veriler yüklenirken hata oluştu')
     } finally {
       setLoading(false)
     }
   }
 
   async function spinWheel() {
+    // Check if user is logged in
+    if (!user) {
+      toast.error('Çark çevirmek için giriş yapmalısınız')
+      setShowLoginModal(true)
+      return
+    }
+
     if (!userData || userData.dailySpinsLeft <= 0) {
       toast.error('Günlük çark hakkınız kalmadı!')
       return
@@ -168,9 +173,15 @@ function WheelContent() {
         {/* Spin Info */}
         <div className="text-center mb-6">
           <p className="text-green-400 font-semibold text-sm mb-1">✨ Tamamen Ücretsiz</p>
-          {userData && (
-            <p className="text-white/60 text-xs">
-              Kalan hak: {userData.dailySpinsLeft} çevirme
+          {user ? (
+            userData && (
+              <p className="text-white/60 text-xs">
+                Kalan hak: {userData.dailySpinsLeft} çevirme
+              </p>
+            )
+          ) : (
+            <p className="text-yellow-400 text-xs">
+              Çevrim hakkınızı görmek için giriş yapın
             </p>
           )}
         </div>
@@ -321,16 +332,14 @@ function WheelContent() {
 
 export default function WheelPage() {
   return (
-    <ProtectedRoute>
-      <DashboardLayout>
-        <Suspense fallback={
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        }>
-          <WheelContent />
-        </Suspense>
-      </DashboardLayout>
-    </ProtectedRoute>
+    <DashboardLayout>
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      }>
+        <WheelContent />
+      </Suspense>
+    </DashboardLayout>
   )
 }
