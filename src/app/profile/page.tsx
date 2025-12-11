@@ -15,9 +15,19 @@ import ProtectedRoute from '@/components/ProtectedRoute'
 import {
   Trophy, Star, MessageSquare, TrendingUp, ShoppingBag, Clock,
   CheckCircle2, Package, Users, History, Crown, Wallet,
-  Building2, Edit2, Save, X, AlertCircle, Search, Plus, Trash2
+  Building2, Edit2, Save, X, AlertCircle, Search, Plus, Trash2, LogOut, Link2, Unlink
 } from 'lucide-react'
 import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface PointHistory {
   id: string
@@ -98,6 +108,12 @@ interface Purchase {
   purchasedAt: string
 }
 
+interface TelegramStatus {
+  connected: boolean
+  canReconnect: boolean
+  daysUntilReconnect?: number
+}
+
 function ProfileContent() {
   const router = useRouter()
   const [userData, setUserData] = useState<UserData | null>(null)
@@ -116,29 +132,37 @@ function ProfileContent() {
   const [selectedSponsor, setSelectedSponsor] = useState<string | null>(null)
   const [sponsorSearch, setSponsorSearch] = useState('')
 
+  // Telegram states
+  const [telegramStatus, setTelegramStatus] = useState<TelegramStatus>({ connected: false, canReconnect: true })
+  const [showDisconnectDialog, setShowDisconnectDialog] = useState(false)
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false)
+
   useEffect(() => {
     loadData()
   }, [])
 
   async function loadData() {
     try {
-      const [userRes, purchasesRes, sponsorInfoRes, sponsorsRes] = await Promise.all([
+      const [userRes, purchasesRes, sponsorInfoRes, sponsorsRes, telegramRes] = await Promise.all([
         fetch('/api/user/me'),
         fetch('/api/user/me/purchases'),
         fetch('/api/user/sponsor-info'),
-        fetch('/api/sponsors')
+        fetch('/api/sponsors'),
+        fetch('/api/user/telegram-status')
       ])
 
       const userData = await userRes.json()
       const purchasesData = await purchasesRes.json()
       const sponsorData = await sponsorInfoRes.json()
       const sponsorsData = await sponsorsRes.json()
+      const telegramData = await telegramRes.json()
 
       setUserData(userData)
       setPurchases(purchasesData.purchases || [])
       setWalletInput(userData.walletAddress || '')
       setSponsorInfos(sponsorData.sponsorInfos || [])
       setAllSponsors(sponsorsData.sponsors || [])
+      setTelegramStatus(telegramData)
     } catch (error) {
       console.error('Error loading profile data:', error)
     } finally {
@@ -247,6 +271,35 @@ function ProfileContent() {
     }
   }
 
+  async function disconnectTelegram() {
+    try {
+      const response = await fetch('/api/user/telegram-disconnect', {
+        method: 'POST'
+      })
+
+      if (response.ok) {
+        await loadData()
+        setShowDisconnectDialog(false)
+        toast.success('Telegram bağlantısı koparıldı. 1 gün sonra tekrar bağlayabilirsiniz.')
+      } else {
+        const data = await response.json()
+        toast.error(data.error || 'Bir hata oluştu')
+      }
+    } catch (error) {
+      toast.error('Bir hata oluştu')
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      router.push('/')
+      router.refresh()
+    } catch (error) {
+      toast.error('Çıkış yapılırken hata oluştu')
+    }
+  }
+
   const getIdentifierLabel = (type: string) => {
     switch (type) {
       case 'username': return 'Kullanıcı Adı'
@@ -300,12 +353,24 @@ function ProfileContent() {
         <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-slate-700/50 backdrop-blur-sm">
           <div className="p-6">
             <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-              <Avatar className="w-24 h-24 border-4 border-white/10 shadow-xl ring-4 ring-slate-800/50">
-                {userData.photoUrl && <AvatarImage src={userData.photoUrl} />}
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-3xl font-bold">
-                  {userData.firstName?.[0] || userData.username?.[0] || '?'}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar className="w-24 h-24 border-4 border-white/10 shadow-xl ring-4 ring-slate-800/50">
+                  {userData.photoUrl && <AvatarImage src={userData.photoUrl} />}
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-3xl font-bold">
+                    {userData.firstName?.[0] || userData.username?.[0] || '?'}
+                  </AvatarFallback>
+                </Avatar>
+                {/* Logout button next to profile */}
+                <Button
+                  onClick={() => setShowLogoutDialog(true)}
+                  size="sm"
+                  variant="outline"
+                  className="absolute -bottom-2 -right-2 h-8 w-8 p-0 rounded-full border-red-500/50 text-red-400 hover:bg-red-500/20 bg-slate-900"
+                  title="Çıkış Yap"
+                >
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </div>
 
               <div className="flex-1 text-center md:text-left space-y-3">
                 <div>
@@ -375,228 +440,281 @@ function ProfileContent() {
           </div>
         </Card>
 
-        {/* Grid Layout for Wallet and Sponsors */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-          {/* Wallet Card */}
-          <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
-            <div className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                  <Wallet className="w-5 h-5 text-green-400" />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-lg font-semibold text-white">TRC20 Cüzdan</h2>
-                  <p className="text-slate-400 text-sm">Ödeme bilgileriniz</p>
-                </div>
-                {userData.walletAddress && !editingWallet && (
-                  <CheckCircle2 className="w-5 h-5 text-green-400" />
-                )}
+        {/* TRC20 Wallet - Always on Top */}
+        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                <Wallet className="w-5 h-5 text-green-400" />
               </div>
-
-              {!editingWallet ? (
-                <div className="space-y-3">
-                  {userData.walletAddress ? (
-                    <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-3">
-                      <p className="text-slate-500 text-xs mb-1">Kayıtlı Adres</p>
-                      <p className="text-white font-mono text-sm break-all">{userData.walletAddress}</p>
-                    </div>
-                  ) : (
-                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 flex items-start gap-2">
-                      <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-yellow-400 text-sm font-medium">Cüzdan adresi eklenmemiş</p>
-                        <p className="text-yellow-400/70 text-xs mt-1">Nakit ürünler için gerekli</p>
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => setEditingWallet(true)}
-                      size="sm"
-                      className="flex-1 bg-blue-600 hover:bg-blue-700"
-                    >
-                      <Edit2 className="w-4 h-4 mr-2" />
-                      {userData.walletAddress ? 'Düzenle' : 'Ekle'}
-                    </Button>
-                    {userData.walletAddress && (
-                      <Button
-                        onClick={deleteWallet}
-                        size="sm"
-                        variant="outline"
-                        className="border-red-500/50 text-red-400 hover:bg-red-500/20"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div>
-                    <Label className="text-slate-300 text-sm mb-2 block">TRC20 Cüzdan Adresi</Label>
-                    <Input
-                      value={walletInput}
-                      onChange={(e) => setWalletInput(e.target.value)}
-                      placeholder="T ile başlayan 34 karakter"
-                      className="bg-slate-900/50 border-slate-700 text-white"
-                      maxLength={34}
-                    />
-                    <p className="text-slate-500 text-xs mt-1">Örn: TYs7Kza9mCTUF5JMi1234567890abcdefgh</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button onClick={saveWallet} size="sm" className="flex-1 bg-green-600 hover:bg-green-700">
-                      <Save className="w-4 h-4 mr-2" />
-                      Kaydet
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setEditingWallet(false)
-                        setWalletInput(userData.walletAddress || '')
-                      }}
-                      size="sm"
-                      variant="outline"
-                      className="border-slate-600 text-slate-300 hover:bg-slate-800"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
+              <div className="flex-1">
+                <h2 className="text-lg font-semibold text-white">TRC20 Cüzdan</h2>
+                <p className="text-slate-400 text-sm">Ödeme bilgileriniz - Nakit ürünler için gerekli</p>
+              </div>
+              {userData.walletAddress && !editingWallet && (
+                <CheckCircle2 className="w-5 h-5 text-green-400" />
               )}
             </div>
-          </Card>
 
-          {/* Sponsor Info Card */}
-          <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
-            <div className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                  <Building2 className="w-5 h-5 text-purple-400" />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-lg font-semibold text-white">Sponsor Bilgileri</h2>
-                  <p className="text-slate-400 text-sm">
-                    {sponsorInfos.length} / {allSponsors.length} sponsor eklenmiş
-                  </p>
+            {!editingWallet ? (
+              <div className="space-y-3">
+                {userData.walletAddress ? (
+                  <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-3">
+                    <p className="text-slate-500 text-xs mb-1">Kayıtlı Adres</p>
+                    <p className="text-white font-mono text-sm break-all">{userData.walletAddress}</p>
+                  </div>
+                ) : (
+                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-yellow-400 text-sm font-medium">Cüzdan adresi eklenmemiş</p>
+                    </div>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setEditingWallet(true)}
+                    size="sm"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    {userData.walletAddress ? 'Düzenle' : 'Ekle'}
+                  </Button>
+                  {userData.walletAddress && (
+                    <Button
+                      onClick={deleteWallet}
+                      size="sm"
+                      variant="outline"
+                      className="border-red-500/50 text-red-400 hover:bg-red-500/20"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
-
-              {allSponsors.length > 0 && (
-                <div className="relative mb-3">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-slate-300 text-sm mb-2 block">TRC20 Cüzdan Adresi</Label>
                   <Input
-                    type="text"
-                    placeholder="Sponsor ara..."
-                    value={sponsorSearch}
-                    onChange={(e) => setSponsorSearch(e.target.value)}
-                    className="pl-10 bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-500"
+                    value={walletInput}
+                    onChange={(e) => setWalletInput(e.target.value)}
+                    placeholder="T ile başlayan 34 karakter"
+                    className="bg-slate-900/50 border-slate-700 text-white"
+                    maxLength={34}
                   />
+                  <p className="text-slate-500 text-xs mt-1">Örn: TYs7Kza9mCTUF5JMi1234567890abcdefgh</p>
                 </div>
-              )}
+                <div className="flex gap-2">
+                  <Button onClick={saveWallet} size="sm" className="flex-1 bg-green-600 hover:bg-green-700">
+                    <Save className="w-4 h-4 mr-2" />
+                    Kaydet
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setEditingWallet(false)
+                      setWalletInput(userData.walletAddress || '')
+                    }}
+                    size="sm"
+                    variant="outline"
+                    className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </Card>
 
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {allSponsors
-                  .filter(s => s.name.toLowerCase().includes(sponsorSearch.toLowerCase()))
-                  .slice(0, 3)
-                  .map(sponsor => {
-                    const userInfo = sponsorInfos.find(info => info.sponsor.id === sponsor.id)
-                    const isEditing = editingSponsor === sponsor.id
+        {/* Sponsor Section */}
+        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-purple-400" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-lg font-semibold text-white">Sponsor Bilgileri</h2>
+                <p className="text-slate-400 text-sm">
+                  {sponsorInfos.length} / {allSponsors.length} sponsor eklenmiş
+                </p>
+              </div>
+            </div>
 
-                    return (
-                      <div key={sponsor.id} className="bg-slate-900/50 border border-slate-700 rounded-lg p-3">
-                        {!isEditing ? (
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <p className="text-white text-sm font-medium">{sponsor.name}</p>
+            {allSponsors.length > 0 && sponsorSearch !== '' && (
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <Input
+                  type="text"
+                  placeholder="Sponsor ara..."
+                  value={sponsorSearch}
+                  onChange={(e) => setSponsorSearch(e.target.value)}
+                  className="pl-10 bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-500"
+                />
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {allSponsors
+                .filter(s => s.name.toLowerCase().includes(sponsorSearch.toLowerCase()))
+                .map(sponsor => {
+                  const userInfo = sponsorInfos.find(info => info.sponsor.id === sponsor.id)
+                  const isEditing = editingSponsor === sponsor.id
+
+                  return (
+                    <div key={sponsor.id} className="bg-slate-900/50 border border-slate-700 rounded-lg p-4">
+                      {!isEditing ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            {sponsor.logoUrl ? (
+                              <img
+                                src={sponsor.logoUrl}
+                                alt={sponsor.name}
+                                className="w-12 h-12 object-contain rounded-lg bg-white/5 p-2"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                                <Building2 className="w-6 h-6 text-purple-400" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-white text-sm font-medium truncate">{sponsor.name}</p>
                               {userInfo ? (
-                                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+                                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs mt-1">
                                   <CheckCircle2 className="w-3 h-3 mr-1" />
                                   Kayıtlı
                                 </Badge>
                               ) : (
-                                <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs">
+                                <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-xs mt-1">
                                   Eksik
                                 </Badge>
                               )}
                             </div>
+                          </div>
+                          {userInfo && (
+                            <p className="text-slate-400 text-xs break-all">{getIdentifierLabel(sponsor.identifierType)}: {userInfo.identifier}</p>
+                          )}
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => {
+                                setEditingSponsor(sponsor.id)
+                                setSponsorInput(userInfo?.identifier || '')
+                              }}
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 h-8 text-xs border-slate-600 hover:bg-slate-800"
+                            >
+                              <Edit2 className="w-3 h-3 mr-1" />
+                              {userInfo ? 'Düzenle' : 'Ekle'}
+                            </Button>
                             {userInfo && (
-                              <p className="text-slate-400 text-xs">{getIdentifierLabel(sponsor.identifierType)}: {userInfo.identifier}</p>
+                              <Button
+                                onClick={() => deleteSponsorInfo(sponsor.id)}
+                                size="sm"
+                                variant="outline"
+                                className="h-8 text-xs border-red-500/50 text-red-400 hover:bg-red-500/20"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
                             )}
-                            <div className="flex gap-2">
-                              <Button
-                                onClick={() => {
-                                  setEditingSponsor(sponsor.id)
-                                  setSponsorInput(userInfo?.identifier || '')
-                                }}
-                                size="sm"
-                                variant="outline"
-                                className="flex-1 h-8 text-xs border-slate-600 hover:bg-slate-800"
-                              >
-                                <Edit2 className="w-3 h-3 mr-1" />
-                                {userInfo ? 'Düzenle' : 'Ekle'}
-                              </Button>
-                              {userInfo && (
-                                <Button
-                                  onClick={() => deleteSponsorInfo(sponsor.id)}
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-8 text-xs border-red-500/50 text-red-400 hover:bg-red-500/20"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
-                              )}
-                            </div>
                           </div>
-                        ) : (
-                          <div className="space-y-2">
-                            <p className="text-white text-sm font-medium">{sponsor.name}</p>
-                            <Input
-                              value={sponsorInput}
-                              onChange={(e) => setSponsorInput(e.target.value)}
-                              placeholder={getIdentifierLabel(sponsor.identifierType)}
-                              className="h-8 text-sm bg-slate-800 border-slate-600 text-white"
-                            />
-                            <div className="flex gap-2">
-                              <Button
-                                onClick={() => saveSponsorInfo(sponsor.id)}
-                                size="sm"
-                                className="flex-1 h-8 text-xs bg-green-600 hover:bg-green-700"
-                              >
-                                <Save className="w-3 h-3 mr-1" />
-                                Kaydet
-                              </Button>
-                              <Button
-                                onClick={() => {
-                                  setEditingSponsor(null)
-                                  setSponsorInput('')
-                                }}
-                                size="sm"
-                                variant="outline"
-                                className="h-8 text-xs border-slate-600 hover:bg-slate-800"
-                              >
-                                <X className="w-3 h-3" />
-                              </Button>
-                            </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            {sponsor.logoUrl ? (
+                              <img
+                                src={sponsor.logoUrl}
+                                alt={sponsor.name}
+                                className="w-10 h-10 object-contain rounded-lg bg-white/5 p-1"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                                <Building2 className="w-5 h-5 text-purple-400" />
+                              </div>
+                            )}
+                            <p className="text-white text-sm font-medium truncate">{sponsor.name}</p>
                           </div>
-                        )}
-                      </div>
-                    )
-                  })}
+                          <Input
+                            value={sponsorInput}
+                            onChange={(e) => setSponsorInput(e.target.value)}
+                            placeholder={getIdentifierLabel(sponsor.identifierType)}
+                            className="h-8 text-sm bg-slate-800 border-slate-600 text-white"
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => saveSponsorInfo(sponsor.id)}
+                              size="sm"
+                              className="flex-1 h-8 text-xs bg-green-600 hover:bg-green-700"
+                            >
+                              <Save className="w-3 h-3 mr-1" />
+                              Kaydet
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                setEditingSponsor(null)
+                                setSponsorInput('')
+                              }}
+                              size="sm"
+                              variant="outline"
+                              className="h-8 text-xs border-slate-600 hover:bg-slate-800"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+            </div>
+          </div>
+        </Card>
+
+        {/* Telegram Connection Section */}
+        {userData.telegramId && (
+          <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <Link2 className="w-5 h-5 text-blue-400" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-lg font-semibold text-white">Telegram Bağlantısı</h2>
+                  <p className="text-slate-400 text-sm">
+                    {telegramStatus.connected ? 'Bağlı' : 'Bağlı değil'}
+                  </p>
+                </div>
+                <CheckCircle2 className="w-5 h-5 text-green-400" />
               </div>
 
-              {allSponsors.length > 3 && (
+              <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-3 mb-3">
+                <p className="text-slate-500 text-xs mb-1">Telegram ID</p>
+                <p className="text-white font-mono text-sm">{userData.telegramId}</p>
+              </div>
+
+              {telegramStatus.canReconnect ? (
                 <Button
-                  onClick={() => router.push('/wallet-info')}
-                  variant="outline"
+                  onClick={() => setShowDisconnectDialog(true)}
                   size="sm"
-                  className="w-full mt-3 border-slate-600 text-slate-300 hover:bg-slate-800"
+                  variant="outline"
+                  className="w-full border-red-500/50 text-red-400 hover:bg-red-500/20"
                 >
-                  Tümünü Gör ({allSponsors.length})
+                  <Unlink className="w-4 h-4 mr-2" />
+                  Telegram Bağlantısını Kopar
                 </Button>
+              ) : (
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+                  <AlertCircle className="w-5 h-5 text-yellow-400 inline mr-2" />
+                  <span className="text-yellow-400 text-sm">
+                    {telegramStatus.daysUntilReconnect} gün sonra tekrar bağlayabilirsiniz
+                  </span>
+                </div>
               )}
             </div>
           </Card>
-        </div>
+        )}
 
         {/* Tabs Section */}
         <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
@@ -807,6 +925,55 @@ function ProfileContent() {
           </Tabs>
         </Card>
       </div>
+
+      {/* Telegram Disconnect Dialog */}
+      <AlertDialog open={showDisconnectDialog} onOpenChange={setShowDisconnectDialog}>
+        <AlertDialogContent className="bg-slate-800 border-slate-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Telegram Bağlantısını Kopar</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              Telegram hesabınızın bağlantısını koparmak istediğinize emin misiniz?
+              <br /><br />
+              <strong className="text-yellow-400">Uyarı:</strong> Başka bir Telegram hesabı bağlayabilirsiniz,
+              ancak bağlantıyı kopardıktan sonra <strong>1 gün boyunca</strong> tekrar bağlantı yapamazsınız.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600">
+              İptal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={disconnectTelegram}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Bağlantıyı Kopar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Logout Dialog */}
+      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <AlertDialogContent className="bg-slate-800 border-slate-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Çıkış Yap</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              Hesabınızdan çıkış yapmak istediğinize emin misiniz?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600">
+              İptal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Çıkış Yap
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
