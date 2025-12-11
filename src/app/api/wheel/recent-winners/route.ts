@@ -7,6 +7,7 @@ export async function GET() {
       include: {
         user: {
           select: {
+            siteUsername: true,
             firstName: true,
             username: true,
             photoUrl: true,
