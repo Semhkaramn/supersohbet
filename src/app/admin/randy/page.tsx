@@ -185,7 +185,7 @@ export default function AdminRandyPage() {
       message += `**Kazananlar:**\n`
 
       winners.forEach((winner, index) => {
-        const name = winner.assignedUsername ? `@${winner.assignedUsername}` : winner.assignedFirstName || 'Kullanıcı'
+        const name = winner.assignedSiteUsername || winner.assignedFirstName || winner.assignedUsername || 'Kullanıcı'
         message += `${index + 1}. ${name} - 🎁 ${schedule.prizeText}\n`
       })
 
@@ -669,7 +669,13 @@ export default function AdminRandyPage() {
                           {slot.assigned ? (
                             <div className="text-right">
                               <p className="text-green-400 font-semibold">
-                                {slot.assignedFirstName || slot.assignedUsername || 'Kullanıcı'}
+                                {slot.assignedSiteUsername || slot.assignedFirstName || slot.assignedUsername || 'Kullanıcı'}
+                                {slot.assignedFirstName && slot.assignedUsername && (
+                                  <div className="text-xs text-gray-400">
+                                    <div>{slot.assignedFirstName}</div>
+                                    <div>@{slot.assignedUsername}</div>
+                                  </div>
+                                )}
                               </p>
                               <p className="text-xs text-gray-400">
                                 {slot.assignedAt && new Date(slot.assignedAt).toLocaleString('tr-TR')}
@@ -785,7 +791,12 @@ export default function AdminRandyPage() {
                                       <div className="flex items-center justify-between">
                                         <div>
                                           <p className="text-white font-medium">
-                                            {index + 1}. {slot.assignedUsername ? `@${slot.assignedUsername}` : slot.assignedFirstName || 'Kullanıcı'}
+                                            {index + 1}. {slot.assignedSiteUsername || slot.assignedFirstName || slot.assignedUsername || 'Kullanıcı'}
+                                            {slot.assignedFirstName && slot.assignedUsername && (
+                                              <span className="text-xs text-gray-400 ml-2">
+                                                ({slot.assignedFirstName} • @{slot.assignedUsername})
+                                              </span>
+                                            )}
                                           </p>
                                           <p className="text-xs text-gray-400">
                                             {slot.assignedAt && new Date(slot.assignedAt).toLocaleString('tr-TR')}
