@@ -654,7 +654,8 @@ Siteye Butondan ulaşabilirsiniz
               hadStart: true // Kullanıcı /start yaptı
             }
           })
-        } 
+        }
+      }
 
       // Ayarları al
       const minMessageLength = parseInt(getSetting('min_message_length', '3'))
@@ -792,4 +793,3 @@ Siteye Butondan ulaşabilirsiniz
     return NextResponse.json({ ok: true })
   }
 }
-
