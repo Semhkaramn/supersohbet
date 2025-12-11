@@ -424,68 +424,106 @@ function ProfileContent() {
         </Card>
 
         {/* Telegram Connection Section */}
-        {userData.telegramId && (
-          <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
-            <div className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                  <Link2 className="w-5 h-5 text-blue-400" />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-lg font-semibold text-white">Telegram Bağlantısı</h2>
-                  <p className="text-slate-400 text-sm">
-                    {telegramStatus.connected ? 'Bağlı' : 'Bağlı değil'}
-                  </p>
-                </div>
-                <CheckCircle2 className="w-5 h-5 text-green-400" />
+        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                <Link2 className="w-5 h-5 text-blue-400" />
               </div>
+              <div className="flex-1">
+                <h2 className="text-lg font-semibold text-white">Telegram Bağlantısı</h2>
+                <p className="text-slate-400 text-sm">
+                  {userData.telegramId ? 'Bağlı' : 'Bağlı değil'}
+                </p>
+              </div>
+              {userData.telegramId && (
+                <CheckCircle2 className="w-5 h-5 text-green-400" />
+              )}
+            </div>
 
-              {/* Telegram User Info Card */}
-              <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-4 mb-3">
-                <div className="flex items-center gap-4">
-                  <Avatar className="w-16 h-16 border-2 border-blue-500/30">
-                    {userData.photoUrl && <AvatarImage src={userData.photoUrl} />}
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white text-2xl font-bold">
-                      {userData.firstName?.[0] || userData.username?.[0] || 'T'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-white font-semibold text-base mb-1">
-                      {userData.firstName || 'Telegram User'}
-                      {userData.lastName && ` ${userData.lastName}`}
-                    </h3>
-                    {userData.username && (
-                      <p className="text-blue-400 text-sm mb-1">@{userData.username}</p>
-                    )}
-                    <div className="flex items-center gap-2 text-xs text-slate-400">
-                      <span>ID:</span>
-                      <span className="font-mono text-white">{userData.telegramId}</span>
+            {userData.telegramId ? (
+              <>
+                {/* Telegram User Info Card */}
+                <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-4 mb-3">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="w-16 h-16 border-2 border-blue-500/30">
+                      {userData.photoUrl && <AvatarImage src={userData.photoUrl} />}
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white text-2xl font-bold">
+                        {userData.firstName?.[0] || userData.username?.[0] || 'T'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-white font-semibold text-base mb-1">
+                        {userData.firstName || 'Telegram User'}
+                        {userData.lastName && ` ${userData.lastName}`}
+                      </h3>
+                      {userData.username && (
+                        <p className="text-blue-400 text-sm mb-1">@{userData.username}</p>
+                      )}
+                      <div className="flex items-center gap-2 text-xs text-slate-400">
+                        <span>ID:</span>
+                        <span className="font-mono text-white">{userData.telegramId}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {telegramStatus.canReconnect ? (
-                <Button
-                  onClick={() => setShowDisconnectDialog(true)}
-                  size="sm"
-                  variant="outline"
-                  className="w-full border-red-500/50 text-red-400 hover:bg-red-500/20"
-                >
-                  <Unlink className="w-4 h-4 mr-2" />
-                  Telegram Bağlantısını Kopar
-                </Button>
-              ) : (
-                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
-                  <AlertCircle className="w-5 h-5 text-yellow-400 inline mr-2" />
-                  <span className="text-yellow-400 text-sm">
-                    {telegramStatus.daysUntilReconnect} gün sonra tekrar bağlayabilirsiniz
-                  </span>
+                {telegramStatus.canReconnect ? (
+                  <Button
+                    onClick={() => setShowDisconnectDialog(true)}
+                    size="sm"
+                    variant="outline"
+                    className="w-full border-red-500/50 text-red-400 hover:bg-red-500/20"
+                  >
+                    <Unlink className="w-4 h-4 mr-2" />
+                    Telegram Bağlantısını Kopar
+                  </Button>
+                ) : (
+                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+                    <AlertCircle className="w-5 h-5 text-yellow-400 inline mr-2" />
+                    <span className="text-yellow-400 text-sm">
+                      {telegramStatus.daysUntilReconnect} gün sonra tekrar bağlayabilirsiniz
+                    </span>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {/* Not Connected - Show Connection Button */}
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-3 flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-yellow-400 text-sm font-medium mb-1">Telegram Bağlı Değil</p>
+                    <p className="text-slate-400 text-xs">
+                      Telegram hesabınızı bağlayarak tüm özelliklere erişebilirsiniz.
+                    </p>
+                  </div>
                 </div>
-              )}
-            </div>
-          </Card>
-        )}
+                <Button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/user/telegram-connection-token')
+                      const data = await response.json()
+
+                      if (data.token) {
+                        // Telegram bot linkine yönlendir
+                        const botUsername = await fetch('/api/settings/telegram-bot-username').then(r => r.json())
+                        window.open(`https://t.me/${botUsername.username}?start=${data.token}`, '_blank')
+                        toast.success('Telegram botu açıldı. Lütfen /start komutunu gönderin.')
+                      }
+                    } catch (error) {
+                      toast.error('Bağlantı başlatılamadı')
+                    }
+                  }}
+                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+                >
+                  <Link2 className="w-4 h-4 mr-2" />
+                  Telegram'ı Bağla
+                </Button>
+              </>
+            )}
+          </div>
+        </Card>
 
         {/* Tabs Section */}
         <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
