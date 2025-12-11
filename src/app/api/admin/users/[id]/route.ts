@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { invalidateLeaderboardCache } from '@/lib/cache'
 
 export async function GET(
   request: NextRequest,
@@ -90,6 +91,12 @@ export async function PUT(
           adminUsername: 'Admin'
         }
       })
+    }
+
+    // ✅ Puan veya XP değiştiği için leaderboard cache'ini temizle
+    if (typeof points === 'number' || typeof xp === 'number') {
+      invalidateLeaderboardCache()
+      console.log('🔄 Leaderboard cache temizlendi (admin kullanıcı güncelleme)')
     }
 
     return NextResponse.json({ user })
