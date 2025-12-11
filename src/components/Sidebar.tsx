@@ -27,25 +27,11 @@ export default function Sidebar() {
 
   const menuItems = [
     {
-      href: '/sponsors',
+      href: '/dashboard',
       label: 'Ana Sayfa',
       icon: Home,
       gradient: 'from-blue-500 to-indigo-600',
-      active: pathname === '/sponsors' || pathname === '/dashboard'
-    },
-    {
-      href: '/profile',
-      label: 'Profilim',
-      icon: User,
-      gradient: 'from-cyan-500 to-blue-500',
-      active: pathname === '/profile'
-    },
-    {
-      href: '/wallet-info',
-      label: 'Cüzdan & Sponsor',
-      icon: Wallet,
-      gradient: 'from-green-500 to-emerald-500',
-      active: pathname === '/wallet-info'
+      active: pathname === '/dashboard' || pathname === '/sponsors'
     },
     {
       href: '/referral',
@@ -81,6 +67,13 @@ export default function Sidebar() {
       icon: Trophy,
       gradient: 'from-amber-500 to-orange-500',
       active: pathname === '/leaderboard'
+    },
+    {
+      href: '/profile',
+      label: 'Profilim',
+      icon: User,
+      gradient: 'from-cyan-500 to-blue-500',
+      active: pathname === '/profile'
     }
   ]
 
