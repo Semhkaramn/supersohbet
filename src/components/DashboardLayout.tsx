@@ -3,6 +3,7 @@
 import { ReactNode } from 'react'
 import Sidebar from './Sidebar'
 import Header from './Header'
+import SponsorBanner from './SponsorBanner'
 
 interface DashboardLayoutProps {
   children: ReactNode
@@ -12,6 +13,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-slate-950">
       <Header />
+      <SponsorBanner />
       <Sidebar />
 
       <div className="transition-all duration-300">
