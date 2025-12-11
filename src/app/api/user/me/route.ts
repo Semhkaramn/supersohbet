@@ -92,8 +92,23 @@ export async function GET(request: NextRequest) {
     const messageStats = await getCached(
       `user_message_stats_${session.userId}`,
       async () => {
+        // Kullanıcının TelegramGroupUser kaydını bul
+        const telegramGroupUser = await prisma.telegramGroupUser.findUnique({
+          where: { linkedUserId: session.userId }
+        })
+
+        // Eğer telegram bağlantısı yoksa boş stats döndür
+        if (!telegramGroupUser) {
+          return {
+            daily: 0,
+            weekly: 0,
+            monthly: 0,
+            total: 0
+          }
+        }
+
         const messages = await prisma.messageStats.findMany({
-          where: { userId: session.userId },
+          where: { telegramUserId: telegramGroupUser.id },
           select: { createdAt: true }
         })
 
