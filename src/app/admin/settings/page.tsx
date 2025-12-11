@@ -824,72 +824,69 @@ export default function AdminSettingsPage() {
 
         {/* Aktif Grup Seçimi */}
         <Card className="bg-white/5 border-white/10 p-6">
-          <h2 className="text-xl font-bold text-white mb-4">💬 Aktif Grup Seçimi</h2>
+          <h2 className="text-xl font-bold text-white mb-4">💬 Aktif Grup</h2>
           <div>
-            <Label className="text-white text-base mb-2 block">Botun mesaj dinleyeceği grup</Label>
-            <Select
-              value={activityGroupId?.value || ''}
-              onValueChange={async (value) => {
-                // Seçilen grubun bilgilerini bul
-                const selectedGroup = groupChannels.find(g => g.channelId === value)
-
-                if (!selectedGroup) {
-                  toast.error('Grup bulunamadı')
-                  return
-                }
-
-                setSaving(true)
-                try {
-                  // Eğer seçilen değer @ ile başlıyorsa veya sayısal ID değilse, Telegram'dan gerçek ID'yi al
-                  const isUsername = value.startsWith('@') || isNaN(Number(value.replace('-', '')))
-
-                  if (isUsername) {
-                    // Telegram'dan gerçek chat ID'yi al
-                    const response = await fetch('/api/admin/settings', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ chatUsername: value })
-                    })
-
-                    const data = await response.json()
-
-                    if (data.success && data.chatId) {
-                      // Gerçek chat ID'yi kaydet
-                      await saveSetting('activity_group_id', data.chatId)
-                      toast.success(`Aktif grup ayarlandı: ${data.chatTitle} (ID: ${data.chatId})`)
-                    } else {
-                      toast.error(data.error || 'Grup ID\'si alınamadı')
-                    }
-                  } else {
-                    // Zaten sayısal ID, direkt kaydet
-                    await saveSetting('activity_group_id', value)
-                    toast.success(`Aktif grup ayarlandı: ${selectedGroup.channelName} (ID: ${value})`)
+            <Label htmlFor="active_group" className="text-white text-base">Botun mesaj dinleyeceği grup</Label>
+            <p className="text-xs text-gray-400 mb-2">Grup kullanıcı adı (@grupadi) veya Chat ID (-100123456789) giriniz</p>
+            <div className="flex gap-2">
+              <Input
+                id="active_group"
+                value={activityGroupId?.value || ''}
+                onChange={(e) => handleInputChange('activity_group_id', e.target.value)}
+                className="bg-white/10 border-white/20 text-white flex-1"
+                placeholder="@grupadi veya -100123456789"
+              />
+              <Button
+                onClick={async () => {
+                  const value = activityGroupId?.value || ''
+                  if (!value) {
+                    toast.error('Grup bilgisi giriniz')
+                    return
                   }
-                } catch (error) {
-                  console.error('Error resolving chat ID:', error)
-                  toast.error('Bir hata oluştu')
-                } finally {
-                  setSaving(false)
-                }
-              }}
-            >
-              <SelectTrigger className="bg-white/10 border-white/20 text-white w-full">
-                <SelectValue placeholder="Grup seçin" />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-900 border-white/20">
-                {groupChannels.length === 0 ? (
-                  <div className="text-gray-400 px-4 py-2">Hiç grup eklenmemiş</div>
-                ) : (
-                  groupChannels.map((group) => (
-                    <SelectItem key={group.channelId} value={group.channelId} className="text-white">
-                      {group.channelName} <span className="text-xs text-gray-400 ml-2">{group.channelId}</span>
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-gray-400 mt-1">
-              Bot sadece burada seçili olan grupta mesaj dinler ve puan verir.
+
+                  setSaving(true)
+                  try {
+                    // Eğer @ ile başlıyorsa username, aksi halde direkt ID
+                    const isUsername = value.startsWith('@')
+
+                    if (isUsername) {
+                      // Telegram API'den gerçek chat ID'yi al
+                      const response = await fetch('/api/admin/settings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chatUsername: value })
+                      })
+
+                      const data = await response.json()
+
+                      if (data.success && data.chatId) {
+                        // Gerçek chat ID'yi kaydet
+                        await saveSetting('activity_group_id', data.chatId)
+                        toast.success(`Aktif grup ayarlandı: ${data.chatTitle} (ID: ${data.chatId})`)
+                      } else {
+                        toast.error(data.error || 'Grup ID\'si alınamadı')
+                      }
+                    } else {
+                      // Zaten sayısal ID, direkt kaydet
+                      await saveSetting('activity_group_id', value)
+                      toast.success(`Aktif grup ayarlandı (ID: ${value})`)
+                    }
+                  } catch (error) {
+                    console.error('Error saving active group:', error)
+                    toast.error('Bir hata oluştu')
+                  } finally {
+                    setSaving(false)
+                  }
+                }}
+                disabled={saving}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Save className="w-4 h-4 mr-1" />
+                Kaydet
+              </Button>
+            </div>
+            <p className="text-xs text-gray-400 mt-2">
+              Bot sadece bu grupta mesaj dinler ve puan verir. @ ile username girerseniz otomatik ID'ye çevrilir.
             </p>
             {activityGroupId?.value && (
               <p className="text-xs text-green-400 mt-2">
