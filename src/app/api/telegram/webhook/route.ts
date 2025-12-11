@@ -824,7 +824,7 @@ Siteye Butondan ulaşabilirsiniz
       console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
       console.log(`👤 Kullanıcı: ${user?.email || user?.siteUsername}`)
       console.log(`📝 Mesaj Uzunluğu: ${messageText.length} karakter (Min: ${minMessageLength})`)
-      console.log(`⏱️  Son Mesaj: ${user.lastMessageAt ? new Date().toISOString() : 'İlk mesaj'}`)
+      console.log(`⏱️  Son Mesaj: ${user.lastMessageAt ? user.lastMessageAt.toISOString() : 'İlk mesaj'}`)
       if (user.lastMessageAt) {
         const timeSince = Math.floor((Date.now() - user.lastMessageAt.getTime()) / 1000)
         console.log(`⏳ Geçen Süre: ${timeSince} saniye (Min: ${messageCooldown})`)
@@ -884,7 +884,7 @@ Siteye Butondan ulaşabilirsiniz
           points: { increment: pointsPerMessage },
           xp: shouldGiveXp ? { increment: xpPerMessage } : undefined,
           messageCount: newMessageCount,
-          lastMessageAt: getTurkeyDate() // Türkiye saati
+          lastMessageAt: new Date() // UTC zamanı kullan (Date.now() ile tutarlı olması için)
         }
       })
 
