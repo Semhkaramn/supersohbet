@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,7 @@ import { toast } from 'sonner'
 import { useAuth } from '@/lib/auth-context'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
-export default function RegisterModal() {
+function RegisterModalContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const referralCodeParam = searchParams?.get('ref') || ''
@@ -25,6 +25,12 @@ export default function RegisterModal() {
     confirmPassword: '',
     referralCode: referralCodeParam
   })
+
+  useEffect(() => {
+    if (referralCodeParam) {
+      setFormData(prev => ({ ...prev, referralCode: referralCodeParam }))
+    }
+  }, [referralCodeParam])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -253,5 +259,13 @@ export default function RegisterModal() {
         </ScrollArea>
       </DialogContent>
     </Dialog>
+  )
+}
+
+export default function RegisterModal() {
+  return (
+    <Suspense fallback={<div />}>
+      <RegisterModalContent />
+    </Suspense>
   )
 }
