@@ -118,19 +118,16 @@ async function findEligibleWinner(
 ): Promise<{ userId: string; username?: string; firstName?: string; siteUsername?: string } | null> {
   try {
     // ========== YENİ: TELEGRAM GRUP MESAJLARINA GÖRE KAZANAN BUL ==========
-    // Slot zamanı civarında mesaj yazmış telegram kullanıcılarını bul (slot zamanından önce 5 dk ve sonrası 5 dk içinde)
-    const timeWindowStart = new Date(slotTime.getTime() - 5 * 60 * 1000) // 5 dk önce
-    const timeWindowEnd = new Date(slotTime.getTime() + 5 * 60 * 1000) // 5 dk sonra
-
-    const messagesInTimeWindow = await prisma.telegramGroupMessage.findMany({
+    // Slot zamanından SONRA mesaj yazmış telegram kullanıcılarını bul
+    // İLK mesaj yazan ve şartları karşılayan kişi kazanır
+    const messagesAfterSlot = await prisma.telegramGroupMessage.findMany({
       where: {
         createdAt: {
-          gte: timeWindowStart,
-          lte: timeWindowEnd
+          gte: slotTime // Slot zamanından sonra (veya o dakikada)
         }
       },
       orderBy: {
-        createdAt: 'asc' // En erken mesajdan başlayarak sırala
+        createdAt: 'asc' // En erken mesajdan başlayarak sırala - ilk yazan kazanır
       },
       include: {
         telegramUser: {
@@ -141,47 +138,44 @@ async function findEligibleWinner(
       }
     })
 
-    if (messagesInTimeWindow.length === 0) {
-      console.log(`⚠️ Slot zamanında mesaj bulunamadı: ${slotTime.toISOString()}`)
-      return null
-    }
-
-    // Mesaj yazmış telegram kullanıcılarını bul (genel kontrol için)
-    const usersWithMessages = await prisma.telegramGroupMessage.groupBy({
-      by: ['telegramUserId'],
-      _count: { telegramUserId: true }
-    })
-
-    if (usersWithMessages.length === 0) {
+    if (messagesAfterSlot.length === 0) {
+      console.log(`⚠️ Slot zamanından sonra mesaj bulunamadı: ${slotTime.toISOString()}`)
       return null
     }
 
     // Telegram grup kullanıcıları için filtre hazırla
-    const telegramWhereClause: any = {
-      id: { in: usersWithMessages.map(u => u.telegramUserId) } // Sadece mesaj yazmış kullanıcılar
-    }
+    const telegramWhereClause: any = {}
 
-    // Banlı kullanıcıları hariç tut (eğer siteye kayıtlıysa)
-    const bannedUserTelegramIds = await prisma.user.findMany({
-      where: { isBanned: true },
+    // Banlı kullanıcıları hariç tut (siteye kayıtlı ve banlıysa)
+    // NOT: Siteye kayıtlı olmayan kullanıcılar banlı olamaz, onlar katılabilir
+    const bannedTelegramIds = await prisma.user.findMany({
+      where: {
+        isBanned: true,
+        telegramId: { not: null }
+      },
       select: { telegramId: true }
     })
 
-    if (bannedUserTelegramIds.length > 0) {
+    if (bannedTelegramIds.length > 0) {
       const bannedTgUsers = await prisma.telegramGroupUser.findMany({
-        where: { telegramId: { in: bannedUserTelegramIds.map(u => u.telegramId).filter(Boolean) as string[] } },
+        where: {
+          telegramId: {
+            in: bannedTelegramIds.map(u => u.telegramId).filter(Boolean) as string[]
+          }
+        },
         select: { id: true }
       })
 
       if (bannedTgUsers.length > 0) {
+        const existingNotIn = (telegramWhereClause.id as any)?.notIn || []
         telegramWhereClause.id = {
           ...telegramWhereClause.id,
-          notIn: bannedTgUsers.map(u => u.id)
+          notIn: [...existingNotIn, ...bannedTgUsers.map(u => u.id)]
         }
       }
     }
 
-    // Minimum mesaj kontrolü
+    // Minimum mesaj kontrolü - belirli dönemde yeterli mesaj atmış kullanıcıları filtrele
     if (schedule.minMessages > 0 && schedule.messagePeriod !== 'none') {
       const periodFilter = getMessagePeriodFilterForTelegram(schedule.messagePeriod)
 
@@ -200,19 +194,20 @@ async function findEligibleWinner(
         })
 
         if (eligibleTgUserIds.length === 0) {
+          console.log(`⚠️ Minimum mesaj şartını karşılayan kullanıcı bulunamadı. Min: ${schedule.minMessages}, Dönem: ${schedule.messagePeriod}`)
           return null
         }
 
+        // Sadece minimum mesaj şartını karşılayanları filtrele
         telegramWhereClause.id = {
           in: eligibleTgUserIds.map(u => u.telegramUserId)
         }
       }
     }
 
-    // Kullanıcı başına bir kez kuralı
+    // Kullanıcı başına bir kez kuralı - bu schedule'da daha önce kazananları hariç tut
     if (schedule.onePerUser) {
-      // Bu schedule'da zaten kazanan telegram ID'lerini hariç tut
-      const alreadyWonUserIds = await prisma.randySlot.findMany({
+      const alreadyWonSlots = await prisma.randySlot.findMany({
         where: {
           scheduleId: schedule.id,
           assigned: true,
@@ -221,7 +216,7 @@ async function findEligibleWinner(
         select: { assignedUser: true }
       })
 
-      const wonTelegramIds = alreadyWonUserIds
+      const wonTelegramIds = alreadyWonSlots
         .map(s => s.assignedUser)
         .filter(Boolean) as string[]
 
@@ -233,9 +228,10 @@ async function findEligibleWinner(
         })
 
         if (wonTgUsers.length > 0) {
+          const existingNotIn = (telegramWhereClause.id as any)?.notIn || []
           telegramWhereClause.id = {
             ...telegramWhereClause.id,
-            notIn: wonTgUsers.map(u => u.id)
+            notIn: [...existingNotIn, ...wonTgUsers.map(u => u.id)]
           }
         }
       }
@@ -253,13 +249,13 @@ async function findEligibleWinner(
       return null
     }
 
-    // Slot zamanında mesaj yazan kullanıcılar arasından şartları karşılayan ilk kişiyi seç
-    for (const message of messagesInTimeWindow) {
+    // Slot zamanından SONRA mesaj yazan kullanıcılar arasından şartları karşılayan İLK kişiyi seç
+    for (const message of messagesAfterSlot) {
       const isEligible = eligibleUsers.some(u => u.id === message.telegramUserId)
 
       if (isEligible && message.telegramUser) {
         const tgUser = message.telegramUser
-        console.log(`✅ İlk uygun kazanan bulundu: ${tgUser.linkedUser?.siteUsername || tgUser.firstName || tgUser.username} (${tgUser.telegramId}) - Mesaj zamanı: ${message.createdAt.toISOString()}`)
+        console.log(`✅ İlk uygun kazanan bulundu: ${tgUser.linkedUser?.siteUsername || tgUser.firstName || tgUser.username} (${tgUser.telegramId}) - Slot zamanı: ${slotTime.toISOString()} - Mesaj zamanı: ${message.createdAt.toISOString()}`)
         return {
           userId: tgUser.telegramId,
           username: tgUser.username || undefined,
@@ -269,21 +265,9 @@ async function findEligibleWinner(
       }
     }
 
-    // Eğer slot zamanında mesaj yazan uygun kullanıcı bulunamazsa, genel uygun kullanıcılardan ilkini seç
-    console.log(`⚠️ Slot zamanında uygun kullanıcı bulunamadı, genel listeden seçiliyor`)
-    const winner = eligibleUsers[0]
-
-    if (!winner.telegramId) {
-      console.log(`❌ Kazanan kullanıcının telegramId yok`)
-      return null
-    }
-
-    return {
-      userId: winner.telegramId,
-      username: winner.username || undefined,
-      firstName: winner.firstName || undefined,
-      siteUsername: winner.siteUsername || undefined
-    }
+    // Eğer slot zamanından sonra şartları karşılayan kullanıcı bulunamazsa kazanan yok
+    console.log(`⚠️ Slot zamanından sonra şartları karşılayan kullanıcı bulunamadı. Slot zamanı: ${slotTime.toISOString()}`)
+    return null
   } catch (error) {
     console.error('Find eligible winner error:', error)
     return null
@@ -294,6 +278,32 @@ async function findEligibleWinner(
  * Mesaj dönemi filtresini oluşturur
  */
 function getMessagePeriodFilter(period: string): any {
+  const now = new Date()
+
+  switch (period) {
+    case 'today': {
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      return { createdAt: { gte: todayStart } }
+    }
+    case 'week': {
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      return { createdAt: { gte: weekAgo } }
+    }
+    case 'month': {
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+      return { createdAt: { gte: monthStart } }
+    }
+    case 'all':
+      return {} // Tüm mesajlar
+    default:
+      return null // Period kontrolü yok
+  }
+}
+
+/**
+ * Telegram grup mesajları için mesaj dönemi filtresini oluşturur
+ */
+function getMessagePeriodFilterForTelegram(period: string): any {
   const now = new Date()
 
   switch (period) {
