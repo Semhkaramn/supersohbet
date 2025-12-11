@@ -34,13 +34,6 @@ export default function Sidebar() {
       active: pathname === '/dashboard' || pathname === '/sponsors'
     },
     {
-      href: '/referral',
-      label: 'Referans',
-      icon: Users,
-      gradient: 'from-orange-500 to-red-500',
-      active: pathname === '/referral'
-    },
-    {
       href: '/shop',
       label: 'Mağaza',
       icon: ShoppingBag,
