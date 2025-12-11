@@ -5,8 +5,10 @@ import { getCachedLeaderboard } from '@/lib/cache'
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
+    const userId = searchParams.get('userId') // Opsiyonel - sadece kendi sıralamasını görmek için
     const sortBy = searchParams.get('sortBy') || 'points' // 'points' veya 'xp'
+
+    console.log('📊 Leaderboard API çağrıldı:', { userId: userId || 'yok', sortBy })
 
     const leaderboardData = await getCachedLeaderboard(
       sortBy,
@@ -16,7 +18,13 @@ export async function GET(request: Request) {
           ? [{ xp: 'desc' as const }, { points: 'desc' as const }]
           : [{ points: 'desc' as const }, { xp: 'desc' as const }]
 
+        console.log('🔍 Veritabanından kullanıcılar getiriliyor...')
+
+        // ✅ FIX: Banlı kullanıcıları filtrele
         const users = await prisma.user.findMany({
+          where: {
+            isBanned: false // Sadece banlı OLMAYAN kullanıcılar
+          },
           select: {
             id: true,
             telegramId: true,
@@ -38,6 +46,8 @@ export async function GET(request: Request) {
           take: 100
         })
 
+        console.log(`✅ ${users.length} kullanıcı bulundu (banlı olmayanlar)`)
+
         return users.map((user, index) => ({
           ...user,
           position: index + 1
@@ -46,13 +56,20 @@ export async function GET(request: Request) {
       300 // 5 minutes cache
     )
 
+    console.log(`📊 Leaderboard data: ${leaderboardData.length} kullanıcı`)
+
     // Mevcut kullanıcının pozisyonunu bul
     let currentUser = null
     if (userId) {
+      console.log('🔍 Kullanıcı pozisyonu aranıyor:', userId)
+
       const userIndex = leaderboardData.findIndex((u: any) => u.id === userId)
       if (userIndex !== -1) {
         currentUser = leaderboardData[userIndex]
+        console.log(`✅ Kullanıcı top 100'de bulundu: #${currentUser.position}`)
       } else {
+        console.log('⚠️ Kullanıcı top 100\'de değil, ayrıca getiriliyor...')
+
         // Kullanıcı top 100'de değilse, ayrıca getir
         const user = await prisma.user.findUnique({
           where: { id: userId },
@@ -66,6 +83,7 @@ export async function GET(request: Request) {
             points: true,
             xp: true,
             totalMessages: true,
+            isBanned: true, // Ban durumunu kontrol et
             rank: {
               select: {
                 name: true,
@@ -75,11 +93,16 @@ export async function GET(request: Request) {
           }
         })
 
-        if (user) {
-          // Kullanıcının gerçek pozisyonunu hesapla (sortBy'a göre)
+        if (!user) {
+          console.log('❌ Kullanıcı bulunamadı')
+        } else if (user.isBanned) {
+          console.log('🚫 Kullanıcı banlı, leaderboard\'da gösterilmeyecek')
+        } else {
+          // ✅ FIX: Pozisyon hesaplarken de sadece banlı olmayanları say
           const higherRankedCount = sortBy === 'xp'
             ? await prisma.user.count({
                 where: {
+                  isBanned: false, // ✅ Banlı olmayanlar
                   OR: [
                     { xp: { gt: user.xp } },
                     {
@@ -93,6 +116,7 @@ export async function GET(request: Request) {
               })
             : await prisma.user.count({
                 where: {
+                  isBanned: false, // ✅ Banlı olmayanlar
                   OR: [
                     { points: { gt: user.points } },
                     {
@@ -109,18 +133,26 @@ export async function GET(request: Request) {
             ...user,
             position: higherRankedCount + 1
           }
+          console.log(`✅ Kullanıcı pozisyonu hesaplandı: #${currentUser.position}`)
         }
       }
     }
 
     return NextResponse.json({
       leaderboard: leaderboardData,
-      currentUser
+      currentUser,
+      totalUsers: leaderboardData.length
     })
   } catch (error) {
-    console.error('Error fetching leaderboard:', error)
+    console.error('❌ Leaderboard API hatası:', error)
+    console.error('Hata detayı:', error instanceof Error ? error.message : 'Bilinmeyen hata')
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'Yok')
+
     return NextResponse.json(
-      { error: 'Liderlik tablosu alınamadı' },
+      {
+        error: 'Liderlik tablosu alınamadı',
+        details: error instanceof Error ? error.message : 'Bilinmeyen hata'
+      },
       { status: 500 }
     )
   }
