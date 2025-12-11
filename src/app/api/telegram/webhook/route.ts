@@ -215,56 +215,46 @@ Daha fazla bilgi için Ödül Merkezi'ne git!
       // 🔍 KONTROL: message.from var mı? (anonymous admin/channel mesajlarında olmayabilir)
       if (!message.from || !message.from.id) {
         console.log('⚠️ message.from YOK veya message.from.id YOK - Anonymous admin veya channel mesajı')
-        console.log('sender_chat:', message.sender_chat)
-        console.log('message_id:', message.message_id)
         return NextResponse.json({ ok: true, message: 'No from.id - anonymous/channel message' })
       }
 
       const chatId = message.chat.id
+      const chatType = message.chat.type
       const userId = String(message.from.id)
       const username = message.from.username
       const firstName = message.from.first_name
       const lastName = message.from.last_name
       const messageText = message.text
 
-      // 📊 LOG: Alınan değerleri logla
-      console.log(`📩 MESAJ ALINDI:`, {
-        messageId: message.message_id,
-        fromUserId: message.from.id,
-        fromUsername: username,
-        fromFirstName: firstName,
-        chatId: chatId,
-        chatType: message.chat.type,
-        extractedUserId: userId
-      })
-
-      // Aktif grup kontrolü - Sadece GRUP mesajlarında kontrol et, private chat'leri geçir
-      const chatType = message.chat.type
+      // 🚨 ÖNEMLİ: AKTİF GRUP KONTROLÜ - SADECE AKTİF GRUPTA DİNLE
       const activityGroupId = getSetting('activity_group_id', '')
 
-      // Eğer grup veya supergroup ise ve activity_group_id ayarlanmışsa kontrol et
-      if ((chatType === 'group' || chatType === 'supergroup') && activityGroupId && activityGroupId.trim() !== '') {
+      // Private chat'i kabul et (sadece /start komutu için)
+      const isPrivateChat = chatType === 'private'
+
+      // Grup mesajıysa, SADECE aktif grup olmalı
+      if (!isPrivateChat) {
+        if (!activityGroupId || activityGroupId.trim() === '') {
+          console.log('⚠️ Aktif grup ayarlanmamış - grup mesajları dinlenmiyor')
+          return NextResponse.json({ ok: true, message: 'No activity group set' })
+        }
+
         const chatIdStr = String(chatId)
         const isActivityGroup = chatIdStr === activityGroupId
 
-        console.log(`🔍 Grup Kontrolü:`, {
-          chatType,
-          messageChatId: chatIdStr,
-          activityGroupId: activityGroupId,
-          isMatch: isActivityGroup,
-          from: `${firstName || username || userId}`
-        })
-
         if (!isActivityGroup) {
-          console.log(`⏭️ Mesaj aktif grupta değil - atlandı`)
+          console.log(`⏭️ Mesaj aktif grupta değil (${chatIdStr} != ${activityGroupId}) - atlandı`)
           return NextResponse.json({ ok: true, message: 'Not activity group' })
         }
 
-        console.log(`✅ Mesaj aktif grupta - işleniyor`)
-      } else if (chatType === 'private') {
-        console.log(`💬 Private mesaj - işleniyor (grup kontrolü atlandı)`)
+        console.log(`✅ Mesaj aktif grupta - işleniyor: ${firstName || username || userId}`)
       } else {
-        console.log(`⚠️ Aktif grup ayarlanmamış veya private chat - tüm mesajlar işleniyor`)
+        // Private chat - sadece /start komutları için devam et
+        if (messageText !== '/start' && !messageText.startsWith('/start ')) {
+          console.log(`⏭️ Private chat - sadece /start kabul ediliyor`)
+          return NextResponse.json({ ok: true, message: 'Private chat - only /start allowed' })
+        }
+        console.log(`💬 Private chat /start komutu - işleniyor`)
       }
 
       // /start komutu hariç her şey için ban kontrolü
@@ -283,7 +273,7 @@ Bot özelliklerini kullanmanız engellenmiştir.
         }
       }
 
-      // ROLL SİSTEMİ - Sadece gruplarda çalışır
+      // ROLL SİSTEMİ - Sadece gruplarda çalışır (zaten aktif grupta olduğumuzu biliyoruz)
       if (chatType === 'group' || chatType === 'supergroup') {
         const groupId = String(chatId)
         const text = messageText.trim()
@@ -301,27 +291,15 @@ Bot özelliklerini kullanmanız engellenmiştir.
           }
         }
 
-        // Aktif grup kontrolü - Roll sistemi sadece aktif grupta çalışır
-        const activeGroupId = getSetting('activity_group_id', '')
-        const isActiveGroup = activeGroupId === groupId
-
-        // "liste" komutu - Herkes kullanabilir (sadece aktif grupta)
+        // "liste" komutu - Herkes kullanabilir
         if (text.toLowerCase() === 'liste') {
-          if (!isActiveGroup) {
-            return NextResponse.json({ ok: true })
-          }
-
           const statusMsg = getStatusList(groupId)
           await sendTelegramMessage(chatId, statusMsg)
           return NextResponse.json({ ok: true })
         }
 
-        // Roll komutları - Sadece adminler (sadece aktif grupta)
+        // Roll komutları - Sadece adminler
         if (text.startsWith('roll ') || text === 'roll') {
-          if (!isActiveGroup) {
-            return NextResponse.json({ ok: true })
-          }
-
           const isAdmin = await checkAdmin(chatId, Number(userId))
 
           const parts = text.split(' ')
@@ -472,8 +450,8 @@ Bot özelliklerini kullanmanız engellenmiştir.
           return NextResponse.json({ ok: true })
         }
 
-        // Normal mesaj - tracking aktifse kaydet (sadece aktif grupta)
-        if (isActiveGroup && rollEnabled) {
+        // Normal mesaj - tracking aktifse kaydet
+        if (rollEnabled) {
           const state = getRollState(groupId)
           if (state.status === 'active' || state.status === 'locked') {
             trackUserMessage(groupId, userId, username || null, firstName || null)
@@ -722,11 +700,7 @@ Siteye Butondan ulaşabilirsiniz
       const messagesForXp = parseInt(getSetting('messages_for_xp', '1'))
       const allowNewUsers = getSetting('allow_new_users', 'true') === 'true'
 
-      // PUAN KAZANMA SADECE GRUPLARDA OLUR - Private chat'te puan verilmez
-      if (chatType === 'private') {
-        console.log(`💬 Private chat mesajı - puan verilmez`)
-        return NextResponse.json({ ok: true, message: 'Private chat - no points' })
-      }
+      // NOT: Private chat kontrolü artık en başta yapılıyor, buraya sadece grup mesajları geliyor
 
       // ========== YENİ: TÜM TELEGRAM KULLANICILARINI KAYDET ==========
       // Telegram grup kullanıcısını oluştur veya güncelle (siteye kayıt olmamış bile olsa)
