@@ -167,8 +167,6 @@ export async function GET(
       points: user.points,
       xp: user.xp,
       totalMessages: user.totalMessages,
-      totalReferrals: user.totalReferrals,
-      referralPoints: user.referralPoints,
       messageStats: {
         daily: dailyMessages,
         weekly: weeklyMessages,
