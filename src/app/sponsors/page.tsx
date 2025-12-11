@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth-context'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import Header from '@/components/Header'
+import DashboardLayout from '@/components/DashboardLayout'
 import { Heart, TrendingUp, Crown, Sparkles, Search } from 'lucide-react'
 
 import Image from 'next/image'
@@ -278,12 +278,14 @@ function SponsorsContent() {
 
 export default function SponsorsPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    }>
-      <SponsorsContent />
-    </Suspense>
+    <DashboardLayout>
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      }>
+        <SponsorsContent />
+      </Suspense>
+    </DashboardLayout>
   )
 }
