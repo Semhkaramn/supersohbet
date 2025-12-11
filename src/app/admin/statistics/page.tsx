@@ -32,7 +32,8 @@ import Link from 'next/link'
 
 interface User {
   id: string
-  telegramId?: string | null // ✅ Opsiyonel
+  telegramId?: string | null
+  siteUsername?: string
   username?: string
   firstName?: string
   lastName?: string
@@ -422,30 +423,20 @@ export default function AdminStatisticsPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={user.photoUrl || undefined} alt={user.firstName || user.username || 'User'} />
-                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white font-bold">
-                          {(user.firstName || user.username || 'U').charAt(0).toUpperCase()}
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={user.photoUrl || undefined} alt={user.siteUsername || user.firstName || user.username || 'User'} />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold">
+                          {(user.siteUsername || user.firstName || user.username || 'U').charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                          {user.firstName || user.username || 'Kullanıcı'}
-                          {user.rank && (
-                            <span className="text-sm" style={{ color: user.rank.color }}>
-                              {user.rank.icon} {user.rank.name}
-                            </span>
-                          )}
-                          {user.isBanned && (
-                            <span className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded">
-                              BANLI
-                            </span>
-                          )}
-                        </h3>
-                        <p className="text-gray-400 text-sm">@{user.username || user.telegramId || 'Yok'}</p>
-                        {user.isBanned && user.banReason && (
-                          <p className="text-red-400 text-xs mt-1">Ban Nedeni: {user.banReason}</p>
-                        )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-bold text-base truncate">
+                          {user.siteUsername || 'Kullanıcı'}
+                        </p>
+                        <div className="flex flex-col text-xs text-gray-400">
+                          {user.firstName && <span className="truncate">{user.firstName}</span>}
+                          {user.username && <span className="truncate">@{user.username}</span>}
+                        </div>
                       </div>
                     </div>
                     <div className="flex gap-4 mt-2 flex-wrap">
@@ -524,37 +515,35 @@ export default function AdminStatisticsPage() {
               {/* User Info */}
               <Card className="bg-white/5 border-white/10 p-6">
                 <div className="flex items-center gap-4 mb-6">
-                  <Avatar className="h-20 w-20">
-                    <AvatarImage src={selectedUser.photoUrl || undefined} alt={selectedUser.firstName || selectedUser.username || 'User'} />
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white font-bold text-2xl">
-                      {(selectedUser.firstName || selectedUser.username || 'U').charAt(0).toUpperCase()}
+                  <Avatar className="w-16 h-16">
+                    <AvatarImage src={selectedUser.photoUrl || undefined} alt={selectedUser.siteUsername || selectedUser.firstName || selectedUser.username || 'User'} />
+                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xl font-bold">
+                      {(selectedUser.siteUsername || selectedUser.firstName || selectedUser.username || 'U').charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="text-2xl font-bold text-white">
-                      {selectedUser.firstName || selectedUser.username || 'Kullanıcı'}
+                    <h3 className="text-xl font-bold text-white mb-1">
+                      {selectedUser.siteUsername || 'Kullanıcı'}
                     </h3>
-                    <p className="text-gray-400">@{selectedUser.username || selectedUser.telegramId}</p>
-                    {selectedUser.rank && (
-                      <p className="text-sm mt-1" style={{ color: selectedUser.rank.color }}>
-                        {selectedUser.rank.icon} {selectedUser.rank.name}
-                      </p>
-                    )}
+                    <div className="flex flex-col text-sm text-gray-400">
+                      {selectedUser.firstName && <span>{selectedUser.firstName}</span>}
+                      {selectedUser.username && <span>@{selectedUser.username}</span>}
+                    </div>
                   </div>
                 </div>
                 <h3 className="text-xl font-bold text-white mb-4">Genel Bilgiler</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-gray-400 text-sm">İsim</p>
+                    <Label className="text-gray-400">Site Kullanıcı Adı</Label>
+                    <p className="text-white font-semibold">{selectedUser.siteUsername || 'Belirtilmemiş'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-gray-400">Telegram Adı</Label>
                     <p className="text-white font-semibold">{selectedUser.firstName || 'Belirtilmemiş'}</p>
                   </div>
                   <div>
-                    <p className="text-gray-400 text-sm">Kullanıcı Adı</p>
+                    <Label className="text-gray-400">Telegram Kullanıcı Adı</Label>
                     <p className="text-white font-semibold">@{selectedUser.username || selectedUser.telegramId}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400 text-sm">Telegram ID</p>
-                    <p className="text-white font-semibold">{selectedUser.telegramId}</p>
                   </div>
                   <div>
                     <p className="text-gray-400 text-sm">Kayıt Tarihi</p>
