@@ -310,7 +310,8 @@ export default function AdminRandyPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          onePerUser: randySettings.randy_one_per_user === 'true'
+          onePerUser: randySettings.randy_one_per_user === 'true',
+          allowAdmins: randySettings.randy_allow_admins === 'true'
         })
       })
 
@@ -632,6 +633,10 @@ export default function AdminRandyPage() {
                       <p className="text-white font-semibold">{activeSchedule.onePerUser ? 'Evet' : 'Hayır'}</p>
                     </div>
                     <div className="p-3 bg-white/5 rounded-lg">
+                      <p className="text-xs text-gray-400">Adminler</p>
+                      <p className="text-white font-semibold">{activeSchedule.allowAdmins ? 'Kazanabilir' : 'Kazanamaz'}</p>
+                    </div>
+                    <div className="p-3 bg-white/5 rounded-lg">
                       <p className="text-xs text-gray-400">Min. Mesaj</p>
                       <p className="text-white font-semibold">{activeSchedule.minMessages || 'Yok'}</p>
                     </div>
@@ -775,6 +780,10 @@ export default function AdminRandyPage() {
                               <div className="p-3 bg-white/5 rounded-lg">
                                 <p className="text-xs text-gray-400">Bir Kez</p>
                                 <p className="text-white text-sm font-medium">{schedule.onePerUser ? 'Evet' : 'Hayır'}</p>
+                              </div>
+                              <div className="p-3 bg-white/5 rounded-lg">
+                                <p className="text-xs text-gray-400">Adminler</p>
+                                <p className="text-white text-sm font-medium">{schedule.allowAdmins ? 'Kazanabilir' : 'Kazanamaz'}</p>
                               </div>
                               <div className="p-3 bg-white/5 rounded-lg">
                                 <p className="text-xs text-gray-400">Min. Mesaj</p>
