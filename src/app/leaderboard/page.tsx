@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import DashboardLayout from '@/components/DashboardLayout'
 import { Trophy, Crown, Medal, Star } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface LeaderboardUser {
   id: string
@@ -41,41 +42,52 @@ function LeaderboardContent() {
   }, [user])
 
   async function loadLeaderboards() {
+    setLoading(true)
     try {
       const userId = user?.id || ''
+
+      console.log('📊 Leaderboard yükleniyor...', { userId: userId || 'Giriş yapmamış' })
+
       const [pointsRes, xpRes] = await Promise.all([
         fetch(`/api/leaderboard?sortBy=points${userId ? `&userId=${userId}` : ''}`),
         fetch(`/api/leaderboard?sortBy=xp${userId ? `&userId=${userId}` : ''}`)
       ])
 
-      // Response kontrolü
+      // Response kontrolü - detaylı log
       if (!pointsRes.ok || !xpRes.ok) {
-        console.error('Leaderboard API error:', {
+        const pointsError = !pointsRes.ok ? await pointsRes.text().catch(() => 'Okunamadı') : null
+        const xpError = !xpRes.ok ? await xpRes.text().catch(() => 'Okunamadı') : null
+
+        console.error('❌ Leaderboard API hatası:', {
           pointsStatus: pointsRes.status,
-          xpStatus: xpRes.status
+          xpStatus: xpRes.status,
+          pointsError,
+          xpError
         })
-        throw new Error('Failed to fetch leaderboard')
+        throw new Error('Leaderboard API başarısız oldu')
       }
 
       const pointsData = await pointsRes.json()
       const xpData = await xpRes.json()
 
-      console.log('Leaderboard loaded:', {
+      console.log('✅ Leaderboard yüklendi:', {
         pointsCount: pointsData.leaderboard?.length || 0,
         xpCount: xpData.leaderboard?.length || 0,
         hasCurrentUser: !!pointsData.currentUser
       })
 
-      // Login olmasa bile leaderboard'ı göster
+      // Giriş yapmasa bile leaderboard'ı göster
       setPointsLeaderboard(pointsData.leaderboard || [])
       setPointsCurrentUser(pointsData.currentUser || null)
       setXpLeaderboard(xpData.leaderboard || [])
       setXpCurrentUser(xpData.currentUser || null)
     } catch (error) {
-      console.error('Error loading leaderboard:', error)
-      // Hata durumunda bile boş array döndür
+      console.error('❌ Leaderboard yükleme hatası:', error)
+      // Hata durumunda bile boş array set et (UI çökmemeli)
       setPointsLeaderboard([])
       setXpLeaderboard([])
+      setPointsCurrentUser(null)
+      setXpCurrentUser(null)
     } finally {
       setLoading(false)
     }
@@ -288,6 +300,30 @@ function LeaderboardContent() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 py-6">
+      {/* Giriş yapmamış kullanıcılar için bilgilendirme */}
+      {!user && (
+        <Card className="bg-gradient-to-br from-blue-900/40 via-indigo-900/30 to-blue-900/40 border-blue-500/50 p-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-blue-500/20">
+              <Trophy className="w-5 h-5 text-blue-300" />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-blue-100 mb-1">Sıralamada Yerinizi Görmek İçin Giriş Yapın</p>
+              <p className="text-sm text-blue-200/80">
+                Liderlik tablosunu görüntüleyebilirsiniz. Kendi sıralamanızı görmek için giriş yapın.
+              </p>
+              <Button
+                onClick={() => setShowLoginModal(true)}
+                size="sm"
+                className="mt-3 bg-blue-500 hover:bg-blue-400 text-white font-bold"
+              >
+                Giriş Yap
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <Tabs defaultValue="points" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="points" className="flex items-center gap-2">
