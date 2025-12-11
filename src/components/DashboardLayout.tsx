@@ -14,8 +14,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <Header />
       <Sidebar />
 
-      <div className="lg:pl-20 transition-all duration-300">
-        <main className="min-h-screen p-4 md:p-6 lg:p-8 lg:pt-24">
+      <div className="transition-all duration-300">
+        <main className="min-h-screen p-4 md:p-6 lg:p-8 pt-20 lg:pt-24">
           {children}
         </main>
       </div>
