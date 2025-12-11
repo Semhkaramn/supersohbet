@@ -417,7 +417,7 @@ function ShopContent() {
             <AlertDialogAction
               onClick={() => {
                 setWalletInfoDialogOpen(false)
-                router.push(`/wallet-info`)
+                router.push(`/profile#wallet`)
               }}
               className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
@@ -462,7 +462,7 @@ function ShopContent() {
             <AlertDialogAction
               onClick={() => {
                 setSponsorInfoDialogOpen(false)
-                router.push(`/wallet-info`)
+                router.push(`/profile#wallet`)
               }}
               className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
@@ -562,3 +562,4 @@ export default function ShopPage() {
     </DashboardLayout>
   )
 }
+
