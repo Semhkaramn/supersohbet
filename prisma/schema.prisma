@@ -419,3 +419,17 @@ model RandySlot {
   @@index([assigned])
   @@index([assignedUser])
 }
+
+// Site ziyaretçi sayacı - Tüm sayfa ziyaretlerini takip eder
+model SiteVisit {
+  id               String          @id @default(cuid())
+  ipAddress        String?         // Ziyaretçi IP adresi (opsiyonel, privacy için hash'lenmiş olabilir)
+  userAgent        String?         // Tarayıcı bilgisi (opsiyonel)
+  page             String          @default("/") // Ziyaret edilen sayfa
+  userId           String?         // Giriş yapmış kullanıcı ID'si (opsiyonel)
+  createdAt        DateTime        @default(now())
+
+  @@index([createdAt])
+  @@index([page])
+  @@index([userId])
+}
