@@ -6,18 +6,21 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/auth-context'
-import { CheckCircle2, ExternalLink } from 'lucide-react'
+import { CheckCircle2, ExternalLink, Copy } from 'lucide-react'
 
-export default function ChannelModal() {
+export default function TelegramConnectionModal() {
   const { user, showChannelModal, setShowChannelModal, refreshUser } = useAuth()
   const [loading, setLoading] = useState(true)
   const [telegramConnected, setTelegramConnected] = useState(false)
   const [botUsername, setBotUsername] = useState('')
+  const [connectionToken, setConnectionToken] = useState('')
+  const [tokenExpiry, setTokenExpiry] = useState<Date | null>(null)
 
   useEffect(() => {
     if (showChannelModal && user) {
       loadTelegramStatus()
       loadBotUsername()
+      loadConnectionToken()
     }
   }, [showChannelModal, user])
 
@@ -66,8 +69,37 @@ export default function ChannelModal() {
     } catch (error) {
       console.error('Error loading bot username:', error)
       toast.error('Bot bilgileri yüklenirken hata oluştu')
+    }
+  }
+
+  async function loadConnectionToken() {
+    try {
+      const tokenRes = await fetch('/api/user/telegram-connection-token')
+
+      if (tokenRes.ok) {
+        const tokenData = await tokenRes.json()
+        setConnectionToken(tokenData.token)
+        setTokenExpiry(tokenData.expiresAt ? new Date(tokenData.expiresAt) : null)
+      } else {
+        const errorData = await tokenRes.json()
+        if (errorData.connected) {
+          setTelegramConnected(true)
+        } else {
+          toast.error(errorData.error || 'Token alınamadı')
+        }
+      }
+    } catch (error) {
+      console.error('Error loading connection token:', error)
+      toast.error('Bağlantı kodu alınamadı')
     } finally {
       setLoading(false)
+    }
+  }
+
+  function copyToken() {
+    if (connectionToken) {
+      navigator.clipboard.writeText(connectionToken)
+      toast.success('Bağlantı kodu kopyalandı!')
     }
   }
 
@@ -85,7 +117,7 @@ export default function ChannelModal() {
 
         <div className="space-y-6 py-4">
           {/* Telegram Bot Başlatma */}
-          {!telegramConnected && (
+          {!telegramConnected && connectionToken && (
             <Card className="bg-gradient-to-br from-blue-600/20 to-cyan-600/20 border-blue-500/30 p-6">
               <div className="text-center space-y-4">
                 <div className="w-16 h-16 mx-auto rounded-full bg-blue-500/30 flex items-center justify-center">
@@ -96,19 +128,42 @@ export default function ChannelModal() {
                 <div>
                   <h3 className="text-white font-bold text-lg mb-2">Telegram Botunu Başlat</h3>
                   <p className="text-gray-300 text-sm mb-4">
-                    Telegram botunu başlatmak için /start komutunu gönderin
+                    Aşağıdaki butona tıklayın ve bota /start komutunu gönderin
                   </p>
+
+                  {/* Bağlantı Kodu */}
+                  <div className="bg-gray-700/50 rounded-lg p-4 mb-4">
+                    <p className="text-gray-400 text-xs mb-2">Bağlantı Kodunuz:</p>
+                    <div className="flex items-center justify-center gap-2">
+                      <code className="text-2xl font-mono font-bold text-white tracking-wider">
+                        {connectionToken}
+                      </code>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={copyToken}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    {tokenExpiry && (
+                      <p className="text-gray-500 text-xs mt-2">
+                        10 dakika içinde geçerli
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <Button
                   onClick={() => {
                     const username = botUsername || 'supersohbet_bot'
-                    window.open(`https://t.me/${username}?start=connect`, '_blank')
+                    window.open(`https://t.me/${username}?start=${connectionToken}`, '_blank')
                   }}
                   className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
-                  disabled={!botUsername}
+                  disabled={!botUsername || !connectionToken}
                 >
                   <ExternalLink className="w-4 h-4 mr-2" />
-                  {botUsername ? 'Botu Başlat' : 'Yükleniyor...'}
+                  {botUsername && connectionToken ? 'Botu Başlat' : 'Yükleniyor...'}
                 </Button>
                 {botUsername && (
                   <p className="text-xs text-gray-400">@{botUsername}</p>
