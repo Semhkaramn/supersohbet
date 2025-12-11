@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Home,
   ShoppingBag,
@@ -16,10 +16,60 @@ import {
   Menu,
   X
 } from 'lucide-react'
+import { FaTelegram, FaInstagram, FaTwitter, FaYoutube, FaDiscord, FaTiktok, FaFacebook, FaWhatsapp, FaLinkedin, FaTwitch } from 'react-icons/fa'
+
+interface SocialMedia {
+  id: string
+  name: string
+  platform: string
+  username: string
+  order: number
+}
+
+const SOCIAL_ICONS: { [key: string]: any } = {
+  telegram: FaTelegram,
+  instagram: FaInstagram,
+  twitter: FaTwitter,
+  youtube: FaYoutube,
+  discord: FaDiscord,
+  tiktok: FaTiktok,
+  facebook: FaFacebook,
+  whatsapp: FaWhatsapp,
+  linkedin: FaLinkedin,
+  twitch: FaTwitch
+}
+
+const SOCIAL_URLS: { [key: string]: (username: string) => string } = {
+  telegram: (u) => u.startsWith('http') ? u : `https://t.me/${u}`,
+  instagram: (u) => u.startsWith('http') ? u : `https://instagram.com/${u}`,
+  twitter: (u) => u.startsWith('http') ? u : `https://twitter.com/${u}`,
+  youtube: (u) => u.startsWith('http') ? u : `https://youtube.com/@${u}`,
+  discord: (u) => u.startsWith('http') ? u : `https://discord.gg/${u}`,
+  tiktok: (u) => u.startsWith('http') ? u : `https://tiktok.com/@${u}`,
+  facebook: (u) => u.startsWith('http') ? u : `https://facebook.com/${u}`,
+  whatsapp: (u) => u.startsWith('http') ? u : `https://wa.me/${u}`,
+  linkedin: (u) => u.startsWith('http') ? u : `https://linkedin.com/in/${u}`,
+  twitch: (u) => u.startsWith('http') ? u : `https://twitch.tv/${u}`
+}
 
 export default function Sidebar() {
   const pathname = usePathname()
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [socialMedia, setSocialMedia] = useState<SocialMedia[]>([])
+
+  useEffect(() => {
+    loadSocialMedia()
+  }, [])
+
+  async function loadSocialMedia() {
+    try {
+      const response = await fetch('/api/social-media')
+      const data = await response.json()
+      setSocialMedia(data || [])
+    } catch (error) {
+      console.error('Error loading social media:', error)
+    }
+  }
 
   const menuItems = [
     {
@@ -121,6 +171,34 @@ export default function Sidebar() {
             )
           })}
         </nav>
+
+        {/* Social Media Links */}
+        {socialMedia.length > 0 && (
+          <div className="p-4 border-t border-white/10">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase mb-3 px-4">Bağlantılar</h3>
+            <div className="space-y-1">
+              {socialMedia.map((social) => {
+                const Icon = SOCIAL_ICONS[social.platform]
+                const url = SOCIAL_URLS[social.platform]?.(social.username) || '#'
+                return (
+                  <a
+                    key={social.id}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-white/5 transition-all duration-200 group"
+                    title={social.name}
+                  >
+                    {Icon && <Icon className="w-5 h-5 flex-shrink-0 text-gray-400 group-hover:text-white transition-colors" />}
+                    <span className="font-medium whitespace-nowrap text-gray-400 group-hover:text-white text-sm transition-colors">
+                      {social.name}
+                    </span>
+                  </a>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </aside>
 
       {/* Mobile Sidebar */}
@@ -164,6 +242,34 @@ export default function Sidebar() {
             )
           })}
         </nav>
+
+        {/* Social Media Links */}
+        {socialMedia.length > 0 && (
+          <div className="p-4 border-t border-white/10">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase mb-3 px-4">Bağlantılar</h3>
+            <div className="space-y-1">
+              {socialMedia.map((social) => {
+                const Icon = SOCIAL_ICONS[social.platform]
+                const url = SOCIAL_URLS[social.platform]?.(social.username) || '#'
+                return (
+                  <a
+                    key={social.id}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setIsMobileOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-white/5 transition-all duration-200 group"
+                  >
+                    {Icon && <Icon className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" />}
+                    <span className="font-medium text-gray-400 group-hover:text-white text-sm transition-colors">
+                      {social.name}
+                    </span>
+                  </a>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </aside>
     </>
   )
