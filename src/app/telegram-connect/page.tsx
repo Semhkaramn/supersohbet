@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckCircle2, Send, Loader2 } from 'lucide-react'
@@ -9,6 +10,7 @@ import { toast } from 'sonner'
 
 export default function TelegramConnectPage() {
   const router = useRouter()
+  const { setShowLoginModal } = useAuth()
   const [loading, setLoading] = useState(true)
   const [botUsername, setBotUsername] = useState<string>('')
   const [connected, setConnected] = useState(false)
@@ -55,7 +57,7 @@ export default function TelegramConnectPage() {
       const response = await fetch('/api/user/telegram-status')
 
       if (response.status === 401) {
-        router.push('/login')
+        setShowLoginModal(true)
         return
       }
 
