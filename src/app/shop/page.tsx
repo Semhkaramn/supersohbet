@@ -16,7 +16,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import BottomNav from '@/components/BottomNav'
+import DashboardLayout from '@/components/DashboardLayout'
+import ProtectedRoute from '@/components/ProtectedRoute'
 import { ShoppingBag, Coins, Heart, Package, Clock, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import Image from 'next/image'
@@ -394,7 +395,7 @@ function ShopContent() {
         </Tabs>
       </div>
 
-      <BottomNav />
+
 
       {/* Wallet Info Dialog */}
       <AlertDialog open={walletInfoDialogOpen} onOpenChange={setWalletInfoDialogOpen}>
@@ -551,12 +552,16 @@ function ShopContent() {
 
 export default function ShopPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    }>
-      <ShopContent />
-    </Suspense>
+    <ProtectedRoute>
+      <DashboardLayout>
+        <Suspense fallback={
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        }>
+          <ShopContent />
+        </Suspense>
+      </DashboardLayout>
+    </ProtectedRoute>
   )
 }
