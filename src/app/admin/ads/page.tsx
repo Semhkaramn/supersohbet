@@ -4,10 +4,28 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, MonitorPlay, GripVertical, Eye, EyeOff } from 'lucide-react'
+import { ArrowLeft, MonitorPlay, GripVertical, Eye, EyeOff, Share2, Plus, Edit2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { Switch } from '@/components/ui/switch'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import Image from 'next/image'
 
 interface Setting {
@@ -28,16 +46,49 @@ interface Sponsor {
   showInBanner: boolean
 }
 
+interface SocialMedia {
+  id: string
+  name: string
+  platform: string
+  username: string
+  isActive: boolean
+  order: number
+}
+
+const SOCIAL_PLATFORMS = [
+  { value: 'telegram', label: 'Telegram', icon: '📱' },
+  { value: 'instagram', label: 'Instagram', icon: '📷' },
+  { value: 'twitter', label: 'Twitter/X', icon: '🐦' },
+  { value: 'youtube', label: 'YouTube', icon: '📺' },
+  { value: 'discord', label: 'Discord', icon: '💬' },
+  { value: 'tiktok', label: 'TikTok', icon: '🎵' },
+  { value: 'facebook', label: 'Facebook', icon: '👥' },
+  { value: 'whatsapp', label: 'WhatsApp', icon: '💚' },
+  { value: 'linkedin', label: 'LinkedIn', icon: '💼' },
+  { value: 'twitch', label: 'Twitch', icon: '🎮' }
+]
+
 export default function AdminAdsPage() {
   const router = useRouter()
   const [settings, setSettings] = useState<Setting[]>([])
   const [sponsors, setSponsors] = useState<Sponsor[]>([])
+  const [socialMedia, setSocialMedia] = useState<SocialMedia[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [draggedItem, setDraggedItem] = useState<number | null>(null)
+  const [draggedSocial, setDraggedSocial] = useState<number | null>(null)
 
   // Sponsor Banner
   const [sponsorBannerEnabled, setSponsorBannerEnabled] = useState(false)
+
+  // Social Media Dialog
+  const [socialDialog, setSocialDialog] = useState(false)
+  const [editingSocial, setEditingSocial] = useState<SocialMedia | null>(null)
+  const [socialForm, setSocialForm] = useState({
+    name: '',
+    platform: '',
+    username: ''
+  })
 
   useEffect(() => {
     const token = localStorage.getItem('admin_token')
@@ -47,6 +98,7 @@ export default function AdminAdsPage() {
     }
     loadSettings()
     loadSponsors()
+    loadSocialMedia()
   }, [])
 
   async function loadSettings() {
@@ -88,6 +140,196 @@ export default function AdminAdsPage() {
       console.error('Error loading sponsors:', error)
       toast.error('Sponsorlar yüklenemedi')
     }
+  }
+
+  async function loadSocialMedia() {
+    try {
+      const token = localStorage.getItem('admin_token')
+      const response = await fetch('/api/admin/social-media', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      const data = await response.json()
+      setSocialMedia(data || [])
+    } catch (error) {
+      console.error('Error loading social media:', error)
+      toast.error('Sosyal medya bağlantıları yüklenemedi')
+    }
+  }
+
+  async function saveSocialMedia() {
+    if (!socialForm.name || !socialForm.platform || !socialForm.username) {
+      toast.error('Tüm alanları doldurun')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const token = localStorage.getItem('admin_token')
+      const url = editingSocial
+        ? `/api/admin/social-media/${editingSocial.id}`
+        : '/api/admin/social-media'
+
+      const response = await fetch(url, {
+        method: editingSocial ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...socialForm,
+          isActive: true,
+          order: editingSocial?.order ?? socialMedia.length
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.id) {
+        toast.success(editingSocial ? 'Sosyal medya güncellendi' : 'Sosyal medya eklendi')
+        loadSocialMedia()
+        setSocialDialog(false)
+        setEditingSocial(null)
+        setSocialForm({ name: '', platform: '', username: '' })
+      } else {
+        toast.error(data.error || 'İşlem başarısız')
+      }
+    } catch (error) {
+      console.error('Save error:', error)
+      toast.error('Bir hata oluştu')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function deleteSocialMedia(id: string) {
+    if (!confirm('Bu sosyal medya bağlantısını silmek istediğinize emin misiniz?')) return
+
+    try {
+      const token = localStorage.getItem('admin_token')
+      const response = await fetch(`/api/admin/social-media/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success('Sosyal medya silindi')
+        loadSocialMedia()
+      } else {
+        toast.error(data.error || 'Silme başarısız')
+      }
+    } catch (error) {
+      console.error('Delete error:', error)
+      toast.error('Bir hata oluştu')
+    }
+  }
+
+  async function toggleSocialActive(id: string, currentValue: boolean) {
+    try {
+      const token = localStorage.getItem('admin_token')
+      const item = socialMedia.find(s => s.id === id)
+      if (!item) return
+
+      const response = await fetch(`/api/admin/social-media/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...item,
+          isActive: !currentValue
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.id) {
+        setSocialMedia(prev => prev.map(s =>
+          s.id === id ? { ...s, isActive: !currentValue } : s
+        ))
+        toast.success(!currentValue ? 'Sosyal medya aktif edildi' : 'Sosyal medya pasif edildi')
+      } else {
+        toast.error(data.error || 'İşlem başarısız')
+      }
+    } catch (error) {
+      console.error('Toggle error:', error)
+      toast.error('Bir hata oluştu')
+    }
+  }
+
+  function handleSocialDragStart(index: number) {
+    setDraggedSocial(index)
+  }
+
+  function handleSocialDragOver(e: React.DragEvent, index: number) {
+    e.preventDefault()
+    if (draggedSocial === null || draggedSocial === index) return
+
+    const newItems = [...socialMedia]
+    const draggedItem = newItems[draggedSocial]
+    newItems.splice(draggedSocial, 1)
+    newItems.splice(index, 0, draggedItem)
+
+    setSocialMedia(newItems)
+    setDraggedSocial(index)
+  }
+
+  async function handleSocialDragEnd() {
+    if (draggedSocial === null) return
+
+    try {
+      const updates = socialMedia.map((item, index) => ({
+        id: item.id,
+        order: index
+      }))
+
+      const token = localStorage.getItem('admin_token')
+      const response = await fetch('/api/admin/social-media/reorder', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ items: updates })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success('Sıralama kaydedildi')
+      } else {
+        toast.error('Sıralama kaydedilemedi')
+        loadSocialMedia()
+      }
+    } catch (error) {
+      console.error('Reorder error:', error)
+      toast.error('Bir hata oluştu')
+      loadSocialMedia()
+    } finally {
+      setDraggedSocial(null)
+    }
+  }
+
+  function openEditSocial(item: SocialMedia) {
+    setEditingSocial(item)
+    setSocialForm({
+      name: item.name,
+      platform: item.platform,
+      username: item.username
+    })
+    setSocialDialog(true)
+  }
+
+  function openAddSocial() {
+    setEditingSocial(null)
+    setSocialForm({ name: '', platform: '', username: '' })
+    setSocialDialog(true)
   }
 
   async function toggleSponsorBanner() {
@@ -235,12 +477,24 @@ export default function AdminAdsPage() {
             <div>
               <h1 className="text-3xl font-bold text-white flex items-center gap-2">
                 <MonitorPlay className="w-8 h-8" />
-                Kayan Banner Yönetimi
+                Reklam Alanı Yönetimi
               </h1>
-              <p className="text-gray-400 mt-1">Sponsor banner gösterimini yönetin</p>
+              <p className="text-gray-400 mt-1">Sponsor banner ve sosyal medya bağlantılarını yönetin</p>
             </div>
           </div>
         </div>
+
+        {/* Tabs */}
+        <Tabs defaultValue="banner" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 bg-white/5">
+            <TabsTrigger value="banner">Kayan Banner</TabsTrigger>
+            <TabsTrigger value="social">
+              <Share2 className="w-4 h-4 mr-2" />
+              Sosyal Medya
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="banner" className="space-y-6 mt-6">
 
         {/* Banner Açma/Kapama */}
         <Card className="bg-white/5 border-white/10 p-6">
@@ -380,6 +634,187 @@ export default function AdminAdsPage() {
           )}
         </Card>
 
+        {/* Social Media */}
+        <Card className="bg-white/5 border-white/10 p-6">
+          <div className="mb-4">
+            <h2 className="text-xl font-bold text-white mb-2">Sosyal Medya Bağlantıları</h2>
+            <p className="text-gray-400 text-sm">
+              Sosyal medya bağlantılarınızı yönetin. Sıralama banner'da soldan sağa kayma sırası olacaktır.
+            </p>
+          </div>
+
+          {socialMedia.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-400 mb-3">Henüz sosyal medya bağlantısı eklenmemiş</p>
+              <Button onClick={openAddSocial} className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Sosyal Medya Ekle
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {socialMedia.map((item, index) => (
+                <div
+                  key={item.id}
+                  draggable
+                  onDragStart={() => handleSocialDragStart(index)}
+                  onDragOver={(e) => handleSocialDragOver(e, index)}
+                  onDragEnd={handleSocialDragEnd}
+                  className={`flex items-center gap-4 p-4 rounded-lg border transition-all cursor-move ${
+                    item.isActive
+                      ? 'bg-blue-500/10 border-blue-500/30'
+                      : 'bg-white/5 border-white/10'
+                  } ${draggedSocial === index ? 'opacity-50' : ''} hover:border-blue-500/50`}
+                >
+                  {/* Drag Handle */}
+                  <GripVertical className="w-5 h-5 text-gray-400" />
+
+                  {/* Sıra Numarası */}
+                  <div className="text-white font-bold text-lg bg-white/10 rounded-full w-8 h-8 flex items-center justify-center">
+                    {index + 1}
+                  </div>
+
+                  {/* Platform Icon */}
+                  <div className="text-2xl">{SOCIAL_PLATFORMS.find(p => p.value === item.platform)?.icon}</div>
+
+                  {/* Platform */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-white font-semibold">{item.name}</h3>
+                      <span className="text-gray-400 text-xs">{item.platform}</span>
+                    </div>
+                    <p className="text-gray-400 text-xs">{item.username}</p>
+                  </div>
+
+                  {/* Active Toggle */}
+                  <Button
+                    size="sm"
+                    variant={item.isActive ? "default" : "outline"}
+                    onClick={() => toggleSocialActive(item.id, item.isActive)}
+                    disabled={saving}
+                    className={item.isActive
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "border-white/20 hover:bg-white/10"
+                    }
+                  >
+                    {item.isActive ? (
+                      <>
+                        <Eye className="w-4 h-4 mr-2" />
+                        Aktif
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff className="w-4 h-4 mr-2" />
+                        Pasif
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Edit/Delete Buttons */}
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openEditSocial(item)}
+                      disabled={saving}
+                      className="border-white/20 hover:bg-white/10"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => deleteSocialMedia(item.id)}
+                      disabled={saving}
+                      className="border-red-500/30 hover:bg-red-500/20"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* Social Media Dialog */}
+        <Dialog open={socialDialog} onOpenChange={setSocialDialog}>
+          <DialogContent className="bg-white/5 border-white/10">
+            <DialogHeader>
+              <DialogTitle>
+                {editingSocial ? 'Sosyal Medya Güncelle' : 'Yeni Sosyal Medya Ekle'}
+              </DialogTitle>
+              <DialogDescription>
+                {editingSocial ? 'Mevcut sosyal medya bilgilerini güncelleyin' : 'Yeni sosyal medya bağlantısı ekleyin'}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name">Ad</Label>
+                <Input
+                  id="name"
+                  value={socialForm.name}
+                  onChange={(e) => setSocialForm(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Sosyal medya adı"
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="platform">Platform</Label>
+                <Select
+                  value={socialForm.platform}
+                  onValueChange={(value) => setSocialForm(prev => ({ ...prev, platform: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Platform seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SOCIAL_PLATFORMS.map(platform => (
+                      <SelectItem key={platform.value} value={platform.value}>
+                        {platform.icon} {platform.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="username">Kullanıcı Adı</Label>
+                <Input
+                  id="username"
+                  value={socialForm.username}
+                  onChange={(e) => setSocialForm(prev => ({ ...prev, username: e.target.value }))}
+                  placeholder="Kullanıcı adı"
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSocialDialog(false)
+                  setEditingSocial(null)
+                  setSocialForm({ name: '', platform: '', username: '' })
+                }}
+                disabled={saving}
+              >
+                İptal
+              </Button>
+              <Button
+                onClick={saveSocialMedia}
+                disabled={saving}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {saving ? 'Kaydediliyor...' : editingSocial ? 'Güncelle' : 'Ekle'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Yönlendirme */}
         <Card className="bg-blue-500/10 border-blue-500/30 p-4">
           <h4 className="text-blue-300 font-semibold mb-2">💡 Sponsor Yönetimi</h4>
@@ -392,6 +827,208 @@ export default function AdminAdsPage() {
             </Button>
           </Link>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="social" className="space-y-6 mt-6">
+        {/* Social Media */}
+        <div className="flex justify-end mb-4">
+          <Button onClick={openAddSocial} className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="w-4 h-4 mr-2" />
+            Sosyal Medya Ekle
+          </Button>
+        </div>
+
+        <Card className="bg-white/5 border-white/10 p-6">
+          <div className="mb-4">
+            <h2 className="text-xl font-bold text-white mb-2">Sosyal Medya Bağlantıları</h2>
+            <p className="text-gray-400 text-sm">
+              Sosyal medya bağlantılarınızı yönetin. Aktif olanlar sidebar'ın en altında görünecektir.
+            </p>
+          </div>
+
+          {socialMedia.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-400 mb-3">Henüz sosyal medya bağlantısı eklenmemiş</p>
+              <Button onClick={openAddSocial} className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Sosyal Medya Ekle
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {socialMedia.map((item, index) => (
+                <div
+                  key={item.id}
+                  draggable
+                  onDragStart={() => handleSocialDragStart(index)}
+                  onDragOver={(e) => handleSocialDragOver(e, index)}
+                  onDragEnd={handleSocialDragEnd}
+                  className={`flex items-center gap-4 p-4 rounded-lg border transition-all cursor-move ${
+                    item.isActive
+                      ? 'bg-blue-500/10 border-blue-500/30'
+                      : 'bg-white/5 border-white/10'
+                  } ${draggedSocial === index ? 'opacity-50' : ''} hover:border-blue-500/50`}
+                >
+                  {/* Drag Handle */}
+                  <GripVertical className="w-5 h-5 text-gray-400" />
+
+                  {/* Sıra Numarası */}
+                  <div className="text-white font-bold text-lg bg-white/10 rounded-full w-8 h-8 flex items-center justify-center">
+                    {index + 1}
+                  </div>
+
+                  {/* Platform Icon */}
+                  <div className="text-2xl">{SOCIAL_PLATFORMS.find(p => p.value === item.platform)?.icon}</div>
+
+                  {/* Info */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-white font-semibold">{item.name}</h3>
+                      <span className="text-gray-400 text-xs bg-white/10 px-2 py-0.5 rounded">
+                        {SOCIAL_PLATFORMS.find(p => p.value === item.platform)?.label}
+                      </span>
+                      {!item.isActive && (
+                        <span className="bg-red-500/20 text-red-400 text-xs font-bold px-2 py-0.5 rounded border border-red-500/30">
+                          Pasif
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-gray-400 text-sm mt-1">{item.username}</p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant={item.isActive ? "default" : "outline"}
+                      onClick={() => toggleSocialActive(item.id, item.isActive)}
+                      className={item.isActive
+                        ? "bg-green-600 hover:bg-green-700"
+                        : "border-white/20 hover:bg-white/10"
+                      }
+                    >
+                      {item.isActive ? (
+                        <>
+                          <Eye className="w-4 h-4 mr-2" />
+                          Aktif
+                        </>
+                      ) : (
+                        <>
+                          <EyeOff className="w-4 h-4 mr-2" />
+                          Pasif
+                        </>
+                      )}
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openEditSocial(item)}
+                      className="border-white/20 hover:bg-white/10"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => deleteSocialMedia(item.id)}
+                      className="border-red-500/30 hover:bg-red-500/20 text-red-400"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Social Media Dialog */}
+        <Dialog open={socialDialog} onOpenChange={setSocialDialog}>
+          <DialogContent className="bg-gray-900 border-white/10">
+            <DialogHeader>
+              <DialogTitle className="text-white">
+                {editingSocial ? 'Sosyal Medya Güncelle' : 'Yeni Sosyal Medya Ekle'}
+              </DialogTitle>
+              <DialogDescription className="text-gray-400">
+                {editingSocial ? 'Mevcut sosyal medya bilgilerini güncelleyin' : 'Yeni sosyal medya bağlantısı ekleyin'}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name" className="text-white">Gösterilecek İsim</Label>
+                <Input
+                  id="name"
+                  value={socialForm.name}
+                  onChange={(e) => setSocialForm(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Örn: Telegram Kanalımız"
+                  className="bg-white/5 border-white/10 text-white mt-2"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="platform" className="text-white">Platform</Label>
+                <Select
+                  value={socialForm.platform}
+                  onValueChange={(value) => setSocialForm(prev => ({ ...prev, platform: value }))}
+                >
+                  <SelectTrigger className="bg-white/5 border-white/10 text-white mt-2">
+                    <SelectValue placeholder="Platform seçin" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-900 border-white/10">
+                    {SOCIAL_PLATFORMS.map(platform => (
+                      <SelectItem key={platform.value} value={platform.value} className="text-white">
+                        {platform.icon} {platform.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="username" className="text-white">Kullanıcı Adı / Link</Label>
+                <Input
+                  id="username"
+                  value={socialForm.username}
+                  onChange={(e) => setSocialForm(prev => ({ ...prev, username: e.target.value }))}
+                  placeholder={socialForm.platform === 'telegram' ? 'supersohbet' : 'kullaniciadi veya tam link'}
+                  className="bg-white/5 border-white/10 text-white mt-2"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  {socialForm.platform === 'telegram'
+                    ? '@ işareti olmadan sadece kullanıcı adı yazın'
+                    : 'Kullanıcı adı veya tam link girebilirsiniz'}
+                </p>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSocialDialog(false)
+                  setEditingSocial(null)
+                  setSocialForm({ name: '', platform: '', username: '' })
+                }}
+                disabled={saving}
+                className="border-white/20 hover:bg-white/10"
+              >
+                İptal
+              </Button>
+              <Button
+                onClick={saveSocialMedia}
+                disabled={saving}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {saving ? 'Kaydediliyor...' : editingSocial ? 'Güncelle' : 'Ekle'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )
