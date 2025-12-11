@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth-context'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -58,6 +59,7 @@ const TASK_TYPE_LABELS: Record<string, string> = {
 
 function TasksContent() {
   const router = useRouter()
+  const { user, setShowLoginModal } = useAuth()
 
   const [dailyTasks, setDailyTasks] = useState<Task[]>([])
   const [weeklyTasks, setWeeklyTasks] = useState<Task[]>([])
@@ -80,7 +82,7 @@ function TasksContent() {
       ])
 
       if (tasksRes.status === 401) {
-        router.push('/login')
+        setShowLoginModal(true)
         return
       }
 
