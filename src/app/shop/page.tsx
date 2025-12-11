@@ -18,7 +18,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import DashboardLayout from '@/components/DashboardLayout'
-import ProtectedRoute from '@/components/ProtectedRoute'
 import { ShoppingBag, Coins, Heart, Package, Clock, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import Image from 'next/image'
@@ -51,7 +50,7 @@ interface Purchase {
 
 function ShopContent() {
   const router = useRouter()
-  const { setShowLoginModal } = useAuth()
+  const { user, setShowLoginModal } = useAuth()
 
   const [items, setItems] = useState<ShopItem[]>([])
   const [userData, setUserData] = useState<UserData | null>(null)
@@ -67,26 +66,22 @@ function ShopContent() {
 
   useEffect(() => {
     loadData()
-  }, [])
+  }, [user])
 
   async function loadData() {
     try {
-      const [itemsRes, userRes] = await Promise.all([
-        fetch('/api/shop/items'),
-        fetch('/api/user/me')
-      ])
-
-      if (userRes.status === 401) {
-        // Session expired, show login modal instead of redirect
-        setShowLoginModal(true)
-        return
-      }
-
+      const itemsRes = await fetch('/api/shop/items')
       const itemsData = await itemsRes.json()
-      const userData = await userRes.json()
-
       setItems(itemsData.items || [])
-      setUserData(userData)
+
+      // Only load user data if logged in
+      if (user) {
+        const userRes = await fetch('/api/user/me')
+        if (userRes.ok) {
+          const userData = await userRes.json()
+          setUserData(userData)
+        }
+      }
     } catch (error) {
       console.error('Error loading shop data:', error)
       toast.error('Veriler yüklenirken hata oluştu')
@@ -96,6 +91,9 @@ function ShopContent() {
   }
 
   async function loadPurchases(silent = false) {
+    // Only load purchases if logged in
+    if (!user) return
+
     // Sessiz güncelleme değilse loading göster
     if (!silent) {
       setLoadingPurchases(true)
@@ -119,6 +117,13 @@ function ShopContent() {
   }
 
   function openPurchaseConfirm(item: ShopItem) {
+    // Check if user is logged in
+    if (!user) {
+      toast.error('Satın almak için giriş yapmalısınız')
+      setShowLoginModal(true)
+      return
+    }
+
     if (!userData || userData.points < item.price) {
       toast.error('Yetersiz puan!')
       return
@@ -329,7 +334,18 @@ function ShopContent() {
           </TabsContent>
 
           <TabsContent value="orders">
-            {loadingPurchases ? (
+            {!user ? (
+              <div className="text-center py-12">
+                <Package className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                <p className="text-gray-400 mb-4">Siparişlerinizi görmek için giriş yapmalısınız</p>
+                <Button
+                  onClick={() => setShowLoginModal(true)}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  Giriş Yap
+                </Button>
+              </div>
+            ) : loadingPurchases ? (
               <div className="flex items-center justify-center py-12">
                 <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
               </div>
@@ -542,16 +558,14 @@ function ShopContent() {
 
 export default function ShopPage() {
   return (
-    <ProtectedRoute>
-      <DashboardLayout>
-        <Suspense fallback={
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        }>
-          <ShopContent />
-        </Suspense>
-      </DashboardLayout>
-    </ProtectedRoute>
+    <DashboardLayout>
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      }>
+        <ShopContent />
+      </Suspense>
+    </DashboardLayout>
   )
 }
