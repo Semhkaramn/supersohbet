@@ -6,8 +6,8 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import BottomNav from '@/components/BottomNav'
-import { FileText, CheckCircle2, Clock, Zap, Users, Gift, Target, MessageSquare, Award, TrendingUp, Calendar, History } from 'lucide-react'
+import DashboardLayout from '@/components/DashboardLayout'
+import { FileText, CheckCircle2, Clock, Zap, Users, Gift, Target, MessageSquare, Award, TrendingUp, Calendar, History, Sparkles, Star } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Task {
@@ -80,7 +80,6 @@ function TasksContent() {
       ])
 
       if (tasksRes.status === 401) {
-        // Session expired, redirect to login
         router.push('/login')
         return
       }
@@ -114,7 +113,6 @@ function TasksContent() {
 
       if (response.ok && data.success) {
         toast.success(`Ödül alındı! +${data.rewards.points} puan, +${data.rewards.xp} XP`)
-        // Görevleri yeniden yükle
         await loadTasks()
       } else {
         toast.error(data.error || 'Ödül alınamadı')
@@ -132,55 +130,78 @@ function TasksContent() {
     const canClaim = task.completed && !task.rewardClaimed
 
     return (
-      <Card className={`bg-gradient-to-br ${
+      <Card className={`relative overflow-hidden transition-all duration-300 hover:scale-[1.01] group ${
         task.rewardClaimed
-          ? 'from-gray-500/10 to-gray-600/10 border-gray-500/30'
+          ? 'bg-gradient-to-br from-gray-800/40 via-gray-700/30 to-gray-800/40 border-gray-600/30'
           : canClaim
-            ? 'from-green-500/10 to-emerald-500/10 border-green-500/30'
-            : 'from-blue-500/10 to-purple-500/10 border-blue-500/30'
-      } p-4`}>
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3 flex-1">
-            <div className={`p-2 rounded-lg ${
+            ? 'bg-gradient-to-br from-green-900/40 via-emerald-800/30 to-green-900/40 border-2 border-green-500/50 hover:border-green-400 hover:shadow-xl hover:shadow-green-500/20'
+            : 'bg-gradient-to-br from-purple-900/30 via-blue-900/20 to-purple-800/30 border border-blue-500/30 hover:border-blue-400/50 hover:shadow-lg hover:shadow-blue-500/10'
+      } p-5`}>
+        {/* Sparkle effects for completed tasks */}
+        {canClaim && (
+          <>
+            <div className="absolute top-2 right-2">
+              <Sparkles className="w-4 h-4 text-green-400 animate-pulse" />
+            </div>
+            <div className="absolute bottom-2 left-2">
+              <Sparkles className="w-3 h-3 text-emerald-300 animate-pulse" style={{ animationDelay: '0.5s' }} />
+            </div>
+          </>
+        )}
+
+        <div className="relative flex items-start justify-between gap-4">
+          <div className="flex items-start gap-4 flex-1 min-w-0">
+            <div className={`p-3 rounded-xl flex-shrink-0 ${
               task.rewardClaimed
-                ? 'bg-gray-500/20'
+                ? 'bg-gray-700/40 shadow-inner'
                 : canClaim
-                  ? 'bg-green-500/20'
-                  : 'bg-blue-500/20'
+                  ? 'bg-gradient-to-br from-green-500/20 to-emerald-600/20 shadow-lg shadow-green-500/20'
+                  : 'bg-gradient-to-br from-blue-500/20 to-purple-600/20 shadow-md'
             }`}>
               {task.rewardClaimed ? (
-                <CheckCircle2 className="w-6 h-6 text-gray-400" />
+                <CheckCircle2 className="w-7 h-7 text-gray-400" />
               ) : canClaim ? (
-                <CheckCircle2 className="w-6 h-6 text-green-400" />
+                <CheckCircle2 className="w-7 h-7 text-green-400 animate-pulse" />
               ) : (
-                <Icon className="w-6 h-6 text-blue-400" />
+                <Icon className="w-7 h-7 text-blue-400" />
               )}
             </div>
 
             <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-2 mb-1">
-                <h3 className="font-semibold text-white text-sm">{task.title}</h3>
-              </div>
+              <h3 className={`font-bold text-lg mb-1 ${
+                task.rewardClaimed ? 'text-gray-300' : canClaim ? 'text-green-100' : 'text-white'
+              }`}>{task.title}</h3>
 
               {task.description && (
-                <p className="text-xs text-gray-400 mb-2">{task.description}</p>
+                <p className={`text-sm mb-3 leading-relaxed ${
+                  task.rewardClaimed ? 'text-gray-500' : canClaim ? 'text-green-200/80' : 'text-gray-300'
+                }`}>{task.description}</p>
               )}
 
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs text-gray-400">{TASK_TYPE_LABELS[task.taskType] || task.taskType}</span>
-                <span className="text-xs text-gray-500">•</span>
-                <span className="text-xs text-gray-300">{task.progress}</span>
+              <div className="flex items-center gap-2 mb-3">
+                <Badge variant="outline" className={`text-xs ${
+                  task.rewardClaimed
+                    ? 'bg-gray-600/20 text-gray-400 border-gray-500/30'
+                    : canClaim
+                      ? 'bg-green-500/20 text-green-300 border-green-400/30'
+                      : 'bg-blue-500/20 text-blue-300 border-blue-400/30'
+                }`}>
+                  {TASK_TYPE_LABELS[task.taskType] || task.taskType}
+                </Badge>
+                <span className={`text-sm font-medium ${
+                  task.rewardClaimed ? 'text-gray-500' : canClaim ? 'text-green-200' : 'text-blue-200'
+                }`}>{task.progress}</span>
               </div>
 
               {/* Progress Bar */}
-              <div className="w-full bg-white/10 rounded-full h-2 mb-2">
+              <div className="w-full bg-white/10 rounded-full h-2.5 mb-3 overflow-hidden shadow-inner">
                 <div
-                  className={`h-2 rounded-full transition-all ${
+                  className={`h-2.5 rounded-full transition-all duration-500 ${
                     task.rewardClaimed
-                      ? 'bg-gray-400'
+                      ? 'bg-gradient-to-r from-gray-500 to-gray-400'
                       : canClaim
-                        ? 'bg-green-500'
-                        : 'bg-blue-500'
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-400 shadow-lg shadow-green-500/50'
+                        : 'bg-gradient-to-r from-blue-500 to-purple-500'
                   }`}
                   style={{
                     width: `${Math.min((task.currentProgress / task.targetValue) * 100, 100)}%`
@@ -190,13 +211,15 @@ function TasksContent() {
 
               <div className="flex flex-wrap gap-2">
                 {task.xpReward > 0 && (
-                  <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-300 border-yellow-500/30">
-                    ⭐ {task.xpReward} XP
+                  <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-300 border-yellow-500/30 shadow-sm">
+                    <Star className="w-3 h-3 mr-1" fill="currentColor" />
+                    {task.xpReward} XP
                   </Badge>
                 )}
                 {task.pointsReward > 0 && (
-                  <Badge variant="outline" className="text-xs bg-green-500/10 text-green-300 border-green-500/30">
-                    💰 {task.pointsReward} Puan
+                  <Badge variant="outline" className="text-xs bg-green-500/10 text-green-300 border-green-500/30 shadow-sm">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    {task.pointsReward} Puan
                   </Badge>
                 )}
               </div>
@@ -208,9 +231,19 @@ function TasksContent() {
               onClick={() => claimReward(task.id)}
               disabled={claiming === task.id}
               size="sm"
-              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shrink-0"
+              className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold shadow-lg hover:shadow-green-500/50 transition-all hover:scale-105 flex-shrink-0"
             >
-              {claiming === task.id ? 'Alınıyor...' : 'Al'}
+              {claiming === task.id ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Alınıyor
+                </>
+              ) : (
+                <>
+                  <Gift className="w-4 h-4 mr-1" />
+                  Al
+                </>
+              )}
             </Button>
           )}
         </div>
@@ -222,25 +255,24 @@ function TasksContent() {
     const Icon = TASK_TYPE_ICONS[item.taskType] || FileText
 
     return (
-      <Card className="bg-gradient-to-br from-gray-500/10 to-gray-600/10 border-gray-500/30 p-4">
-        <div className="flex items-start gap-3">
-          <div className="p-2 rounded-lg bg-gray-500/20">
-            <CheckCircle2 className="w-6 h-6 text-gray-400" />
+      <Card className="bg-gradient-to-br from-slate-800/40 via-slate-700/30 to-slate-800/40 border border-slate-600/30 p-5 hover:bg-slate-800/50 transition-all duration-300">
+        <div className="flex items-start gap-4">
+          <div className="p-3 rounded-xl bg-slate-700/40 flex-shrink-0">
+            <CheckCircle2 className="w-6 h-6 text-slate-400" />
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2 mb-1">
-              <h3 className="font-semibold text-white text-sm">{item.title}</h3>
-            </div>
+            <h3 className="font-semibold text-white text-base mb-1">{item.title}</h3>
 
             {item.description && (
-              <p className="text-xs text-gray-400 mb-2">{item.description}</p>
+              <p className="text-sm text-slate-400 mb-2">{item.description}</p>
             )}
 
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs text-gray-400">{TASK_TYPE_LABELS[item.taskType] || item.taskType}</span>
-              <span className="text-xs text-gray-500">•</span>
-              <span className="text-xs text-gray-400">
+            <div className="flex items-center gap-2 mb-3">
+              <Badge variant="outline" className="text-xs bg-slate-600/20 text-slate-300 border-slate-500/30">
+                {TASK_TYPE_LABELS[item.taskType] || item.taskType}
+              </Badge>
+              <span className="text-xs text-slate-500">
                 {new Date(item.claimedAt).toLocaleDateString('tr-TR', {
                   day: 'numeric',
                   month: 'short',
@@ -254,16 +286,19 @@ function TasksContent() {
             <div className="flex flex-wrap gap-2">
               {item.xpReward > 0 && (
                 <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-300 border-yellow-500/30">
-                  ⭐ {item.xpReward} XP
+                  <Star className="w-3 h-3 mr-1" fill="currentColor" />
+                  {item.xpReward} XP
                 </Badge>
               )}
               {item.pointsReward > 0 && (
                 <Badge variant="outline" className="text-xs bg-green-500/10 text-green-300 border-green-500/30">
-                  💰 {item.pointsReward} Puan
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  {item.pointsReward} Puan
                 </Badge>
               )}
-              <Badge variant="outline" className="text-xs bg-gray-500/10 text-gray-300 border-gray-500/30">
-                ✅ Tamamlandı
+              <Badge variant="outline" className="text-xs bg-slate-500/10 text-slate-300 border-slate-500/30">
+                <CheckCircle2 className="w-3 h-3 mr-1" />
+                Tamamlandı
               </Badge>
             </div>
           </div>
@@ -276,7 +311,7 @@ function TasksContent() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-300">Görevler yükleniyor...</p>
         </div>
       </div>
@@ -284,144 +319,185 @@ function TasksContent() {
   }
 
   return (
-    <div className="min-h-screen pb-24">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-indigo-600 to-blue-600 p-4">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Görevler
-          </h1>
-          <p className="text-sm text-blue-100 mt-1">Görevleri tamamla, ödül kazan!</p>
+    <DashboardLayout>
+      <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+        {/* Header */}
+        <div className="bg-gradient-to-br from-purple-800 via-blue-700 to-indigo-900 p-6 shadow-xl sticky top-0 z-10">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-xl bg-white/10 backdrop-blur-sm">
+                <FileText className="w-6 h-6 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold text-white">Görevler</h1>
+            </div>
+            <p className="text-blue-100">Görevleri tamamla, ödül kazan!</p>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          <Tabs defaultValue="active" value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="w-full bg-slate-800/50 border border-slate-700/50 mb-6 p-1">
+              <TabsTrigger value="active" className="flex-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white">
+                <Target className="w-4 h-4 mr-2" />
+                Aktif Görevler
+              </TabsTrigger>
+              <TabsTrigger value="history" className="flex-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-700 data-[state=active]:to-slate-600 data-[state=active]:text-white">
+                <History className="w-4 h-4 mr-2" />
+                Geçmiş ({taskHistory.length})
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Active Tasks Tab */}
+            <TabsContent value="active" className="space-y-8">
+              {/* Daily Tasks */}
+              {dailyTasks.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20">
+                      <Calendar className="w-6 h-6 text-cyan-400" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">
+                      Günlük Görevler
+                    </h2>
+                    {dailyTasks.filter(t => t.completed && !t.rewardClaimed).length > 0 && (
+                      <Badge variant="outline" className="ml-auto bg-green-500/20 text-green-300 border-green-500/50 shadow-lg shadow-green-500/20 animate-pulse">
+                        <Gift className="w-3 h-3 mr-1" />
+                        {dailyTasks.filter(t => t.completed && !t.rewardClaimed).length} ödül bekliyor
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="space-y-4">
+                    {dailyTasks.map(task => (
+                      <TaskCard key={task.id} task={task} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Weekly Tasks */}
+              {weeklyTasks.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-teal-500/20 to-emerald-500/20">
+                      <Clock className="w-6 h-6 text-teal-400" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">
+                      Haftalık Görevler
+                    </h2>
+                    {weeklyTasks.filter(t => t.completed && !t.rewardClaimed).length > 0 && (
+                      <Badge variant="outline" className="ml-auto bg-green-500/20 text-green-300 border-green-500/50 shadow-lg shadow-green-500/20 animate-pulse">
+                        <Gift className="w-3 h-3 mr-1" />
+                        {weeklyTasks.filter(t => t.completed && !t.rewardClaimed).length} ödül bekliyor
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="space-y-4">
+                    {weeklyTasks.map(task => (
+                      <TaskCard key={task.id} task={task} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Permanent Tasks */}
+              {permanentTasks.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20">
+                      <Target className="w-6 h-6 text-purple-400" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
+                      Kalıcı Görevler
+                    </h2>
+                    {permanentTasks.filter(t => t.completed && !t.rewardClaimed).length > 0 && (
+                      <Badge variant="outline" className="ml-auto bg-green-500/20 text-green-300 border-green-500/50 shadow-lg shadow-green-500/20 animate-pulse">
+                        <Gift className="w-3 h-3 mr-1" />
+                        {permanentTasks.filter(t => t.completed && !t.rewardClaimed).length} ödül bekliyor
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="space-y-4">
+                    {permanentTasks.map(task => (
+                      <TaskCard key={task.id} task={task} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Empty State */}
+              {dailyTasks.length === 0 && weeklyTasks.length === 0 && permanentTasks.length === 0 && (
+                <Card className="bg-white/5 border-white/10 p-12 text-center">
+                  <FileText className="w-20 h-20 text-gray-500 mx-auto mb-4" />
+                  <h3 className="text-2xl font-semibold text-white mb-2">Henüz Görev Yok</h3>
+                  <p className="text-gray-400">Yakında yeni görevler eklenecek!</p>
+                </Card>
+              )}
+
+              {/* Info Card */}
+              <Card className="bg-gradient-to-br from-blue-900/40 via-indigo-900/30 to-purple-900/40 border-blue-500/30 p-6 shadow-lg">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-blue-500/20">
+                    <Gift className="w-6 h-6 text-blue-300" />
+                  </div>
+                  <div className="text-blue-100">
+                    <p className="font-bold text-lg mb-3 text-white">Görev Sistemi Nasıl Çalışır?</p>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-start gap-2">
+                        <Sparkles className="w-4 h-4 text-blue-300 mt-0.5 flex-shrink-0" />
+                        <span>Görevleri tamamlayın ve ödül kazanın</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Calendar className="w-4 h-4 text-cyan-300 mt-0.5 flex-shrink-0" />
+                        <span>Günlük görevler her gün, haftalık görevler her hafta sıfırlanır</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Target className="w-4 h-4 text-purple-300 mt-0.5 flex-shrink-0" />
+                        <span>Kalıcı görevler bir kez tamamlanabilir</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Gift className="w-4 h-4 text-green-300 mt-0.5 flex-shrink-0" />
+                        <span>Tamamlanan görevlerin ödüllerini "Al" butonuyla talep edin</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <History className="w-4 h-4 text-gray-300 mt-0.5 flex-shrink-0" />
+                        <span>Tamamlanan görevler geçmiş sekmesinde görüntülenir</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
+
+            {/* Task History Tab */}
+            <TabsContent value="history" className="space-y-4">
+              {taskHistory.length === 0 ? (
+                <Card className="bg-white/5 border-white/10 p-12 text-center">
+                  <History className="w-20 h-20 text-gray-500 mx-auto mb-4" />
+                  <h3 className="text-2xl font-semibold text-white mb-2">Henüz Görev Geçmişi Yok</h3>
+                  <p className="text-gray-400">Tamamladığınız görevler burada görünecek</p>
+                </Card>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-white">Tamamlanan Görevler</h2>
+                    <Badge variant="outline" className="bg-slate-600/20 text-slate-300 border-slate-500/30">
+                      <History className="w-3 h-3 mr-1" />
+                      {taskHistory.length} görev
+                    </Badge>
+                  </div>
+                  <div className="space-y-3">
+                    {taskHistory.map(item => (
+                      <HistoryCard key={item.id} item={item} />
+                    ))}
+                  </div>
+                </>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
-
-      {/* Tabs */}
-      <div className="max-w-2xl mx-auto px-4 pt-6">
-        <Tabs defaultValue="active" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full bg-white/5 border border-white/10 mb-6">
-            <TabsTrigger value="active" className="flex-1 data-[state=active]:bg-blue-600">
-              <Target className="w-4 h-4 mr-2" />
-              Aktif Görevler
-            </TabsTrigger>
-            <TabsTrigger value="history" className="flex-1 data-[state=active]:bg-gray-600">
-              <History className="w-4 h-4 mr-2" />
-              Geçmiş ({taskHistory.length})
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Active Tasks Tab */}
-          <TabsContent value="active" className="space-y-8">
-            {/* Daily Tasks */}
-            {dailyTasks.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Calendar className="w-5 h-5 text-cyan-400" />
-                  <h2 className="text-xl font-bold text-white">Günlük Görevler</h2>
-                  <Badge variant="outline" className="ml-auto text-xs bg-cyan-500/10 text-cyan-300 border-cyan-500/30">
-                    {dailyTasks.filter(t => t.completed && !t.rewardClaimed).length} ödül bekliyor
-                  </Badge>
-                </div>
-                <div className="space-y-3">
-                  {dailyTasks.map(task => (
-                    <TaskCard key={task.id} task={task} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Weekly Tasks */}
-            {weeklyTasks.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Clock className="w-5 h-5 text-teal-400" />
-                  <h2 className="text-xl font-bold text-white">Haftalık Görevler</h2>
-                  <Badge variant="outline" className="ml-auto text-xs bg-teal-500/10 text-teal-300 border-teal-500/30">
-                    {weeklyTasks.filter(t => t.completed && !t.rewardClaimed).length} ödül bekliyor
-                  </Badge>
-                </div>
-                <div className="space-y-3">
-                  {weeklyTasks.map(task => (
-                    <TaskCard key={task.id} task={task} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Permanent Tasks */}
-            {permanentTasks.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Target className="w-5 h-5 text-purple-400" />
-                  <h2 className="text-xl font-bold text-white">Kalıcı Görevler</h2>
-                  <Badge variant="outline" className="ml-auto text-xs bg-purple-500/10 text-purple-300 border-purple-500/30">
-                    {permanentTasks.filter(t => t.completed && !t.rewardClaimed).length} ödül bekliyor
-                  </Badge>
-                </div>
-                <div className="space-y-3">
-                  {permanentTasks.map(task => (
-                    <TaskCard key={task.id} task={task} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Empty State */}
-            {dailyTasks.length === 0 && weeklyTasks.length === 0 && permanentTasks.length === 0 && (
-              <Card className="bg-white/5 border-white/10 p-8 text-center">
-                <FileText className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-white mb-2">Henüz Görev Yok</h3>
-                <p className="text-gray-400">Yakında yeni görevler eklenecek!</p>
-              </Card>
-            )}
-
-            {/* Info Card */}
-            <Card className="bg-blue-500/10 border-blue-500/30 p-4">
-              <div className="flex items-start gap-3">
-                <Gift className="w-5 h-5 text-blue-300 shrink-0 mt-0.5" />
-                <div className="text-sm text-blue-200">
-                  <p className="font-semibold mb-1">Görev Sistemi Nasıl Çalışır?</p>
-                  <ul className="space-y-1 text-xs">
-                    <li>• Görevleri tamamlayın ve ödül kazanın</li>
-                    <li>• Günlük görevler her gün, haftalık görevler her hafta sıfırlanır</li>
-                    <li>• Kalıcı görevler bir kez tamamlanabilir</li>
-                    <li>• Tamamlanan görevlerin ödüllerini "Al" butonuyla talep edin</li>
-                    <li>• Tamamlanan görevler geçmiş sekmesinde görüntülenir</li>
-                  </ul>
-                </div>
-              </div>
-            </Card>
-          </TabsContent>
-
-          {/* Task History Tab */}
-          <TabsContent value="history" className="space-y-4">
-            {taskHistory.length === 0 ? (
-              <Card className="bg-white/5 border-white/10 p-8 text-center">
-                <History className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-white mb-2">Henüz Görev Geçmişi Yok</h3>
-                <p className="text-gray-400">Tamamladığınız görevler burada görünecek</p>
-              </Card>
-            ) : (
-              <>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-white">Tamamlanan Görevler</h2>
-                  <Badge variant="outline" className="bg-gray-500/10 text-gray-300 border-gray-500/30">
-                    {taskHistory.length} görev
-                  </Badge>
-                </div>
-                <div className="space-y-3">
-                  {taskHistory.map(item => (
-                    <HistoryCard key={item.id} item={item} />
-                  ))}
-                </div>
-              </>
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      <BottomNav />
-    </div>
+    </DashboardLayout>
   )
 }
 
