@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { ExternalLink } from 'lucide-react'
 
 interface Sponsor {
   id: string
@@ -11,6 +10,8 @@ interface Sponsor {
   websiteUrl?: string
   category: string
   isActive: boolean
+  order: number
+  showInBanner?: boolean
 }
 
 export default function SponsorBanner() {
@@ -36,10 +37,12 @@ export default function SponsorBanner() {
       // Banner etkin mi kontrol et
       setIsEnabled(settingsData.enabled === true)
 
-      // Sadece aktif sponsorları al ve sırala
+      // Sadece aktif, logosu olan ve banner'da gösterilmesi istenen sponsorları al
       const activeSponsors = (sponsorsData.sponsors || [])
-        .filter((s: Sponsor) => s.isActive && s.logoUrl)
+        .filter((s: Sponsor) => s.isActive && s.logoUrl && s.showInBanner !== false)
         .sort((a: Sponsor, b: Sponsor) => {
+          // Önce order'a göre sırala
+          if (a.order !== b.order) return a.order - b.order
           // VIP'leri öne al
           if (a.category === 'vip' && b.category !== 'vip') return -1
           if (a.category !== 'vip' && b.category === 'vip') return 1
@@ -80,7 +83,7 @@ export default function SponsorBanner() {
   const duplicatedSponsors = [...sponsors, ...sponsors]
 
   return (
-    <div className="w-full bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 border-y border-white/10 overflow-hidden py-4">
+    <div className="w-full lg:w-[calc(100%-16rem)] lg:ml-64 bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 border-b border-white/10 overflow-hidden py-2">
       <div className="relative">
         {/* Gradyan kenarlıklar (fade effect) */}
         <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-slate-900 to-transparent z-10 pointer-events-none" />
@@ -92,10 +95,14 @@ export default function SponsorBanner() {
             <div
               key={`${sponsor.id}-${index}`}
               onClick={() => handleSponsorClick(sponsor.id, sponsor.websiteUrl)}
-              className="flex-shrink-0 mx-4 cursor-pointer group"
+              className="flex-shrink-0 mx-3 cursor-pointer group"
               title={`${sponsor.name} - Tıklayın`}
             >
-              <div className="relative w-32 h-20 bg-white/5 rounded-lg border border-white/10 hover:border-blue-500/50 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-blue-500/20 overflow-hidden">
+              <div className={`relative w-28 h-14 rounded-lg overflow-hidden transition-all duration-300 group-hover:scale-110 ${
+                sponsor.category === 'vip'
+                  ? 'bg-gradient-to-br from-yellow-900/30 to-amber-800/30 border-2 border-yellow-500/60 group-hover:border-yellow-400 shadow-lg shadow-yellow-500/20 group-hover:shadow-yellow-500/40'
+                  : 'bg-white/5 border border-white/10 group-hover:border-blue-500/50 group-hover:shadow-lg group-hover:shadow-blue-500/20'
+              }`}>
                 {sponsor.logoUrl ? (
                   <Image
                     src={sponsor.logoUrl}
@@ -112,15 +119,10 @@ export default function SponsorBanner() {
 
                 {/* VIP badge */}
                 {sponsor.category === 'vip' && (
-                  <div className="absolute top-1 right-1 bg-yellow-500 text-black text-[8px] font-bold px-1.5 py-0.5 rounded">
+                  <div className="absolute top-1 right-1 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-[8px] font-bold px-1.5 py-0.5 rounded shadow-md">
                     VIP
                   </div>
                 )}
-
-                {/* Hover icon */}
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <ExternalLink className="w-6 h-6 text-white" />
-                </div>
               </div>
             </div>
           ))}
