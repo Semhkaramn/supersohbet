@@ -8,8 +8,7 @@ import { createToken, createAuthResponse } from '@/lib/auth'
 const registerSchema = z.object({
   email: z.string().email('Geçerli bir email adresi giriniz'),
   siteUsername: z.string().min(3, 'Kullanıcı adı en az 3 karakter olmalıdır').max(20, 'Kullanıcı adı en fazla 20 karakter olabilir'),
-  password: z.string().min(6, 'Şifre en az 6 karakter olmalıdır'),
-  referralCode: z.string().optional()
+  password: z.string().min(6, 'Şifre en az 6 karakter olmalıdır')
 })
 
 export async function POST(request: NextRequest) {
@@ -28,7 +27,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { email, siteUsername, password, referralCode } = validation.data
+    const { email, siteUsername, password } = validation.data
 
     // Email kontrolü
     const existingEmail = await prisma.user.findUnique({
@@ -57,29 +56,13 @@ export async function POST(request: NextRequest) {
     // Şifreyi hashle
     const passwordHash = await bcrypt.hash(password, 10)
 
-    // Referral code kontrolü
-    let referredById: string | undefined
-    if (referralCode) {
-      const referrer = await prisma.user.findUnique({
-        where: { referralCode }
-      })
-      if (referrer) {
-        referredById = referrer.id
-      }
-    }
-
-    // Kullanıcının kendi referral code'unu oluştur
-    const userReferralCode = `${siteUsername.toLowerCase()}-${Math.random().toString(36).substring(2, 8)}`
-
     // Yeni kullanıcı oluştur
     const user = await prisma.user.create({
       data: {
         email,
         siteUsername,
         password: passwordHash,
-        loginMethod: 'email',
-        referralCode: userReferralCode,
-        referredById
+        loginMethod: 'email'
       },
       select: {
         id: true,
@@ -89,30 +72,6 @@ export async function POST(request: NextRequest) {
         xp: true
       }
     })
-
-    // Eğer referral code kullanıldıysa, referrer'a puan ver
-    if (referredById) {
-      await Promise.all([
-        // Referrer'ın total referral sayısını artır
-        prisma.user.update({
-          where: { id: referredById },
-          data: {
-            totalReferrals: { increment: 1 },
-            referralPoints: { increment: 100 }, // 100 puan ödül
-            points: { increment: 100 }
-          }
-        }),
-        // Point history ekle
-        prisma.pointHistory.create({
-          data: {
-            userId: referredById,
-            amount: 100,
-            type: 'referral_reward',
-            description: `${siteUsername} referansınızla katıldı!`
-          }
-        })
-      ])
-    }
 
     // JWT token oluştur
     const token = await createToken({
@@ -138,7 +97,6 @@ export async function POST(request: NextRequest) {
         lastName: null,
         points: user.points,
         xp: user.xp,
-        referralCode: userReferralCode,
         telegramId: null,
         hadStart: false
       }
