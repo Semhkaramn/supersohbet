@@ -4,10 +4,10 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import BottomNav from '@/components/BottomNav'
-import { Trophy, Crown, Medal, TrendingUp, Star } from 'lucide-react'
+import DashboardLayout from '@/components/DashboardLayout'
+import ProtectedRoute from '@/components/ProtectedRoute'
+import { Trophy, Crown, Medal, Star } from 'lucide-react'
 
 interface LeaderboardUser {
   id: string
@@ -256,54 +256,53 @@ function LeaderboardContent() {
   )
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-br from-amber-600 to-orange-600 p-4">
-        <div className="max-w-2xl mx-auto text-center">
-          <h1 className="text-xl font-bold text-white flex items-center justify-center gap-2">
-            <Trophy className="w-5 h-5" />
-            Liderlik Sıralaması
-          </h1>
-        </div>
+      <div className="bg-gradient-to-br from-amber-600 to-orange-600 rounded-xl p-6 text-center shadow-xl">
+        <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
+          <Trophy className="w-6 h-6" />
+          Liderlik Sıralaması
+        </h1>
+        <p className="text-white/80 text-sm mt-2">En başarılı üyelerimiz</p>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        {/* Tabs */}
-        <Tabs defaultValue="points" className="w-full mb-4">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="points" className="flex items-center gap-2">
-              <Trophy className="w-4 h-4" />
-              Puanlar
-            </TabsTrigger>
-            <TabsTrigger value="xp" className="flex items-center gap-2">
-              <Star className="w-4 h-4" />
-              XP
-            </TabsTrigger>
-          </TabsList>
+      {/* Tabs */}
+      <Tabs defaultValue="points" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="points" className="flex items-center gap-2">
+            <Trophy className="w-4 h-4" />
+            Puanlar
+          </TabsTrigger>
+          <TabsTrigger value="xp" className="flex items-center gap-2">
+            <Star className="w-4 h-4" />
+            XP
+          </TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="points">
-            {renderLeaderboard(pointsLeaderboard, pointsCurrentUser, 'points')}
-          </TabsContent>
+        <TabsContent value="points">
+          {renderLeaderboard(pointsLeaderboard, pointsCurrentUser, 'points')}
+        </TabsContent>
 
-          <TabsContent value="xp">
-            {renderLeaderboard(xpLeaderboard, xpCurrentUser, 'xp')}
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      <BottomNav />
+        <TabsContent value="xp">
+          {renderLeaderboard(xpLeaderboard, xpCurrentUser, 'xp')}
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
 
 export default function LeaderboardPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    }>
-      <LeaderboardContent />
-    </Suspense>
+    <ProtectedRoute>
+      <DashboardLayout>
+        <Suspense fallback={
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        }>
+          <LeaderboardContent />
+        </Suspense>
+      </DashboardLayout>
+    </ProtectedRoute>
   )
 }
