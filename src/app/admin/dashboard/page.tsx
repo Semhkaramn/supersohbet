@@ -20,7 +20,8 @@ import {
   Radio,
   User,
   Sparkles,
-  UserCheck
+  UserCheck,
+  MonitorPlay
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -137,6 +138,14 @@ export default function AdminDashboard() {
       icon: Heart,
       href: '/admin/sponsors',
       color: 'from-pink-500 to-pink-600',
+      permission: 'canAccessSponsors'
+    },
+    {
+      title: 'Reklam Ayarları',
+      description: 'Sponsor banner yönetimi',
+      icon: MonitorPlay,
+      href: '/admin/ads',
+      color: 'from-violet-500 to-violet-600',
       permission: 'canAccessSponsors'
     },
     {
