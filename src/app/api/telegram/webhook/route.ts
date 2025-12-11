@@ -211,12 +211,32 @@ Daha fazla bilgi için Ödül Merkezi'ne git!
     // Mesaj varsa işle
     if (update.message && update.message.text) {
       const message = update.message
+
+      // 🔍 KONTROL: message.from var mı? (anonymous admin/channel mesajlarında olmayabilir)
+      if (!message.from || !message.from.id) {
+        console.log('⚠️ message.from YOK veya message.from.id YOK - Anonymous admin veya channel mesajı')
+        console.log('sender_chat:', message.sender_chat)
+        console.log('message_id:', message.message_id)
+        return NextResponse.json({ ok: true, message: 'No from.id - anonymous/channel message' })
+      }
+
       const chatId = message.chat.id
       const userId = String(message.from.id)
       const username = message.from.username
       const firstName = message.from.first_name
       const lastName = message.from.last_name
       const messageText = message.text
+
+      // 📊 LOG: Alınan değerleri logla
+      console.log(`📩 MESAJ ALINDI:`, {
+        messageId: message.message_id,
+        fromUserId: message.from.id,
+        fromUsername: username,
+        fromFirstName: firstName,
+        chatId: chatId,
+        chatType: message.chat.type,
+        extractedUserId: userId
+      })
 
       // Aktif grup kontrolü - Sadece GRUP mesajlarında kontrol et, private chat'leri geçir
       const chatType = message.chat.type
