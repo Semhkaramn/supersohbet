@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     const whereClause: any = {}
     if (search) {
       whereClause.OR = [
+        { siteUsername: { contains: search, mode: 'insensitive' } },
         { username: { contains: search, mode: 'insensitive' } },
         { firstName: { contains: search, mode: 'insensitive' } },
         { telegramId: { contains: search } }
@@ -43,6 +44,7 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         telegramId: true,
+        siteUsername: true,
         username: true,
         firstName: true,
         lastName: true,
