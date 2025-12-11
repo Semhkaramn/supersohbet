@@ -237,6 +237,46 @@ async function findEligibleWinner(
       }
     }
 
+    // Admin kontrolü - Eğer allowAdmins false ise grup adminlerini hariç tut
+    if (!schedule.allowAdmins) {
+      try {
+        const groupIdSetting = await prisma.settings.findUnique({
+          where: { key: 'activity_group_id' }
+        })
+
+        if (groupIdSetting?.value) {
+          // Telegram API'den grup adminlerini al
+          const { getGroupAdmins } = await import('@/lib/telegram')
+          const groupAdmins = await getGroupAdmins(groupIdSetting.value)
+
+          if (groupAdmins.length > 0) {
+            // Admin telegram ID'lerini string'e çevir
+            const adminTelegramIds = groupAdmins.map(admin => admin.userId.toString())
+
+            // Admin telegram ID'lerine sahip TelegramGroupUser'ları bul
+            const adminTgUsers = await prisma.telegramGroupUser.findMany({
+              where: {
+                telegramId: { in: adminTelegramIds }
+              },
+              select: { id: true }
+            })
+
+            if (adminTgUsers.length > 0) {
+              const existingNotIn = (telegramWhereClause.id as any)?.notIn || []
+              telegramWhereClause.id = {
+                ...telegramWhereClause.id,
+                notIn: [...existingNotIn, ...adminTgUsers.map(u => u.id)]
+              }
+              console.log(`⚠️ ${adminTgUsers.length} admin kazananlardan hariç tutuldu (allowAdmins: false)`)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('⚠️ Admin kontrolü sırasında hata:', error)
+        // Hata durumunda devam et, sadece log'la
+      }
+    }
+
     // Uygun telegram kullanıcılarını getir
     const eligibleUsers = await prisma.telegramGroupUser.findMany({
       where: telegramWhereClause,
