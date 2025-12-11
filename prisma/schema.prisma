@@ -401,7 +401,8 @@ model RandySlot {
   schedTime            DateTime        // Planlanan zaman
   assigned             Boolean         @default(false) // Atandı mı
   assignedUser         String?         // Kazanan kullanıcı telegram ID
-  assignedUsername     String?         // Kazanan kullanıcı adı
+  assignedSiteUsername String?         // Kazanan kullanıcı site kullanıcı adı
+  assignedUsername     String?         // Kazanan kullanıcı telegram username
   assignedFirstName    String?         // Kazanan kullanıcı ismi
   assignedAt           DateTime?       // Atanma zamanı
   randomKey            String?         // Rastgele anahtar (opsiyonel)
