@@ -313,18 +313,11 @@ function ShopContent() {
                       </div>
                       <Button
                         onClick={() => openPurchaseConfirm(item)}
-                        disabled={userData ? userData.points < item.price : true}
                         className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
                         size="sm"
                       >
-                        {userData && userData.points >= item.price ? (
-                          <>
-                            <Heart className="w-4 h-4 mr-1" />
-                            Al
-                          </>
-                        ) : (
-                          'Yetersiz Puan'
-                        )}
+                        <Heart className="w-4 h-4 mr-1" />
+                        Al
                       </Button>
                     </div>
                   </Card>
