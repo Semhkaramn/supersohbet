@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import DashboardLayout from '@/components/DashboardLayout'
-import { Heart, TrendingUp, Crown, Sparkles, Search } from 'lucide-react'
+import { Heart, TrendingUp, Crown, Sparkles, Search, Users, Eye } from 'lucide-react'
 
 import Image from 'next/image'
 
@@ -21,6 +21,12 @@ interface Sponsor {
   clicks: number
 }
 
+interface VisitStats {
+  totalVisits: number
+  todayVisits: number
+  uniqueVisitors: number
+}
+
 function SponsorsContent() {
   const router = useRouter()
   const { user } = useAuth()
@@ -28,9 +34,11 @@ function SponsorsContent() {
   const [sponsors, setSponsors] = useState<Sponsor[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [visitStats, setVisitStats] = useState<VisitStats | null>(null)
 
   useEffect(() => {
     loadSponsors()
+    loadVisitStats()
   }, [])
 
   async function loadSponsors() {
@@ -48,6 +56,16 @@ function SponsorsContent() {
       console.error('Error loading sponsors:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function loadVisitStats() {
+    try {
+      const response = await fetch('/api/visit/count')
+      const data = await response.json()
+      setVisitStats(data)
+    } catch (error) {
+      console.error('Error loading visit stats:', error)
     }
   }
 
@@ -88,7 +106,7 @@ function SponsorsContent() {
   const normalSponsors = filteredSponsors.filter(s => s.category !== 'vip')
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 pb-8">
       {/* Sponsors List */}
       <div className="max-w-2xl mx-auto px-4">
         {/* Search */}
@@ -149,6 +167,7 @@ function SponsorsContent() {
                             alt={sponsor.name}
                             fill
                             className="object-contain p-3"
+                            loading="lazy"
                           />
                         </div>
                       )}
@@ -208,6 +227,7 @@ function SponsorsContent() {
                             alt={sponsor.name}
                             fill
                             className="object-contain p-2"
+                            loading="lazy"
                           />
                         </div>
                       )}
@@ -237,6 +257,39 @@ function SponsorsContent() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Visitor Counter - Always visible at bottom */}
+        {visitStats && visitStats.totalVisits !== undefined && (
+          <div className="mt-8 pt-6 border-t border-white/10">
+            <Card className="bg-gradient-to-br from-blue-900/20 via-purple-900/20 to-pink-900/20 border-white/10 p-4">
+              <div className="flex items-center justify-center gap-6 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Eye className="w-5 h-5 text-blue-400" />
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-white">{(visitStats.totalVisits || 0).toLocaleString()}</div>
+                    <div className="text-xs text-gray-400">Toplam Ziyaret</div>
+                  </div>
+                </div>
+                <div className="h-8 w-px bg-white/10"></div>
+                <div className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-purple-400" />
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-white">{(visitStats.uniqueVisitors || 0).toLocaleString()}</div>
+                    <div className="text-xs text-gray-400">Benzersiz Ziyaretçi</div>
+                  </div>
+                </div>
+                <div className="h-8 w-px bg-white/10"></div>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-green-400" />
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-white">{(visitStats.todayVisits || 0).toLocaleString()}</div>
+                    <div className="text-xs text-gray-400">Bugünkü Ziyaret</div>
+                  </div>
+                </div>
+              </div>
+            </Card>
           </div>
         )}
       </div>
