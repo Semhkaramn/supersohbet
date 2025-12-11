@@ -24,7 +24,12 @@ export default function Header() {
         <div className="flex items-center justify-between h-full">
           {/* Logo on Left - Space for hamburger on mobile */}
           <div className="flex items-center gap-3 pl-12 lg:pl-0">
-            <h2 className="text-lg lg:text-xl font-bold text-white">SuperSohbet</h2>
+            <h2
+              onClick={() => router.push('/')}
+              className="text-lg lg:text-xl font-bold text-white cursor-pointer hover:text-blue-400 transition-colors"
+            >
+              SuperSohbet
+            </h2>
           </div>
 
           {loading ? (
