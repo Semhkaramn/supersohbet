@@ -27,7 +27,7 @@ interface LeaderboardUser {
 
 function LeaderboardContent() {
   const router = useRouter()
-  const { setShowLoginModal } = useAuth()
+  const { user, setShowLoginModal } = useAuth()
 
   const [pointsLeaderboard, setPointsLeaderboard] = useState<LeaderboardUser[]>([])
   const [xpLeaderboard, setXpLeaderboard] = useState<LeaderboardUser[]>([])
@@ -37,14 +37,17 @@ function LeaderboardContent() {
   const [activeTab, setActiveTab] = useState('points')
 
   useEffect(() => {
-    loadLeaderboards()
-  }, [])
+    if (user) {
+      loadLeaderboards()
+    }
+  }, [user])
 
   async function loadLeaderboards() {
     try {
+      const userId = user?.id || ''
       const [pointsRes, xpRes] = await Promise.all([
-        fetch('/api/leaderboard?sortBy=points'),
-        fetch('/api/leaderboard?sortBy=xp')
+        fetch(`/api/leaderboard?sortBy=points&userId=${userId}`),
+        fetch(`/api/leaderboard?sortBy=xp&userId=${userId}`)
       ])
 
       if (pointsRes.status === 401) {
