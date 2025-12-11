@@ -252,15 +252,7 @@ function LeaderboardContent() {
   )
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="bg-gradient-to-br from-amber-600 to-orange-600 rounded-xl p-6 text-center shadow-xl">
-        <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
-          <Trophy className="w-6 h-6" />
-          Liderlik Sıralaması
-        </h1>
-        <p className="text-white/80 text-sm mt-2">En başarılı üyelerimiz</p>
-      </div>
-
+    <div className="max-w-4xl mx-auto space-y-6 py-6">
       <Tabs defaultValue="points" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="points" className="flex items-center gap-2">
