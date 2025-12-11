@@ -35,6 +35,7 @@ interface UserSponsorInfo {
   user: {
     id: string
     telegramId: string
+    siteUsername?: string
     username?: string
     firstName?: string
     lastName?: string
@@ -55,6 +56,7 @@ interface GroupedUserData {
   firstName?: string
   lastName?: string
   trc20WalletAddress?: string
+  siteUsername?: string
   sponsors: {
     sponsorId: string
     sponsorName: string
@@ -361,6 +363,7 @@ export default function AdminSponsorsPage() {
       userMap.set(userId, {
         userId: info.user.id,
         telegramId: info.user.telegramId,
+        siteUsername: info.user.siteUsername,
         username: info.user.username,
         firstName: info.user.firstName,
         lastName: info.user.lastName,
@@ -536,7 +539,7 @@ export default function AdminSponsorsPage() {
                       <div className="flex items-start justify-between border-b border-white/10 pb-3">
                         <div>
                           <h3 className="text-white font-bold text-lg">
-                            {userData.firstName || userData.username || 'Kullanıcı'}
+                            {userData.siteUsername || userData.firstName || userData.username || 'Kullanıcı'}
                           </h3>
                           <p className="text-sm text-gray-400">
                             @{userData.username || userData.telegramId}
