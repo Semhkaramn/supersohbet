@@ -23,6 +23,7 @@ interface Admin {
   canAccessShop: boolean
   canAccessWheel: boolean
   canAccessSponsors: boolean
+  canAccessAds: boolean
   canAccessRanks: boolean
   canAccessRandy: boolean
   canAccessSettings: boolean
@@ -37,6 +38,7 @@ const PERMISSION_LABELS = {
   canAccessShop: 'Market',
   canAccessWheel: 'Çark',
   canAccessSponsors: 'Sponsorlar',
+  canAccessAds: 'Reklam Ayarları',
   canAccessRanks: 'Rütbeler',
   canAccessRandy: 'Randy',
   canAccessSettings: 'Ayarlar',
