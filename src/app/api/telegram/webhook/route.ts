@@ -243,7 +243,6 @@ Daha fazla bilgi için Ödül Merkezi'ne git!
         const isActivityGroup = chatIdStr === activityGroupId
 
         if (!isActivityGroup) {
-          console.log(`⏭️ Mesaj aktif grupta değil (${chatIdStr} != ${activityGroupId}) - atlandı`)
           return NextResponse.json({ ok: true, message: 'Not activity group' })
         }
 
@@ -909,3 +908,4 @@ Siteye Butondan ulaşabilirsiniz
     return NextResponse.json({ ok: true })
   }
 }
+
