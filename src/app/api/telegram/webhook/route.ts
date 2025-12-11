@@ -626,15 +626,6 @@ Lütfen web sitesinden yeni bir kod alın ve tekrar deneyin.
           return NextResponse.json({ ok: true })
         }
 
-        // 2️⃣ Referans kodu kontrolü (örn: /start ref_123456789)
-        let referrerTelegramId: string | null = null
-
-        // Yeni format: ref_TELEGRAM_ID
-        if (startParam && startParam.startsWith('ref_')) {
-          referrerTelegramId = startParam.replace('ref_', '')
-        }
-        // Eski format için geriye dönük uyumluluk (referralCode)
-        const legacyReferralCode = startParam && !startParam.startsWith('ref_') && !(/^\d{6}$/.test(startParam)) ? startParam : null
 
         const welcomeMessage = `
 🎉 **SüperSohbet Bot'a Hoş Geldin!**
