@@ -20,6 +20,7 @@ export async function GET(request: Request) {
           select: {
             id: true,
             telegramId: true,
+            siteUsername: true,
             username: true,
             firstName: true,
             photoUrl: true,
@@ -58,6 +59,7 @@ export async function GET(request: Request) {
           select: {
             id: true,
             telegramId: true,
+            siteUsername: true,
             username: true,
             firstName: true,
             photoUrl: true,
