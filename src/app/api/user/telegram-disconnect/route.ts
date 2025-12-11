@@ -42,8 +42,7 @@ export async function POST(request: NextRequest) {
         lastName: null,
         photoUrl: null,
         telegramUnlinkedAt: new Date(),
-        hadStart: false,
-        channelsVerified: false
+        hadStart: false
       }
     })
 
