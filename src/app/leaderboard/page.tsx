@@ -44,19 +44,23 @@ function LeaderboardContent() {
     try {
       const userId = user?.id || ''
       const [pointsRes, xpRes] = await Promise.all([
-        fetch(`/api/leaderboard?sortBy=points&userId=${userId}`),
-        fetch(`/api/leaderboard?sortBy=xp&userId=${userId}`)
+        fetch(`/api/leaderboard?sortBy=points${userId ? `&userId=${userId}` : ''}`),
+        fetch(`/api/leaderboard?sortBy=xp${userId ? `&userId=${userId}` : ''}`)
       ])
 
       const pointsData = await pointsRes.json()
       const xpData = await xpRes.json()
 
+      // Login olmasa bile leaderboard'ı göster
       setPointsLeaderboard(pointsData.leaderboard || [])
       setPointsCurrentUser(pointsData.currentUser || null)
       setXpLeaderboard(xpData.leaderboard || [])
       setXpCurrentUser(xpData.currentUser || null)
     } catch (error) {
       console.error('Error loading leaderboard:', error)
+      // Hata durumunda bile boş array döndür
+      setPointsLeaderboard([])
+      setXpLeaderboard([])
     } finally {
       setLoading(false)
     }
