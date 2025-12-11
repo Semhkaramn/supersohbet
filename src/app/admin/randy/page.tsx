@@ -26,6 +26,7 @@ interface RandySchedule {
   onePerUser: boolean
   minMessages: number
   messagePeriod: string
+  allowAdmins: boolean
   status: string
   startTime: string
   createdAt: string
@@ -85,7 +86,8 @@ export default function AdminRandyPage() {
     randy_send_announcement: 'true',
     randy_pin_start_message: 'true',
     randy_pin_winner_message: 'true',
-    randy_one_per_user: 'true'
+    randy_one_per_user: 'true',
+    randy_allow_admins: 'false'
   })
   const [savingSettings, setSavingSettings] = useState(false)
 
@@ -129,7 +131,8 @@ export default function AdminRandyPage() {
         'randy_send_announcement',
         'randy_pin_start_message',
         'randy_pin_winner_message',
-        'randy_one_per_user'
+        'randy_one_per_user',
+        'randy_allow_admins'
       ]
 
       const newSettings: any = {}
@@ -938,6 +941,17 @@ export default function AdminRandyPage() {
                   <Switch
                     checked={randySettings.randy_one_per_user === 'true'}
                     onCheckedChange={(checked) => toggleRandySetting('randy_one_per_user', checked)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between border-t border-white/10 pt-4">
+                  <div>
+                    <Label className="text-white">Adminler Kazanabilir</Label>
+                    <p className="text-xs text-gray-400">Grup adminleri Randy çekilişine katılabilir ve kazanabilir</p>
+                  </div>
+                  <Switch
+                    checked={randySettings.randy_allow_admins === 'true'}
+                    onCheckedChange={(checked) => toggleRandySetting('randy_allow_admins', checked)}
                   />
                 </div>
               </div>
