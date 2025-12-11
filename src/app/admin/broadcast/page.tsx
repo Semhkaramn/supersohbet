@@ -33,7 +33,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 
 interface User {
   id: string
-  telegramId: string
+  siteUsername: string | null
   username: string | null
   firstName: string | null
   points: number
@@ -763,12 +763,13 @@ export default function BroadcastPage() {
                               className="mt-1"
                             />
                             <div className="flex-1 min-w-0">
-                              <p className="text-white font-medium truncate">
-                                {user.firstName || user.username || 'İsimsiz'}
+                              <p className="text-white font-bold text-base truncate">
+                                {user.siteUsername || 'Kullanıcı'}
                               </p>
-                              {user.username && (
-                                <p className="text-xs text-gray-400 truncate">@{user.username}</p>
-                              )}
+                              <div className="flex flex-col text-xs text-gray-400">
+                                {user.firstName && <span className="truncate">{user.firstName}</span>}
+                                {user.username && <span className="truncate">@{user.username}</span>}
+                              </div>
                               <div className="flex flex-wrap gap-2 mt-2">
                                 <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">
                                   {user.points} puan
