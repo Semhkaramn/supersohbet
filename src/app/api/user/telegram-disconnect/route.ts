@@ -18,19 +18,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user can disconnect (hasn't disconnected in the last 24 hours)
-    if (user.telegramUnlinkedAt) {
-      const daysSinceUnlink = Math.floor(
-        (Date.now() - new Date(user.telegramUnlinkedAt).getTime()) / (1000 * 60 * 60 * 24)
-      )
-
-      if (daysSinceUnlink < 1) {
-        return NextResponse.json(
-          { error: `${1 - daysSinceUnlink} gün sonra tekrar bağlantı koparabilirsiniz` },
-          { status: 400 }
-        )
-      }
-    }
+    // 1 günlük kısıtlama kaldırıldı - istediğiniz zaman tekrar bağlayabilirsiniz
 
     // Disconnect Telegram
     await prisma.user.update({
@@ -52,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Telegram bağlantısı koparıldı. 1 gün sonra tekrar bağlayabilirsiniz.'
+      message: 'Telegram bağlantısı koparıldı. İstediğiniz zaman tekrar bağlayabilirsiniz.'
     })
 
   } catch (error) {
