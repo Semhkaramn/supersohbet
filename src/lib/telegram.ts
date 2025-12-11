@@ -55,62 +55,6 @@ export async function setupMenuButton(webAppUrl: string): Promise<void> {
   }
 }
 
-// Kullanıcının kanala üye olup olmadığını kontrol et
-export async function checkChannelMembership(
-  userId: string,
-  channelId: string
-): Promise<boolean> {
-  try {
-    const bot = await getTelegramBot()
-
-    // userId string olarak geldiği için number'a çeviriyoruz
-    const numericUserId = Number.parseInt(userId, 10)
-    if (Number.isNaN(numericUserId)) {
-      console.error('❌ Invalid userId format:', userId)
-      return false
-    }
-
-    // channelId formatını düzenle
-    // Eğer sadece username ise (örn: "kanalkodileti"), @ ekle
-    // Eğer zaten @ veya - ile başlıyorsa olduğu gibi bırak
-    let chatId = channelId.trim()
-    if (!chatId.startsWith('@') && !chatId.startsWith('-')) {
-      chatId = '@' + chatId
-    }
-
-    console.log(`🔍 Kanal üyelik kontrolü: userId=${numericUserId}, chatId="${chatId}"`)
-
-    const member = await bot.getChatMember(chatId, numericUserId)
-    const isMember = ['creator', 'administrator', 'member'].includes(member.status)
-
-    console.log(`✅ Üyelik sonucu: ${isMember ? 'ÜYE' : 'ÜYE DEĞİL'} (durum: ${member.status})`)
-
-    return isMember
-  } catch (error: any) {
-    console.error('❌ Kanal üyelik kontrolü hatası:', error?.message || error)
-    console.error('Detaylar:', {
-      userId,
-      channelId,
-      errorCode: error?.code,
-      errorResponse: error?.response?.body
-    })
-
-    // Eğer kanal bulunamazsa veya bot kanalda değilse
-    if (error?.message?.includes('chat not found') || error?.code === 'ETELEGRAM') {
-      console.error('⚠️ Bot bu kanala erişemiyor veya kanal bulunamadı!')
-      console.error('⚠️ Çözüm: Bot\'u kanala ADMIN olarak ekleyin veya kanal ID\'sini kontrol edin')
-      console.error('📋 Not: Bot admin olmadan kullanıcı üyeliklerini kontrol edemez!')
-    }
-
-    if (error?.message?.includes('not enough rights') || error?.message?.includes('Forbidden')) {
-      console.error('❌ Bot\'un yetkileri yetersiz veya bot kanala eklenmemiş!')
-      console.error('⚠️ Çözüm: Bot\'u kanalda ADMIN yapın ve "Add Members" yetkisi verin!')
-    }
-
-    return false
-  }
-}
-
 // Kullanıcının profil fotoğrafını al
 export async function getUserProfilePhoto(userId: number): Promise<string | null> {
   try {
