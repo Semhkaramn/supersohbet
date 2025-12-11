@@ -442,7 +442,7 @@ export default function AdminRandyPage() {
                       type="number"
                       min="1"
                       value={formData.winnerCount}
-                      onChange={(e) => setFormData({ ...formData, winnerCount: parseInt(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, winnerCount: Math.max(1, parseInt(e.target.value) || 1) })}
                       className="bg-white/5 border-white/10 text-white mt-2"
                       required
                     />
@@ -456,7 +456,7 @@ export default function AdminRandyPage() {
                       type="number"
                       min="1"
                       value={formData.distributionHours}
-                      onChange={(e) => setFormData({ ...formData, distributionHours: parseInt(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, distributionHours: Math.max(1, parseInt(e.target.value) || 1) })}
                       className="bg-white/5 border-white/10 text-white mt-2"
                       required
                     />
@@ -508,7 +508,7 @@ export default function AdminRandyPage() {
                         type="number"
                         min="0"
                         value={formData.minMessages}
-                        onChange={(e) => setFormData({ ...formData, minMessages: parseInt(e.target.value) })}
+                        onChange={(e) => setFormData({ ...formData, minMessages: Math.max(0, parseInt(e.target.value) || 0) })}
                         className="bg-white/5 border-white/10 text-white mt-2"
                       />
                       <p className="text-xs text-gray-400 mt-1">Seçilen dönemde en az kaç mesaj yazmış olmalı (0 = sınırsız)</p>
