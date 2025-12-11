@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import BottomNav from '@/components/BottomNav'
+import DashboardLayout from '@/components/DashboardLayout'
+import ProtectedRoute from '@/components/ProtectedRoute'
 import { Ticket, Gift, TrendingUp, Trophy } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -322,20 +323,22 @@ function WheelContent() {
           )}
         </div>
       </div>
-
-      <BottomNav />
     </div>
   )
 }
 
 export default function WheelPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    }>
-      <WheelContent />
-    </Suspense>
+    <ProtectedRoute>
+      <DashboardLayout>
+        <Suspense fallback={
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        }>
+          <WheelContent />
+        </Suspense>
+      </DashboardLayout>
+    </ProtectedRoute>
   )
 }
