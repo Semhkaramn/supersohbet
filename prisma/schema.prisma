@@ -296,6 +296,7 @@ model TaskCompletion {
   // İlerleme takibi
   currentProgress  Int             @default(0) // Mevcut ilerleme
   targetProgress   Int             @default(1) // Hedef ilerleme
+  startingValue    Int             @default(0) // Görev başlangıç anındaki değer (geçmiş aktiviteleri saymaması için)
   isCompleted      Boolean         @default(false)
 
   // Ödül bilgisi
@@ -346,6 +347,7 @@ model Admin {
   canAccessShop         Boolean     @default(false)
   canAccessWheel        Boolean     @default(false)
   canAccessSponsors     Boolean     @default(false)
+  canAccessAds          Boolean     @default(false)
   canAccessRanks        Boolean     @default(false)
   canAccessRandy        Boolean     @default(false)
   canAccessSettings     Boolean     @default(false)
