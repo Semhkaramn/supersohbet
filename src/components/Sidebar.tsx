@@ -26,11 +26,11 @@ export default function Sidebar() {
 
   const menuItems = [
     {
-      href: '/dashboard',
+      href: '/',
       label: 'Ana Sayfa',
       icon: Home,
       gradient: 'from-blue-500 to-indigo-600',
-      active: pathname === '/dashboard' || pathname === '/sponsors'
+      active: pathname === '/'
     },
     {
       href: '/shop',
