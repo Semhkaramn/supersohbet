@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth-context'
 import { Card } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -26,6 +27,7 @@ interface LeaderboardUser {
 
 function LeaderboardContent() {
   const router = useRouter()
+  const { setShowLoginModal } = useAuth()
 
   const [pointsLeaderboard, setPointsLeaderboard] = useState<LeaderboardUser[]>([])
   const [xpLeaderboard, setXpLeaderboard] = useState<LeaderboardUser[]>([])
@@ -46,7 +48,7 @@ function LeaderboardContent() {
       ])
 
       if (pointsRes.status === 401) {
-        router.push('/login')
+        setShowLoginModal(true)
         return
       }
 
@@ -100,7 +102,6 @@ function LeaderboardContent() {
 
   const renderLeaderboard = (leaderboard: LeaderboardUser[], currentUser: LeaderboardUser | null, sortBy: 'points' | 'xp') => (
     <>
-      {/* Current User Position */}
       {currentUser && (
         <Card className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 border-blue-500/40 p-4 mb-4 backdrop-blur-sm">
           <div className="flex items-center gap-4">
@@ -127,10 +128,8 @@ function LeaderboardContent() {
         </Card>
       )}
 
-      {/* Top 3 Podium */}
       {leaderboard.length >= 3 && (
         <div className="grid grid-cols-3 gap-2 mb-6">
-          {/* 2nd Place */}
           <div className="flex flex-col items-center order-1">
             <div className="relative mb-2">
               <Avatar className="w-16 h-16 border-2 border-gray-400">
@@ -154,7 +153,6 @@ function LeaderboardContent() {
             </Card>
           </div>
 
-          {/* 1st Place */}
           <div className="flex flex-col items-center order-2">
             <Crown className="w-8 h-8 text-yellow-400 mb-1 animate-pulse" />
             <div className="relative mb-2">
@@ -179,7 +177,6 @@ function LeaderboardContent() {
             </Card>
           </div>
 
-          {/* 3rd Place */}
           <div className="flex flex-col items-center order-3">
             <div className="relative mb-2">
               <Avatar className="w-16 h-16 border-2 border-orange-400">
@@ -205,7 +202,6 @@ function LeaderboardContent() {
         </div>
       )}
 
-      {/* Rest of Leaderboard */}
       <div className="space-y-2">
         {leaderboard.slice(3).map((user) => (
           <Card
@@ -257,7 +253,6 @@ function LeaderboardContent() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
       <div className="bg-gradient-to-br from-amber-600 to-orange-600 rounded-xl p-6 text-center shadow-xl">
         <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
           <Trophy className="w-6 h-6" />
@@ -266,7 +261,6 @@ function LeaderboardContent() {
         <p className="text-white/80 text-sm mt-2">En başarılı üyelerimiz</p>
       </div>
 
-      {/* Tabs */}
       <Tabs defaultValue="points" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="points" className="flex items-center gap-2">
