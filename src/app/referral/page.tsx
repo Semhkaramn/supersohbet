@@ -128,41 +128,25 @@ function ReferralContent() {
 
   return (
     <div className="min-h-screen pb-24 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 p-6 pb-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-              <Users className="w-6 h-6 text-white" />
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="w-5 h-5 text-yellow-300" />
+              <span className="text-white/80 text-sm">Davetler</span>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">Referans Sistemi</h1>
-              <p className="text-white/80 text-sm">Arkadaşlarını davet et, ödül kazan</p>
+            <p className="text-3xl font-bold text-white">{referralData.totalReferrals}</p>
+          </Card>
+
+          <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Gift className="w-5 h-5 text-yellow-300" />
+              <span className="text-white/80 text-sm">Kazanç</span>
             </div>
-          </div>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 gap-3">
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="w-5 h-5 text-yellow-300" />
-                <span className="text-white/80 text-sm">Davetler</span>
-              </div>
-              <p className="text-3xl font-bold text-white">{referralData.totalReferrals}</p>
-            </Card>
-
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Gift className="w-5 h-5 text-yellow-300" />
-                <span className="text-white/80 text-sm">Kazanç</span>
-              </div>
-              <p className="text-3xl font-bold text-white">{referralData.referralPoints}</p>
-            </Card>
-          </div>
+            <p className="text-3xl font-bold text-white">{referralData.referralPoints}</p>
+          </Card>
         </div>
-      </div>
-
-      <div className="max-w-2xl mx-auto px-4 -mt-4 space-y-4">
         {/* Referral Link Card */}
         <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 p-5">
           <h3 className="font-bold text-white mb-1 flex items-center gap-2">
