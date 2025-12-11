@@ -7,13 +7,14 @@ import SponsorBanner from './SponsorBanner'
 
 interface DashboardLayoutProps {
   children: ReactNode
+  showSponsorBanner?: boolean
 }
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, showSponsorBanner = false }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-slate-950">
       <Header />
-      <SponsorBanner />
+      {showSponsorBanner && <SponsorBanner />}
       <Sidebar />
 
       <div className="transition-all duration-300">
