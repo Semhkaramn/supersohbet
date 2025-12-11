@@ -79,6 +79,8 @@ export async function GET(request: NextRequest) {
 
       switch (task.taskType) {
         case 'send_messages':
+          // NOT: messageCount kullanılıyor (ödül alan mesajlar)
+          // TÜM mesajları saymak için totalMessages kullanılabilir
           currentProgress = userData.messageCount || 0
           break
         case 'spin_wheel':
@@ -270,8 +272,9 @@ export async function POST(request: NextRequest) {
     // İlerlemeyi hesapla
     let currentProgress = 0
     switch (task.taskType) {
-      case 'invite_users':
       case 'send_messages':
+        // NOT: messageCount kullanılıyor çünkü ödül alan mesajları sayar
+        // Eğer TÜM mesajlar sayılsın istenirse totalMessages kullanılmalı
         currentProgress = user.messageCount
         break
       case 'spin_wheel':
