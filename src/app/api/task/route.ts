@@ -13,7 +13,6 @@ export async function GET(request: NextRequest) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
-        totalReferrals: true,
         messageCount: true,
         points: true,
         xp: true,
@@ -79,9 +78,6 @@ export async function GET(request: NextRequest) {
       let currentProgress = 0
 
       switch (task.taskType) {
-        case 'invite_users':
-          currentProgress = userData.totalReferrals || 0
-          break
         case 'send_messages':
           currentProgress = userData.messageCount || 0
           break
@@ -253,7 +249,6 @@ export async function POST(request: NextRequest) {
       where: { id: userId },
       select: {
         id: true,
-        totalReferrals: true,
         messageCount: true,
         points: true,
         xp: true,
@@ -276,8 +271,6 @@ export async function POST(request: NextRequest) {
     let currentProgress = 0
     switch (task.taskType) {
       case 'invite_users':
-        currentProgress = user.totalReferrals
-        break
       case 'send_messages':
         currentProgress = user.messageCount
         break
