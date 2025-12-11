@@ -45,6 +45,19 @@ export default function ChannelModal() {
     return () => clearInterval(interval)
   }, [channels, showChannelModal])
 
+  // Telegram durumu için otomatik polling
+  useEffect(() => {
+    if (!showChannelModal || telegramStarted) {
+      return
+    }
+
+    const interval = setInterval(() => {
+      loadTelegramStatus()
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [showChannelModal, telegramStarted])
+
   async function loadTelegramStatus() {
     try {
       const response = await fetch('/api/user/telegram-status')
@@ -72,7 +85,13 @@ export default function ChannelModal() {
 
       if (botRes.ok) {
         const botData = await botRes.json()
-        setBotUsername(botData.botUsername || '')
+        console.log('🤖 Bot API Response:', botData)
+        // username veya botUsername olabilir, her ikisini de kontrol et
+        const username = botData.username || botData.botUsername || ''
+        console.log('🤖 Bot Username:', username)
+        setBotUsername(username.replace('@', ''))
+      } else {
+        console.error('❌ Bot API failed:', botRes.status)
       }
     } catch (error) {
       console.error('Error loading channels:', error)
@@ -157,13 +176,19 @@ export default function ChannelModal() {
                   </p>
                 </div>
                 <Button
-                  onClick={() => window.open(`https://t.me/${botUsername}?start=connect`, '_blank')}
+                  onClick={() => {
+                    const username = botUsername || 'supersohbet_bot'
+                    console.log('🔵 Opening Telegram with username:', username)
+                    window.open(`https://t.me/${username}?start=connect`, '_blank')
+                  }}
                   className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
-                  disabled={!botUsername}
                 >
                   <ExternalLink className="w-4 h-4 mr-2" />
-                  Botu Başlat
+                  {botUsername ? 'Botu Başlat' : 'Yükleniyor...'}
                 </Button>
+                {botUsername && (
+                  <p className="text-xs text-gray-400">@{botUsername}</p>
+                )}
               </div>
             </Card>
           )}
