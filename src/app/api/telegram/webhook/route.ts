@@ -567,10 +567,47 @@ Bot özelliklerini kullanmanız engellenmiştir.
               }
             })
 
+            // ========== YENİ: TELEGRAM GRUP KULLANICISINI BAĞLA ==========
+            // Telegram grup kullanıcısını bul veya oluştur
+            let telegramGroupUser = await prisma.telegramGroupUser.findUnique({
+              where: { telegramId: userId }
+            })
+
+            if (telegramGroupUser) {
+              // Mevcut telegram grup kullanıcısını site kullanıcısıyla bağla
+              await prisma.telegramGroupUser.update({
+                where: { id: telegramGroupUser.id },
+                data: {
+                  linkedUserId: updatedUser.id,
+                  username: username || telegramGroupUser.username,
+                  firstName: firstName || telegramGroupUser.firstName,
+                  lastName: lastName || telegramGroupUser.lastName,
+                  photoUrl: photoUrl || telegramGroupUser.photoUrl
+                }
+              })
+              console.log(`✅ Telegram grup kullanıcısı site kullanıcısıyla bağlandı (${telegramGroupUser.messageCount} geçmiş mesaj birleştirildi)`)
+            } else {
+              // Telegram grup kullanıcısı yoksa oluştur ve bağla
+              telegramGroupUser = await prisma.telegramGroupUser.create({
+                data: {
+                  telegramId: userId,
+                  username: username || null,
+                  firstName: firstName || null,
+                  lastName: lastName || null,
+                  photoUrl: photoUrl || null,
+                  linkedUserId: updatedUser.id,
+                  messageCount: 0
+                }
+              })
+              console.log(`✅ Yeni telegram grup kullanıcısı oluşturuldu ve site kullanıcısıyla bağlandı`)
+            }
+            // ========== YENİ BİTİŞ ==========
+
             await sendTelegramMessage(chatId, `
 ✅ **Hesabınız Başarıyla Bağlandı!**
 
 Merhaba ${firstName || webUser.firstName}!
+${telegramGroupUser && telegramGroupUser.messageCount > 0 ? `\n📊 ${telegramGroupUser.messageCount} geçmiş mesajınız hesabınıza aktarıldı!` : ''}
             `.trim())
 
             console.log('✅ Web kullanıcısı Telegram ile bağlandı:', {
@@ -671,15 +708,66 @@ Siteye Butondan ulaşabilirsiniz
         return NextResponse.json({ ok: true, message: 'Private chat - no points' })
       }
 
+      // ========== YENİ: TÜM TELEGRAM KULLANICILARINI KAYDET ==========
+      // Telegram grup kullanıcısını oluştur veya güncelle (siteye kayıt olmamış bile olsa)
+      let telegramGroupUser = await prisma.telegramGroupUser.findUnique({
+        where: { telegramId: userId }
+      })
+
+      if (!telegramGroupUser) {
+        // Yeni telegram kullanıcısı - oluştur
+        telegramGroupUser = await prisma.telegramGroupUser.create({
+          data: {
+            telegramId: userId,
+            username: username || null,
+            firstName: firstName || null,
+            lastName: lastName || null,
+            messageCount: 0
+          }
+        })
+        console.log(`✅ Yeni Telegram grup kullanıcısı oluşturuldu: ${userId} (${firstName || username})`)
+      } else {
+        // Mevcut telegram kullanıcısı - bilgileri güncelle
+        await prisma.telegramGroupUser.update({
+          where: { telegramId: userId },
+          data: {
+            username: username || telegramGroupUser.username,
+            firstName: firstName || telegramGroupUser.firstName,
+            lastName: lastName || telegramGroupUser.lastName
+          }
+        })
+      }
+
+      // Telegram grup mesajını kaydet (TÜM KULLANICILAR İÇİN)
+      await prisma.telegramGroupMessage.create({
+        data: {
+          telegramUserId: telegramGroupUser.id,
+          content: messageText.substring(0, 500),
+          messageLength: messageText.length
+        }
+      })
+
+      // Telegram grup kullanıcısının mesaj sayısını artır
+      await prisma.telegramGroupUser.update({
+        where: { id: telegramGroupUser.id },
+        data: {
+          messageCount: { increment: 1 },
+          lastMessageAt: new Date()
+        }
+      })
+
+      console.log(`📝 Telegram grup mesajı kaydedildi: ${userId} - ${telegramGroupUser.messageCount + 1} mesaj`)
+      // ========== YENİ BİTİŞ ==========
+
       // Kullanıcıyı bul (artık otomatik oluşturulmaz)
       const user = await prisma.user.findUnique({
         where: { telegramId: userId }
       })
 
-      // Kullanıcı yoksa (web'den kayıt olmamış), mesaj işlemez
+      // Kullanıcı yoksa (web'den kayıt olmamış), mesajı kaydettik ama puan vermiyoruz
       if (!user) {
-        console.log(`⚠️ Kullanıcı bulunamadı - web'den kayıt gerekli: ${userId}`)
-        return NextResponse.json({ ok: true, message: 'User not found - web registration required' })
+        console.log(`⚠️ Kullanıcı siteye kayıtlı değil - mesaj kaydedildi ama puan verilmedi: ${userId}`)
+        return NextResponse.json({ ok: true, message: 'Message saved - user not registered on website' })
       }
 
       // hadStart yapmamışlara puan verilmez
