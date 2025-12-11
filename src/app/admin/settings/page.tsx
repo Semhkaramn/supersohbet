@@ -72,7 +72,7 @@ export default function AdminSettingsPage() {
     }
   }
 
-  async function saveSetting(key: string, value: string) {
+  async function saveSetting(key: string, value: string, showToast = true) {
     setSaving(true)
     try {
       const response = await fetch('/api/admin/settings', {
@@ -84,18 +84,27 @@ export default function AdminSettingsPage() {
       const data = await response.json()
 
       if (data.success) {
-        if (key === 'telegram_bot_token' && data.webhookSet) {
-          toast.success(`Bot başarıyla bağlandı! @${data.botUsername}`)
-        } else {
-          toast.success('Ayar kaydedildi!')
+        if (showToast) {
+          if (key === 'telegram_bot_token' && data.webhookSet) {
+            toast.success(`Bot başarıyla bağlandı! @${data.botUsername}`)
+          } else {
+            toast.success('Ayar kaydedildi!')
+          }
         }
-        loadSettings()
+        await loadSettings()
+        return { success: true, data }
       } else {
-        toast.error(data.error || 'Ayar kaydedilemedi')
+        if (showToast) {
+          toast.error(data.error || 'Ayar kaydedilemedi')
+        }
+        return { success: false, error: data.error }
       }
     } catch (error) {
       console.error('Save error:', error)
-      toast.error('Bir hata oluştu')
+      if (showToast) {
+        toast.error('Bir hata oluştu')
+      }
+      return { success: false, error: 'Bir hata oluştu' }
     } finally {
       setSaving(false)
     }
@@ -536,37 +545,47 @@ export default function AdminSettingsPage() {
                     return
                   }
 
-                  setSaving(true)
                   try {
                     // Eğer @ ile başlıyorsa username, aksi halde direkt ID
                     const isUsername = value.startsWith('@')
 
                     if (isUsername) {
                       // Telegram API'den gerçek chat ID'yi al
+                      setSaving(true)
                       const response = await fetch('/api/admin/settings', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ chatUsername: value })
                       })
+                      setSaving(false)
 
                       const data = await response.json()
 
                       if (data.success && data.chatId) {
-                        // Gerçek chat ID'yi kaydet
-                        await saveSetting('activity_group_id', data.chatId)
-                        toast.success(`Aktif grup ayarlandı: ${data.chatTitle} (ID: ${data.chatId})`)
+                        // Gerçek chat ID'yi kaydet - showToast=false çünkü özel mesaj göstereceğiz
+                        const result = await saveSetting('activity_group_id', data.chatId, false)
+                        if (result.success) {
+                          toast.success(`Aktif grup ayarlandı: ${data.chatTitle} (ID: ${data.chatId})`)
+                          // State'i güncelle
+                          handleInputChange('activity_group_id', data.chatId)
+                        } else {
+                          toast.error(result.error || 'Ayar kaydedilemedi')
+                        }
                       } else {
                         toast.error(data.error || 'Grup ID\'si alınamadı')
                       }
                     } else {
-                      // Zaten sayısal ID, direkt kaydet
-                      await saveSetting('activity_group_id', value)
-                      toast.success(`Aktif grup ayarlandı (ID: ${value})`)
+                      // Zaten sayısal ID, direkt kaydet - showToast=false çünkü özel mesaj göstereceğiz
+                      const result = await saveSetting('activity_group_id', value, false)
+                      if (result.success) {
+                        toast.success(`Aktif grup ayarlandı (ID: ${value})`)
+                      } else {
+                        toast.error(result.error || 'Ayar kaydedilemedi')
+                      }
                     }
                   } catch (error) {
                     console.error('Error saving active group:', error)
                     toast.error('Bir hata oluştu')
-                  } finally {
                     setSaving(false)
                   }
                 }}
