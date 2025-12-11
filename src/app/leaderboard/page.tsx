@@ -11,6 +11,7 @@ import { Trophy, Crown, Medal, Star } from 'lucide-react'
 
 interface LeaderboardUser {
   id: string
+  siteUsername?: string
   username?: string
   firstName?: string
   photoUrl?: string
@@ -104,14 +105,17 @@ function LeaderboardContent() {
               <span className="text-lg font-bold text-white">#{currentUser.position}</span>
             </div>
             <Avatar className="w-12 h-12 border-2 border-white/30">
-              {currentUser.photoUrl && <AvatarImage src={currentUser.photoUrl} alt={currentUser.firstName || currentUser.username || 'User'} />}
+              {currentUser.photoUrl && <AvatarImage src={currentUser.photoUrl} alt={currentUser.siteUsername || currentUser.firstName || currentUser.username || 'User'} />}
               <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white font-bold">
-                {currentUser.firstName?.[0] || currentUser.username?.[0] || '?'}
+                {currentUser.siteUsername?.[0] || currentUser.firstName?.[0] || currentUser.username?.[0] || '?'}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <p className="font-semibold text-white">Sen</p>
-              <p className="text-xs text-white/70">@{currentUser.username || 'kullanici'}</p>
+              <p className="font-bold text-white text-lg">Sen - {currentUser.siteUsername || 'Kullanıcı'}</p>
+              <div className="flex flex-col text-xs text-white/60">
+                {currentUser.firstName && <span>{currentUser.firstName}</span>}
+                {currentUser.username && <span>@{currentUser.username}</span>}
+              </div>
             </div>
             <div className="text-right">
               <p className="text-xl font-bold text-yellow-300">
@@ -128,19 +132,23 @@ function LeaderboardContent() {
           <div className="flex flex-col items-center order-1">
             <div className="relative mb-2">
               <Avatar className="w-16 h-16 border-2 border-gray-400">
-                {leaderboard[1].photoUrl && <AvatarImage src={leaderboard[1].photoUrl} alt={leaderboard[1].firstName || leaderboard[1].username || 'User'} />}
+                {leaderboard[1].photoUrl && <AvatarImage src={leaderboard[1].photoUrl} alt={leaderboard[1].siteUsername || leaderboard[1].firstName || leaderboard[1].username || 'User'} />}
                 <AvatarFallback className="bg-gradient-to-br from-gray-400 to-gray-600 text-white font-bold text-lg">
-                  {leaderboard[1].firstName?.[0] || leaderboard[1].username?.[0] || '?'}
+                  {leaderboard[1].siteUsername?.[0] || leaderboard[1].firstName?.[0] || leaderboard[1].username?.[0] || '?'}
                 </AvatarFallback>
               </Avatar>
               <div className="absolute -top-2 -right-2 bg-gray-400 rounded-full w-7 h-7 flex items-center justify-center border-2 border-slate-900">
                 <span className="text-xs font-bold text-white">2</span>
               </div>
             </div>
-            <Card className="bg-gradient-to-b from-gray-400/20 to-gray-600/20 border-gray-400/40 p-3 w-full text-center h-24">
-              <p className="text-sm font-semibold text-white truncate mb-1">
-                {leaderboard[1].firstName || leaderboard[1].username || 'User'}
+            <Card className="bg-gradient-to-b from-gray-400/20 to-gray-600/20 border-gray-400/40 p-3 w-full text-center h-28">
+              <p className="text-sm font-bold text-white truncate mb-0.5">
+                {leaderboard[1].siteUsername || 'Kullanıcı'}
               </p>
+              <div className="flex flex-col text-[10px] text-white/50 mb-1">
+                {leaderboard[1].firstName && <span className="truncate">{leaderboard[1].firstName}</span>}
+                {leaderboard[1].username && <span className="truncate">@{leaderboard[1].username}</span>}
+              </div>
               <p className="text-lg font-bold text-yellow-300">
                 {sortBy === 'points' ? leaderboard[1].points : leaderboard[1].xp}
               </p>
@@ -152,19 +160,23 @@ function LeaderboardContent() {
             <Crown className="w-8 h-8 text-yellow-400 mb-1 animate-pulse" />
             <div className="relative mb-2">
               <Avatar className="w-20 h-20 border-3 border-yellow-400 shadow-lg shadow-yellow-400/50">
-                {leaderboard[0].photoUrl && <AvatarImage src={leaderboard[0].photoUrl} alt={leaderboard[0].firstName || leaderboard[0].username || 'User'} />}
+                {leaderboard[0].photoUrl && <AvatarImage src={leaderboard[0].photoUrl} alt={leaderboard[0].siteUsername || leaderboard[0].firstName || leaderboard[0].username || 'User'} />}
                 <AvatarFallback className="bg-gradient-to-br from-yellow-400 to-orange-500 text-white font-bold text-xl">
-                  {leaderboard[0].firstName?.[0] || leaderboard[0].username?.[0] || '?'}
+                  {leaderboard[0].siteUsername?.[0] || leaderboard[0].firstName?.[0] || leaderboard[0].username?.[0] || '?'}
                 </AvatarFallback>
               </Avatar>
               <div className="absolute -top-2 -right-2 bg-yellow-400 rounded-full w-8 h-8 flex items-center justify-center border-2 border-slate-900">
                 <span className="text-sm font-bold text-slate-900">1</span>
               </div>
             </div>
-            <Card className="bg-gradient-to-b from-yellow-500/20 to-orange-500/20 border-yellow-400/40 p-3 w-full text-center h-32">
-              <p className="text-sm font-semibold text-white truncate mb-1">
-                {leaderboard[0].firstName || leaderboard[0].username || 'User'}
+            <Card className="bg-gradient-to-b from-yellow-500/20 to-orange-500/20 border-yellow-400/40 p-3 w-full text-center h-36">
+              <p className="text-base font-bold text-white truncate mb-0.5">
+                {leaderboard[0].siteUsername || 'Kullanıcı'}
               </p>
+              <div className="flex flex-col text-[10px] text-white/50 mb-1">
+                {leaderboard[0].firstName && <span className="truncate">{leaderboard[0].firstName}</span>}
+                {leaderboard[0].username && <span className="truncate">@{leaderboard[0].username}</span>}
+              </div>
               <p className="text-2xl font-bold text-yellow-300">
                 {sortBy === 'points' ? leaderboard[0].points : leaderboard[0].xp}
               </p>
@@ -175,19 +187,23 @@ function LeaderboardContent() {
           <div className="flex flex-col items-center order-3">
             <div className="relative mb-2">
               <Avatar className="w-16 h-16 border-2 border-orange-400">
-                {leaderboard[2].photoUrl && <AvatarImage src={leaderboard[2].photoUrl} alt={leaderboard[2].firstName || leaderboard[2].username || 'User'} />}
+                {leaderboard[2].photoUrl && <AvatarImage src={leaderboard[2].photoUrl} alt={leaderboard[2].siteUsername || leaderboard[2].firstName || leaderboard[2].username || 'User'} />}
                 <AvatarFallback className="bg-gradient-to-br from-orange-400 to-red-500 text-white font-bold text-lg">
-                  {leaderboard[2].firstName?.[0] || leaderboard[2].username?.[0] || '?'}
+                  {leaderboard[2].siteUsername?.[0] || leaderboard[2].firstName?.[0] || leaderboard[2].username?.[0] || '?'}
                 </AvatarFallback>
               </Avatar>
               <div className="absolute -top-2 -right-2 bg-orange-400 rounded-full w-7 h-7 flex items-center justify-center border-2 border-slate-900">
                 <span className="text-xs font-bold text-white">3</span>
               </div>
             </div>
-            <Card className="bg-gradient-to-b from-orange-400/20 to-red-500/20 border-orange-400/40 p-3 w-full text-center h-24">
-              <p className="text-sm font-semibold text-white truncate mb-1">
-                {leaderboard[2].firstName || leaderboard[2].username || 'User'}
+            <Card className="bg-gradient-to-b from-orange-400/20 to-red-500/20 border-orange-400/40 p-3 w-full text-center h-28">
+              <p className="text-sm font-bold text-white truncate mb-0.5">
+                {leaderboard[2].siteUsername || 'Kullanıcı'}
               </p>
+              <div className="flex flex-col text-[10px] text-white/50 mb-1">
+                {leaderboard[2].firstName && <span className="truncate">{leaderboard[2].firstName}</span>}
+                {leaderboard[2].username && <span className="truncate">@{leaderboard[2].username}</span>}
+              </div>
               <p className="text-lg font-bold text-yellow-300">
                 {sortBy === 'points' ? leaderboard[2].points : leaderboard[2].xp}
               </p>
@@ -208,16 +224,21 @@ function LeaderboardContent() {
                 {getPositionIcon(user.position)}
               </div>
               <Avatar className="w-12 h-12 border-2 border-white/20">
-                {user.photoUrl && <AvatarImage src={user.photoUrl} alt={user.firstName || user.username || 'User'} />}
+                {user.photoUrl && <AvatarImage src={user.photoUrl} alt={user.siteUsername || user.firstName || user.username || 'User'} />}
                 <AvatarFallback className="bg-gradient-to-br from-slate-600 to-slate-800 text-white font-bold">
-                  {user.firstName?.[0] || user.username?.[0] || '?'}
+                  {user.siteUsername?.[0] || user.firstName?.[0] || user.username?.[0] || '?'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <p className="font-semibold text-white">
-                  {user.firstName || user.username || 'Kullanıcı'}
+                <p className="font-bold text-white text-base">
+                  {user.siteUsername || 'Kullanıcı'}
                 </p>
                 <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <div className="flex flex-col">
+                    {user.firstName && <span className="text-slate-400">{user.firstName}</span>}
+                    {user.username && <span className="text-slate-500">@{user.username}</span>}
+                  </div>
+                  <span>•</span>
                   <span>{user.totalMessages} mesaj</span>
                   <span>•</span>
                   <span>{sortBy === 'points' ? `${user.xp} XP` : `${user.points} puan`}</span>
