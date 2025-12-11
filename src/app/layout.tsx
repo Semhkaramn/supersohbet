@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth-context";
 import LoginModal from "@/components/LoginModal";
 import RegisterModal from "@/components/RegisterModal";
-import ChannelModal from "@/components/ChannelModal";
+import TelegramConnectionModal from "@/components/TelegramConnectionModal";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,7 +39,7 @@ export default function RootLayout({
           {children}
           <LoginModal />
           <RegisterModal />
-          <ChannelModal />
+          <TelegramConnectionModal />
           <Toaster />
         </AuthProvider>
       </body>
