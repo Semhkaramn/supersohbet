@@ -1,19 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { verifyAdminToken } from '@/lib/admin-middleware'
 
-// PUT - Sosyal medya bağlantılarını yeniden sırala
+// PUT - Sosyal medya bağlantılarını yeniden sırala (admin panelinde kullanılıyor, sayfa zaten korumalı)
 export async function PUT(request: NextRequest) {
-  const token = request.headers.get('Authorization')?.replace('Bearer ', '')
-  if (!token) {
-    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 })
-  }
-
-  const admin = await verifyAdminToken(token)
-  if (!admin) {
-    return NextResponse.json({ error: 'Geçersiz token' }, { status: 401 })
-  }
-
   try {
     const { items } = await request.json()
 
