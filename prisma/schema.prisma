@@ -208,7 +208,7 @@ model PointHistory {
   userId           String
   user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   amount           Int             // Pozitif = kazanç, Negatif = kayıp
-  type             String          // "admin_add", "admin_remove", "wheel_win", "shop_purchase", "referral_reward", "message_reward" vs
+  type             String          // "admin_add", "admin_remove", "wheel_win", "shop_purchase", "message_reward" vs
   description      String          // Detaylı açıklama
   relatedId        String?         // İlgili kaydın ID'si (wheelSpinId, purchaseId vs)
   adminUsername    String?         // İşlemi yapan admin (varsa)
@@ -254,7 +254,7 @@ model Task {
   category         String          @default("daily") // "daily" (günlük), "weekly" (haftalık), "permanent" (kalıcı)
 
   // Görev tipi
-  taskType         String          @default("send_messages") // "invite_users" (üye davet), "send_messages" (mesaj gönder), "spin_wheel" (çark çevir), "earn_points" (puan kazan), "reach_level" (seviye ulaş)
+  taskType         String          @default("send_messages") // "send_messages" (mesaj gönder), "spin_wheel" (çark çevir), "earn_points" (puan kazan), "reach_level" (seviye ulaş)
 
   // Hedef ve gereksinimler
   targetValue      Int             @default(1) // Hedef değer (örn: 5 mesaj, 3 davet)
