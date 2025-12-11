@@ -479,3 +479,17 @@ model TelegramGroupMessage {
   @@index([createdAt])
   @@index([telegramUserId, createdAt])
 }
+
+// Sosyal Medya Bağlantıları
+model SocialMedia {
+  id               String          @id @default(cuid())
+  name             String          // Gösterilecek isim
+  platform         String          // telegram, instagram, twitter, youtube, discord, tiktok, facebook
+  username         String          // Kullanıcı adı veya link
+  isActive         Boolean         @default(true)
+  order            Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([isActive, order])
+}
