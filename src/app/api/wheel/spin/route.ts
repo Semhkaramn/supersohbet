@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import type { Prisma } from '@prisma/client'
 import { requireAuth } from '@/lib/auth'
+import { invalidateLeaderboardCache } from '@/lib/cache'
 
 // Çark artık tamamen ücretsiz
 
@@ -101,6 +102,10 @@ export async function POST(request: NextRequest) {
         }
       })
     })
+
+    // ✅ Puan değiştiği için leaderboard cache'ini temizle
+    invalidateLeaderboardCache()
+    console.log('🔄 Leaderboard cache temizlendi (çark çevirme)')
 
     return NextResponse.json({
       success: true,
