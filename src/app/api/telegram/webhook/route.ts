@@ -779,9 +779,25 @@ Siteye Butondan ulaşabilirsiniz
       console.log(`📝 Telegram grup mesajı kaydedildi: ${userId} - ${telegramGroupUser.messageCount + 1} mesaj`)
       // ========== YENİ BİTİŞ ==========
 
+      // 🔍 DEBUG: userId değerini detaylı logla
+      console.log(`🔍 DB ARAMA - userId:`, {
+        value: userId,
+        type: typeof userId,
+        length: userId.length,
+        charCodes: [...userId].map(c => c.charCodeAt(0))
+      })
+
       // Kullanıcıyı bul - Önce telegramId ile, yoksa linkedUserId ile
       let user = await prisma.user.findUnique({
         where: { telegramId: userId }
+      })
+
+      console.log(`🔍 DB SONUÇ - User bulundu mu:`, {
+        found: !!user,
+        userId: user?.id,
+        telegramId: user?.telegramId,
+        email: user?.email,
+        siteUsername: user?.siteUsername
       })
 
       // TelegramId ile bulunamadıysa, TelegramGroupUser üzerinden linkedUserId ile bul
@@ -790,6 +806,22 @@ Siteye Butondan ulaşabilirsiniz
           where: { id: telegramGroupUser.linkedUserId }
         })
         console.log(`🔗 Kullanıcı linkedUserId ile bulundu: ${user?.email || user?.siteUsername}`)
+      }
+
+      // Manuel kontrol - telegramId ile arama
+      if (!user) {
+        console.log(`❌ User bulunamadı, manuel kontrol yapılıyor...`)
+        const allUsers = await prisma.user.findMany({
+          where: {
+            OR: [
+              { telegramId: userId },
+              { telegramId: String(userId) },
+              { telegramId: { contains: '5725763398' } }
+            ]
+          },
+          select: { id: true, telegramId: true, email: true, siteUsername: true }
+        })
+        console.log(`📋 Manuel arama sonucu (${allUsers.length} kayıt):`, JSON.stringify(allUsers, null, 2))
       }
 
       // Kullanıcı yoksa (web'den kayıt olmamış ve bağlantı yapmamış), mesajı kaydettik ama puan vermiyoruz
