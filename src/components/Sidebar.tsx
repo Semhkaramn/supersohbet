@@ -95,22 +95,22 @@ export default function Sidebar() {
         />
       )}
 
-      {/* Desktop Toggle Button */}
+      {/* Desktop Toggle Button - Below Header */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="hidden lg:flex fixed top-4 left-4 z-50 p-2 rounded-xl bg-slate-900/95 backdrop-blur-xl border border-white/10 text-white hover:bg-slate-800 transition-all shadow-lg"
+        className="hidden lg:flex fixed top-24 left-4 z-50 p-2 rounded-xl bg-slate-900/95 backdrop-blur-xl border border-white/10 text-white hover:bg-slate-800 transition-all shadow-lg"
       >
         {isOpen ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
       </button>
 
-      {/* Desktop Sidebar */}
+      {/* Desktop Sidebar - Starts Below Header */}
       <aside
-        className={`hidden lg:flex fixed left-0 top-0 h-screen bg-slate-900/95 backdrop-blur-xl border-r border-white/10 flex-col transition-all duration-300 ease-in-out z-40 ${
+        className={`hidden lg:flex fixed left-0 top-20 h-[calc(100vh-5rem)] bg-slate-900/95 backdrop-blur-xl border-r border-white/10 flex-col transition-all duration-300 ease-in-out z-40 ${
           isOpen ? 'w-64' : 'w-20'
         }`}
       >
         {/* Logo */}
-        <div className="p-6 border-b border-white/10 pt-16">
+        <div className="p-6 border-b border-white/10">
           <div className={`flex items-center gap-3 transition-all duration-300 ${isOpen ? '' : 'justify-center'}`}>
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg flex-shrink-0">
               <Sparkles className="w-6 h-6 text-white" />
@@ -132,6 +132,7 @@ export default function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => setIsOpen(true)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                   item.active
                     ? `bg-gradient-to-r ${item.gradient} shadow-lg`
