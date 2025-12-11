@@ -89,28 +89,20 @@ function SponsorsContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
-      {/* Search Header */}
-      <div className="bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 p-6 shadow-xl sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center gap-3 mb-3">
-            <Heart className="w-6 h-6 text-white animate-pulse" fill="currentColor" />
-            <h1 className="text-2xl font-bold text-white">Sponsorlar</h1>
-          </div>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
-            <Input
-              type="text"
-              placeholder="Sponsor ara..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-white/20 border-white/30 text-white placeholder:text-slate-300 focus:bg-white/30 focus:border-white/50 transition-all"
-            />
-          </div>
-        </div>
-      </div>
-
       {/* Sponsors List */}
       <div className="max-w-2xl mx-auto px-4 py-6">
+        {/* Search */}
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
+          <Input
+            type="text"
+            placeholder="Sponsor ara..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 bg-white/20 border-white/30 text-white placeholder:text-slate-300 focus:bg-white/30 focus:border-white/50 transition-all"
+          />
+        </div>
+
         {filteredSponsors.length === 0 ? (
           <div className="text-center py-12">
             <Heart className="w-16 h-16 text-gray-500 mx-auto mb-4" />
