@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useState } from 'react'
 import {
   Home,
   User,
@@ -12,11 +13,17 @@ import {
   Trophy,
   Heart,
   Wallet,
-  Sparkles
+  Sparkles,
+  Menu,
+  X,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const [isOpen, setIsOpen] = useState(true)
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
 
   const menuItems = [
     {
@@ -78,42 +85,122 @@ export default function Sidebar() {
   ]
 
   return (
-    <aside className="hidden lg:flex fixed left-0 top-0 h-screen w-64 bg-slate-900/95 backdrop-blur-xl border-r border-white/10 flex-col">
-      {/* Logo */}
-      <div className="p-6 border-b border-white/10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-            <Sparkles className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-white">SüperSohbet</h2>
-            <p className="text-xs text-slate-400">Ödül Merkezi</p>
+    <>
+      {/* Mobile Hamburger Button */}
+      <button
+        onClick={() => setIsMobileOpen(!isMobileOpen)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-xl bg-slate-900/95 backdrop-blur-xl border border-white/10 text-white hover:bg-slate-800 transition-all"
+      >
+        {isMobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+      </button>
+
+      {/* Mobile Overlay */}
+      {isMobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-30"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      {/* Desktop Toggle Button */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="hidden lg:flex fixed top-4 left-4 z-50 p-2 rounded-xl bg-slate-900/95 backdrop-blur-xl border border-white/10 text-white hover:bg-slate-800 transition-all shadow-lg"
+      >
+        {isOpen ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+      </button>
+
+      {/* Desktop Sidebar */}
+      <aside
+        className={`hidden lg:flex fixed left-0 top-0 h-screen bg-slate-900/95 backdrop-blur-xl border-r border-white/10 flex-col transition-all duration-300 ease-in-out z-40 ${
+          isOpen ? 'w-64' : 'w-20'
+        }`}
+      >
+        {/* Logo */}
+        <div className="p-6 border-b border-white/10 pt-16">
+          <div className={`flex items-center gap-3 transition-all duration-300 ${isOpen ? '' : 'justify-center'}`}>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg flex-shrink-0">
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
+            {isOpen && (
+              <div className="overflow-hidden">
+                <h2 className="text-xl font-bold text-white whitespace-nowrap">SüperSohbet</h2>
+                <p className="text-xs text-slate-400 whitespace-nowrap">Ödül Merkezi</p>
+              </div>
+            )}
           </div>
         </div>
-      </div>
 
-      {/* Menu Items */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-        {menuItems.map((item) => {
-          const Icon = item.icon
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
-                item.active
-                  ? `bg-gradient-to-r ${item.gradient} shadow-lg`
-                  : 'hover:bg-white/5'
-              }`}
-            >
-              <Icon className={`w-5 h-5 ${item.active ? 'text-white' : 'text-gray-400 group-hover:text-white'}`} />
-              <span className={`font-medium ${item.active ? 'text-white' : 'text-gray-400 group-hover:text-white'}`}>
-                {item.label}
-              </span>
-            </Link>
-          )
-        })}
-      </nav>
-    </aside>
+        {/* Menu Items */}
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+          {menuItems.map((item) => {
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                  item.active
+                    ? `bg-gradient-to-r ${item.gradient} shadow-lg`
+                    : 'hover:bg-white/5'
+                } ${isOpen ? '' : 'justify-center'}`}
+                title={!isOpen ? item.label : ''}
+              >
+                <Icon className={`w-5 h-5 flex-shrink-0 ${item.active ? 'text-white' : 'text-gray-400 group-hover:text-white'}`} />
+                {isOpen && (
+                  <span className={`font-medium whitespace-nowrap ${item.active ? 'text-white' : 'text-gray-400 group-hover:text-white'}`}>
+                    {item.label}
+                  </span>
+                )}
+              </Link>
+            )
+          })}
+        </nav>
+      </aside>
+
+      {/* Mobile Sidebar */}
+      <aside
+        className={`lg:hidden fixed left-0 top-0 h-screen w-64 bg-slate-900/95 backdrop-blur-xl border-r border-white/10 flex-col z-40 transition-transform duration-300 ease-in-out ${
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* Logo */}
+        <div className="p-6 border-b border-white/10 pt-16">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">SüperSohbet</h2>
+              <p className="text-xs text-slate-400">Ödül Merkezi</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Menu Items */}
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+          {menuItems.map((item) => {
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setIsMobileOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                  item.active
+                    ? `bg-gradient-to-r ${item.gradient} shadow-lg`
+                    : 'hover:bg-white/5'
+                }`}
+              >
+                <Icon className={`w-5 h-5 ${item.active ? 'text-white' : 'text-gray-400 group-hover:text-white'}`} />
+                <span className={`font-medium ${item.active ? 'text-white' : 'text-gray-400 group-hover:text-white'}`}>
+                  {item.label}
+                </span>
+              </Link>
+            )
+          })}
+        </nav>
+      </aside>
+    </>
   )
 }
