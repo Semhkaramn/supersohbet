@@ -14,21 +14,6 @@ export async function GET(
       where: { id: userId },
       include: {
         rank: true,
-        referredBy: {
-          select: {
-            id: true,
-            username: true,
-            firstName: true
-          }
-        },
-        referrals: {
-          select: {
-            id: true,
-            username: true,
-            firstName: true,
-            createdAt: true
-          }
-        }
       }
     })
 
