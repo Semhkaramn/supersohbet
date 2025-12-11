@@ -469,7 +469,6 @@ export default function AdminShopPage() {
   function getStatusBadge(status: string) {
     const badges = {
       pending: { icon: Clock, color: 'bg-yellow-500/20 text-yellow-400', text: 'Bekliyor' },
-      processing: { icon: AlertCircle, color: 'bg-blue-500/20 text-blue-400', text: 'İşleniyor' },
       completed: { icon: CheckCircle, color: 'bg-green-500/20 text-green-400', text: 'Tamamlandı' },
       cancelled: { icon: XCircle, color: 'bg-red-500/20 text-red-400', text: 'İptal' }
     }
@@ -954,7 +953,6 @@ export default function AdminShopPage() {
                   </SelectTrigger>
                   <SelectContent className="bg-slate-900 border-white/20">
                     <SelectItem value="pending">Bekliyor</SelectItem>
-                    <SelectItem value="processing">İşleniyor</SelectItem>
                     <SelectItem value="completed">Tamamlandı</SelectItem>
                     <SelectItem value="cancelled">İptal</SelectItem>
                   </SelectContent>
