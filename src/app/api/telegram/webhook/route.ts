@@ -562,7 +562,7 @@ Bot özelliklerini kullanmanız engellenmiştir.
           const webUser = await prisma.user.findFirst({
             where: {
               telegramConnectionToken: startParam,
-              telegramConnectionTokenExpiry: { gte: new Date() }, // Token geçerli mi?
+              telegramConnectionTokenExpiry: { gte: getTurkeyDate() }, // Token geçerli mi? - İstanbul saati
               telegramId: null // Henüz bağlanmamış
             }
           })
@@ -661,7 +661,7 @@ ${telegramGroupUser && telegramGroupUser.messageCount > 0 ? `\n📊 ${telegramGr
             const user = allTokenUsers[0]
             console.log('⚠️ Token bulundu AMA:', {
               zatenTelegramBagli: user.telegramId ? 'EVET' : 'HAYIR',
-              tokenSuresiGecmis: user.telegramConnectionTokenExpiry ? (user.telegramConnectionTokenExpiry < new Date() ? 'EVET' : 'HAYIR') : 'BİLİNMİYOR'
+              tokenSuresiGecmis: user.telegramConnectionTokenExpiry ? (user.telegramConnectionTokenExpiry < getTurkeyDate() ? 'EVET' : 'HAYIR') : 'BİLİNMİYOR'
             })
           }
 
@@ -778,7 +778,7 @@ Siteye Butondan ulaşabilirsiniz
         where: { id: telegramGroupUser.id },
         data: {
           messageCount: { increment: 1 },
-          lastMessageAt: new Date()
+          lastMessageAt: getTurkeyDate() // İstanbul saati ile kaydet
         }
       })
 
@@ -915,17 +915,18 @@ Siteye Butondan ulaşabilirsiniz
           points: { increment: pointsPerMessage },
           xp: shouldGiveXp ? { increment: xpPerMessage } : undefined,
           messageCount: newMessageCount,
-          lastMessageAt: new Date(now) // TUTARLILIK: now değişkenini kullan (satır 851'deki ile aynı)
+          lastMessageAt: getTurkeyDate() // İstanbul saati ile kaydet
         }
       })
 
       console.log(`✅ Ödül verildi - Toplam Puan: ${updatedUser.points}, Toplam XP: ${updatedUser.xp}`)
 
       // Bu mesajın ödül kazandığını işaretle
+      const twoSecondsAgo = new Date(getTurkeyDate().getTime() - 2000)
       await prisma.messageStats.updateMany({
         where: {
           telegramUserId: telegramGroupUser.id,
-          createdAt: { gte: new Date(now - 2000) } // Son 2 saniyedeki mesaj (UTC)
+          createdAt: { gte: twoSecondsAgo } // Son 2 saniyedeki mesaj (İstanbul saati)
         },
         data: {
           earnedReward: true
