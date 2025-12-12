@@ -663,7 +663,6 @@ Lütfen web sitesinden yeni bir kod alın ve tekrar deneyin.
           return NextResponse.json({ ok: true })
         }
 
-
         const welcomeMessage = `
 🎉 **SüperSohbet Bot'a Hoş Geldin!**
 
@@ -712,35 +711,26 @@ Siteye Butondan ulaşabilirsiniz
         return NextResponse.json({ ok: true, message: 'Private chat - no points' })
       }
 
-      // ========== YENİ: TÜM TELEGRAM KULLANICILARINI KAYDET ==========
+      // ========== ✅ FIX: TÜM TELEGRAM KULLANICILARINI KAYDET (UPSERT İLE OPTİMİZE) ==========
       // Telegram grup kullanıcısını oluştur veya güncelle (siteye kayıt olmamış bile olsa)
-      let telegramGroupUser = await prisma.telegramGroupUser.findUnique({
-        where: { telegramId: userId }
+      const telegramGroupUser = await prisma.telegramGroupUser.upsert({
+        where: { telegramId: userId },
+        update: {
+          username: username || undefined,
+          firstName: firstName || undefined,
+          lastName: lastName || undefined,
+          messageCount: { increment: 1 },
+          lastMessageAt: new Date()
+        },
+        create: {
+          telegramId: userId,
+          username: username || null,
+          firstName: firstName || null,
+          lastName: lastName || null,
+          messageCount: 1,
+          lastMessageAt: new Date()
+        }
       })
-
-      if (!telegramGroupUser) {
-        // Yeni telegram kullanıcısı - oluştur
-        telegramGroupUser = await prisma.telegramGroupUser.create({
-          data: {
-            telegramId: userId,
-            username: username || null,
-            firstName: firstName || null,
-            lastName: lastName || null,
-            messageCount: 0
-          }
-        })
-        console.log(`✅ Yeni Telegram grup kullanıcısı oluşturuldu: ${userId} (${firstName || username})`)
-      } else {
-        // Mevcut telegram kullanıcısı - bilgileri güncelle
-        await prisma.telegramGroupUser.update({
-          where: { telegramId: userId },
-          data: {
-            username: username || telegramGroupUser.username,
-            firstName: firstName || telegramGroupUser.firstName,
-            lastName: lastName || telegramGroupUser.lastName
-          }
-        })
-      }
 
       // Telegram grup mesajını kaydet (TÜM KULLANICILAR İÇİN)
       await prisma.telegramGroupMessage.create({
@@ -751,17 +741,8 @@ Siteye Butondan ulaşabilirsiniz
         }
       })
 
-      // Telegram grup kullanıcısının mesaj sayısını artır
-      await prisma.telegramGroupUser.update({
-        where: { id: telegramGroupUser.id },
-        data: {
-          messageCount: { increment: 1 },
-          lastMessageAt: new Date()
-        }
-      })
-
-      console.log(`📝 Telegram grup mesajı kaydedildi: ${userId} - ${telegramGroupUser.messageCount + 1} mesaj`)
-      // ========== YENİ BİTİŞ ==========
+      console.log(`📝 Telegram grup mesajı kaydedildi: ${userId} - ${telegramGroupUser.messageCount} mesaj`)
+      // ========== FIX BİTİŞ ==========
 
       // Kullanıcıyı bul (artık otomatik oluşturulmaz)
       const user = await prisma.user.findUnique({
@@ -777,8 +758,9 @@ Siteye Butondan ulaşabilirsiniz
       // hadStart yapmamışlara puan verilmez
       const canEarnPoints = user.hadStart
 
+      // ========== ✅ FIX: MessageStats'i ID ile sakla (race condition önleme) ==========
       // TÜM MESAJLARI İSTATİSTİK İÇİN KAYDET (KURALLARDAN BAĞIMSIZ)
-      await prisma.messageStats.create({
+      const messageStatsRecord = await prisma.messageStats.create({
         data: {
           userId: user.id,
           content: messageText.substring(0, 500),
@@ -806,10 +788,13 @@ Siteye Butondan ulaşabilirsiniz
         return NextResponse.json({ ok: true, message: 'Message too short' })
       }
 
+      // ========== ✅ FIX: Cooldown hesaplamasında Türkiye saati kullan ==========
       // Spam kontrolü - Son mesajdan beri yeterli süre geçmiş mi? (ÖDÜL İÇİN)
       if (user.lastMessageAt) {
-        const timeSinceLastMessage = (Date.now() - user.lastMessageAt.getTime()) / 1000
+        const nowTurkey = getTurkeyDate()
+        const timeSinceLastMessage = (nowTurkey.getTime() - user.lastMessageAt.getTime()) / 1000
         if (timeSinceLastMessage < messageCooldown) {
+          console.log(`⏱️ Cooldown aktif: ${timeSinceLastMessage.toFixed(1)}s / ${messageCooldown}s`)
           return NextResponse.json({ ok: true, message: 'Cooldown active' })
         }
       }
@@ -831,15 +816,11 @@ Siteye Butondan ulaşabilirsiniz
         }
       })
 
+      // ========== ✅ FIX: MessageStats'i direkt ID ile güncelle (race condition önlendi) ==========
       // Bu mesajın ödül kazandığını işaretle
-      await prisma.messageStats.updateMany({
-        where: {
-          userId: user.id,
-          createdAt: { gte: new Date(getTurkeyDate().getTime() - 2000) } // Son 2 saniyedeki mesaj (Türkiye saati)
-        },
-        data: {
-          earnedReward: true
-        }
+      await prisma.messageStats.update({
+        where: { id: messageStatsRecord.id },
+        data: { earnedReward: true }
       })
 
       // ✅ Puan/XP değiştiği için leaderboard cache'ini temizle
