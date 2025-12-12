@@ -541,7 +541,7 @@ Bot özelliklerini kullanmanız engellenmiştir.
           const webUser = await prisma.user.findFirst({
             where: {
               telegramConnectionToken: startParam,
-              telegramConnectionTokenExpiry: { gte: getTurkeyDate() }, // Token geçerli mi? - İstanbul saati
+              telegramConnectionTokenExpiry: { gte: new Date() }, // Token geçerli mi?
               telegramId: null // Henüz bağlanmamış
             }
           })
@@ -640,7 +640,7 @@ ${telegramGroupUser && telegramGroupUser.messageCount > 0 ? `\n📊 ${telegramGr
             const user = allTokenUsers[0]
             console.log('⚠️ Token bulundu AMA:', {
               zatenTelegramBagli: user.telegramId ? 'EVET' : 'HAYIR',
-              tokenSuresiGecmis: user.telegramConnectionTokenExpiry ? (user.telegramConnectionTokenExpiry < getTurkeyDate() ? 'EVET' : 'HAYIR') : 'BİLİNMİYOR'
+              tokenSuresiGecmis: user.telegramConnectionTokenExpiry ? (user.telegramConnectionTokenExpiry < new Date() ? 'EVET' : 'HAYIR') : 'BİLİNMİYOR'
             })
           }
 
@@ -699,16 +699,6 @@ Siteye Butondan ulaşabilirsiniz
       const messagesForXp = parseInt(getSetting('messages_for_xp', '1'))
       const allowNewUsers = getSetting('allow_new_users', 'true') === 'true'
 
-      // Ayarları logla (debug için)
-      console.log(`⚙️ AYARLAR:`, {
-        minMessageLength,
-        messageCooldown,
-        pointsPerMessage,
-        xpPerMessage,
-        messagesForXp,
-        allowNewUsers
-      })
-
       // NOT: Private chat kontrolü artık en başta yapılıyor, buraya sadece grup mesajları geliyor
 
       // ========== YENİ: TÜM TELEGRAM KULLANICILARINI KAYDET ==========
@@ -741,31 +731,12 @@ Siteye Butondan ulaşabilirsiniz
         })
       }
 
-      // ========== DUPLICATE MESAJ KONTROLÜ (DATABASE SEVİYESİNDE) ==========
-      // Son 2 saniye içinde aynı kullanıcıdan aynı içerikle mesaj kaydedilmiş mi kontrol et
-      const twoSecondsAgo = new Date(Date.now() - 2000)
-      const existingMessage = await prisma.messageStats.findFirst({
-        where: {
-          telegramUserId: telegramGroupUser.id,
-          content: messageText.substring(0, 500),
-          messageLength: messageText.length,
-          createdAt: { gte: twoSecondsAgo }
-        }
-      })
-
-      if (existingMessage) {
-        console.log(`⚠️ DUPLICATE MESAJ ENGELLENDI (DB kontrolü) - userId: ${userId}, mesaj: "${messageText.substring(0, 30)}..."`)
-        return NextResponse.json({ ok: true, message: 'Duplicate message detected' })
-      }
-
-      // ========== HERKES İÇİN İSTATİSTİK KAYDET ==========
-      // MessageStats - Tüm mesajları kaydet (siteye kayıtlı olmasalar bile)
-      await prisma.messageStats.create({
+      // Telegram grup mesajını kaydet (TÜM KULLANICILAR İÇİN)
+      await prisma.telegramGroupMessage.create({
         data: {
           telegramUserId: telegramGroupUser.id,
           content: messageText.substring(0, 500),
-          messageLength: messageText.length,
-          earnedReward: false // Varsayılan false, eğer ödül verilirse güncellenecek
+          messageLength: messageText.length
         }
       })
 
@@ -774,11 +745,12 @@ Siteye Butondan ulaşabilirsiniz
         where: { id: telegramGroupUser.id },
         data: {
           messageCount: { increment: 1 },
-          lastMessageAt: getTurkeyDate() // İstanbul saati ile kaydet
+          lastMessageAt: new Date()
         }
       })
 
-      console.log(`📊 MessageStats kaydedildi: ${userId} - ${telegramGroupUser.messageCount + 1} mesaj`)
+      console.log(`📝 Telegram grup mesajı kaydedildi: ${userId} - ${telegramGroupUser.messageCount + 1} mesaj`)
+      // ========== YENİ BİTİŞ ==========
 
       // 🔍 DEBUG: userId değerini detaylı logla
       console.log(`🔍 DB ARAMA - userId:`, {
@@ -835,37 +807,18 @@ Siteye Butondan ulaşabilirsiniz
         return NextResponse.json({ ok: true, message: 'Message saved - user not registered on website' })
       }
 
-      // ÖDÜL SİSTEMİ KONTROL ÖZETİ
-      console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
-      console.log(`🎯 ÖDÜL SİSTEMİ KONTROLÜ BAŞLIYOR`)
-      console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
-      console.log(`👤 Kullanıcı: ${user?.email || user?.siteUsername}`)
-      console.log(`📝 Mesaj Uzunluğu: ${messageText.length} karakter (Min: ${minMessageLength})`)
-      console.log(`⏱️  Son Mesaj: ${user.lastMessageAt ? user.lastMessageAt.toISOString() : 'İlk mesaj'}`)
+      // Sitede kayıtlı olması yeterli - /start şartı kaldırıldı
+      const canEarnPoints = true
 
-      // Zaman kontrolü - UTC kullan
-      const now = Date.now() // UTC timestamp (milliseconds)
-
-      if (user.lastMessageAt) {
-        const lastMessageTimestamp = new Date(user.lastMessageAt).getTime() // UTC timestamp'e çevir
-        const timeSince = Math.floor((now - lastMessageTimestamp) / 1000) // Saniye cinsinden
-        console.log(`⏳ Geçen Süre: ${timeSince} saniye (Min: ${messageCooldown})`)
-        console.log(`📅 Şu anki zaman (UTC): ${new Date(now).toISOString()}`)
-        console.log(`📅 Son mesaj zamanı (UTC): ${new Date(lastMessageTimestamp).toISOString()}`)
-      }
-
-      console.log(`🚫 Ban Durumu: ${user.isBanned ? 'BANLI' : 'Aktif'}`)
-      console.log(`💰 Verilecek Puan: ${pointsPerMessage}`)
-      console.log(`⭐ Mevcut Mesaj Sayısı: ${user.messageCount}`)
-      console.log(`📊 XP Verme Koşulu: Her ${messagesForXp} mesajda bir`)
-      console.log(`✨ XP Verilecek mi: ${(user.messageCount + 1) % messagesForXp === 0 ? `EVET (+${xpPerMessage})` : 'HAYIR'}`)
-      console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`)
-
-      // Ban kontrolü - Banlı kullanıcılara puan vermiyoruz
-      if (user.isBanned) {
-        console.log(`❌ ÖDÜL VERİLMEDİ: Kullanıcı banlı`)
-        return NextResponse.json({ ok: true, message: 'User is banned' })
-      }
+      // TÜM MESAJLARI İSTATİSTİK İÇİN KAYDET (KURALLARDAN BAĞIMSIZ)
+      await prisma.messageStats.create({
+        data: {
+          userId: user.id,
+          content: messageText.substring(0, 500),
+          messageLength: messageText.length,
+          earnedReward: false // Varsayılan olarak false, ödül verilirse güncellenecek
+        }
+      })
 
       // Toplam mesaj sayısını artır (tüm mesajlar için - görevler için kullanılır)
       await prisma.user.update({
@@ -875,23 +828,15 @@ Siteye Butondan ulaşabilirsiniz
         }
       })
 
-      console.log(`📝 Kullanıcı mesajı - ${user?.email || user?.siteUsername} - Mesaj uzunluğu: ${messageText.length}, Min: ${minMessageLength}`)
-
       // Mesaj uzunluğu kontrolü (ÖDÜL İÇİN)
       if (messageText.length < minMessageLength) {
-        console.log(`⚠️ Mesaj çok kısa - puan verilmedi: ${messageText.length} < ${minMessageLength}`)
-        console.log(`❌ ÖDÜL VERİLMEDİ: Mesaj çok kısa (${messageText.length} < ${minMessageLength})`)
         return NextResponse.json({ ok: true, message: 'Message too short' })
       }
 
       // Spam kontrolü - Son mesajdan beri yeterli süre geçmiş mi? (ÖDÜL İÇİN)
       if (user.lastMessageAt) {
-        const lastMessageTimestamp = new Date(user.lastMessageAt).getTime() // UTC timestamp
-        const timeSinceLastMessage = (now - lastMessageTimestamp) / 1000 // Saniye cinsinden
-
+        const timeSinceLastMessage = (Date.now() - user.lastMessageAt.getTime()) / 1000
         if (timeSinceLastMessage < messageCooldown) {
-          console.log(`⏳ Cooldown aktif - puan verilmedi: ${Math.floor(timeSinceLastMessage)}s / ${messageCooldown}s`)
-          console.log(`❌ ÖDÜL VERİLMEDİ: Cooldown aktif (${Math.floor(timeSinceLastMessage)}s / ${messageCooldown}s)`)
           return NextResponse.json({ ok: true, message: 'Cooldown active' })
         }
       }
@@ -902,8 +847,6 @@ Siteye Butondan ulaşabilirsiniz
       // XP verilecek mi kontrol et
       const shouldGiveXp = newMessageCount % messagesForXp === 0
 
-      console.log(`💰 ÖDÜL VERİLİYOR - Puan: +${pointsPerMessage}, XP: ${shouldGiveXp ? `+${xpPerMessage}` : '0'}, Mesaj: ${newMessageCount}`)
-
       // Kullanıcıyı güncelle (ÖDÜL VER)
       const updatedUser = await prisma.user.update({
         where: { id: user.id },
@@ -911,18 +854,15 @@ Siteye Butondan ulaşabilirsiniz
           points: { increment: pointsPerMessage },
           xp: shouldGiveXp ? { increment: xpPerMessage } : undefined,
           messageCount: newMessageCount,
-          lastMessageAt: getTurkeyDate() // İstanbul saati ile kaydet
+          lastMessageAt: getTurkeyDate() // Türkiye saati
         }
       })
 
-      console.log(`✅ Ödül verildi - Toplam Puan: ${updatedUser.points}, Toplam XP: ${updatedUser.xp}`)
-
       // Bu mesajın ödül kazandığını işaretle
-      const twoSecondsAgo = new Date(getTurkeyDate().getTime() - 2000)
       await prisma.messageStats.updateMany({
         where: {
-          telegramUserId: telegramGroupUser.id,
-          createdAt: { gte: twoSecondsAgo } // Son 2 saniyedeki mesaj (İstanbul saati)
+          userId: user.id,
+          createdAt: { gte: new Date(getTurkeyDate().getTime() - 2000) } // Son 2 saniyedeki mesaj (Türkiye saati)
         },
         data: {
           earnedReward: true
