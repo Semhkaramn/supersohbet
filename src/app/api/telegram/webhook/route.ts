@@ -25,10 +25,6 @@ let settingsCache: Record<string, string> = {}
 let lastCacheUpdate = 0
 const CACHE_TTL = 60000 // 1 dakika
 
-// İşlenmiş mesajları takip et (idempotency için - duplicate webhook çağrılarını engeller)
-const processedMessages = new Set<string>()
-const MAX_PROCESSED_MESSAGES = 1000
-
 async function getSettings() {
   const now = Date.now()
   if (now - lastCacheUpdate > CACHE_TTL) {
@@ -220,23 +216,6 @@ Daha fazla bilgi için Ödül Merkezi'ne git!
       if (!message.from || !message.from.id) {
         console.log('⚠️ message.from YOK veya message.from.id YOK - Anonymous admin veya channel mesajı')
         return NextResponse.json({ ok: true, message: 'No from.id - anonymous/channel message' })
-      }
-
-      // 🚨 DUPLICATE MESAJ KONTROLÜ - Telegram aynı mesajı retry edebilir
-      const messageId = String(message.chat.id) + '_' + String(message.message_id)
-      if (processedMessages.has(messageId)) {
-        console.log(`⚠️ DUPLICATE MESAJ ENGELLENDI - messageId: ${messageId}`)
-        return NextResponse.json({ ok: true, message: 'Duplicate message - already processed' })
-      }
-
-      // Mesajı işlenmiş olarak işaretle
-      processedMessages.add(messageId)
-
-      // Set boyutunu kontrol et - çok büyürse eski mesajları temizle
-      if (processedMessages.size > MAX_PROCESSED_MESSAGES) {
-        const itemsToDelete = Array.from(processedMessages).slice(0, processedMessages.size - MAX_PROCESSED_MESSAGES)
-        itemsToDelete.forEach(id => processedMessages.delete(id))
-        console.log(`🗑️ Processed messages cache temizlendi - ${itemsToDelete.length} eski mesaj silindi`)
       }
 
       const chatId = message.chat.id
@@ -760,6 +739,23 @@ Siteye Butondan ulaşabilirsiniz
             lastName: lastName || telegramGroupUser.lastName
           }
         })
+      }
+
+      // ========== DUPLICATE MESAJ KONTROLÜ (DATABASE SEVİYESİNDE) ==========
+      // Son 2 saniye içinde aynı kullanıcıdan aynı içerikle mesaj kaydedilmiş mi kontrol et
+      const twoSecondsAgo = new Date(Date.now() - 2000)
+      const existingMessage = await prisma.messageStats.findFirst({
+        where: {
+          telegramUserId: telegramGroupUser.id,
+          content: messageText.substring(0, 500),
+          messageLength: messageText.length,
+          createdAt: { gte: twoSecondsAgo }
+        }
+      })
+
+      if (existingMessage) {
+        console.log(`⚠️ DUPLICATE MESAJ ENGELLENDI (DB kontrolü) - userId: ${userId}, mesaj: "${messageText.substring(0, 30)}..."`)
+        return NextResponse.json({ ok: true, message: 'Duplicate message detected' })
       }
 
       // ========== HERKES İÇİN İSTATİSTİK KAYDET ==========
