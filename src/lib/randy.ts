@@ -1,6 +1,7 @@
 // Randy Sistemi - Otomatik Rastgele Ödül Dağıtım Sistemi
 
 import { prisma } from '@/lib/prisma'
+import { getTurkeyDate, getTurkeyToday } from '@/lib/utils'
 
 interface RandySlotCheckResult {
   assigned: boolean
@@ -20,7 +21,7 @@ interface RandySlotCheckResult {
  */
 export async function checkRandySlots(): Promise<RandySlotCheckResult[]> {
   try {
-    const now = new Date()
+    const now = getTurkeyDate()
 
     // Önce grup ID'sinin ayarlanıp ayarlanmadığını kontrol et
     const groupIdSetting = await prisma.settings.findUnique({
@@ -318,11 +319,11 @@ async function findEligibleWinner(
  * Mesaj dönemi filtresini oluşturur
  */
 function getMessagePeriodFilter(period: string): any {
-  const now = new Date()
+  const now = getTurkeyDate()
 
   switch (period) {
     case 'today': {
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const todayStart = getTurkeyToday()
       return { createdAt: { gte: todayStart } }
     }
     case 'week': {
@@ -344,11 +345,11 @@ function getMessagePeriodFilter(period: string): any {
  * Telegram grup mesajları için mesaj dönemi filtresini oluşturur
  */
 function getMessagePeriodFilterForTelegram(period: string): any {
-  const now = new Date()
+  const now = getTurkeyDate()
 
   switch (period) {
     case 'today': {
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const todayStart = getTurkeyToday()
       return { createdAt: { gte: todayStart } }
     }
     case 'week': {
@@ -528,7 +529,8 @@ export async function announceRandyStart(
   customTemplate?: string
 ): Promise<boolean> {
   try {
-    const endTime = new Date(Date.now() + schedule.distributionHours * 60 * 60 * 1000)
+    const now = getTurkeyDate()
+    const endTime = new Date(now.getTime() + schedule.distributionHours * 60 * 60 * 1000)
     const endTimeStr = endTime.toLocaleString('tr-TR', {
       timeZone: 'Europe/Istanbul',
       dateStyle: 'short',
