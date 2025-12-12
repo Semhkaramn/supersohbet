@@ -25,9 +25,20 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 1 günlük kısıtlama kaldırıldı - her zaman yeniden bağlanabilirsiniz
-    const canReconnect = true
-    const daysUntilReconnect = 0
+    // Check if user can reconnect
+    let canReconnect = true
+    let daysUntilReconnect = 0
+
+    if (user.telegramUnlinkedAt) {
+      const daysSinceUnlink = Math.floor(
+        (Date.now() - new Date(user.telegramUnlinkedAt).getTime()) / (1000 * 60 * 60 * 24)
+      )
+
+      if (daysSinceUnlink < 1) {
+        canReconnect = false
+        daysUntilReconnect = 1 - daysSinceUnlink
+      }
+    }
 
     return NextResponse.json({
       connected: !!user.telegramId && user.hadStart,
