@@ -4,37 +4,58 @@ import { prisma } from './prisma'
 
 let bot: TelegramBot | null = null
 let botToken: string | null = null
+let tokenCacheTimestamp: number = 0
+const TOKEN_CACHE_TTL = 3600000 // 1 saat (milisaniye)
+
+// ✅ OPTIMIZASYON: Token'ı cache'le ve sadece gerektiğinde DB'den çek
+async function getCachedBotToken(): Promise<string> {
+  const now = Date.now()
+
+  // Cache'te varsa ve süresi dolmamışsa, cache'ten dön
+  if (botToken && (now - tokenCacheTimestamp < TOKEN_CACHE_TTL)) {
+    return botToken
+  }
+
+  // Cache yoksa veya süresi dolmuşsa, DB'den çek
+  const tokenSetting = await prisma.settings.findUnique({
+    where: { key: 'telegram_bot_token' }
+  })
+
+  const token = tokenSetting?.value || process.env.TELEGRAM_BOT_TOKEN
+
+  if (!token) {
+    throw new Error('TELEGRAM_BOT_TOKEN bulunamadı! Admin panelinden ayarlayın.')
+  }
+
+  // Cache'i güncelle
+  botToken = token
+  tokenCacheTimestamp = now
+
+  return token
+}
 
 export async function getTelegramBot(): Promise<TelegramBot> {
-  if (!bot || !botToken) {
-    // Önce veritabanından token'ı al
-    const tokenSetting = await prisma.settings.findUnique({
-      where: { key: 'telegram_bot_token' }
-    })
+  const token = await getCachedBotToken()
 
-    const token = tokenSetting?.value || process.env.TELEGRAM_BOT_TOKEN
-
-    if (!token) {
-      throw new Error('TELEGRAM_BOT_TOKEN bulunamadı! Admin panelinden ayarlayın.')
-    }
-
-    botToken = token
+  // Bot instance'ı token değişmişse yeniden oluştur
+  if (!bot || bot.token !== token) {
     bot = new TelegramBot(token, { polling: false })
   }
+
   return bot
+}
+
+// ✅ Cache'i manuel olarak geçersiz kılmak için (admin token'ı değiştirdiğinde)
+export function invalidateBotTokenCache(): void {
+  botToken = null
+  tokenCacheTimestamp = 0
+  bot = null
 }
 
 // Menu button'u ayarla (mesaj yazma alanının yanındaki buton)
 export async function setupMenuButton(webAppUrl: string): Promise<void> {
   try {
-    const bot = await getTelegramBot()
-
-    // Token'ı al
-    const tokenSetting = await prisma.settings.findUnique({
-      where: { key: 'telegram_bot_token' }
-    })
-    const token = tokenSetting?.value || process.env.TELEGRAM_BOT_TOKEN
-    if (!token) return
+    const token = await getCachedBotToken()
 
     // Telegram Bot API'ye doğrudan istek gönder
     const url = `https://api.telegram.org/bot${token}/setChatMenuButton`
@@ -58,11 +79,7 @@ export async function setupMenuButton(webAppUrl: string): Promise<void> {
 // Kullanıcının profil fotoğrafını al
 export async function getUserProfilePhoto(userId: number): Promise<string | null> {
   try {
-    const tokenSetting = await prisma.settings.findUnique({
-      where: { key: 'telegram_bot_token' }
-    })
-    const token = tokenSetting?.value || process.env.TELEGRAM_BOT_TOKEN
-    if (!token) return null
+    const token = await getCachedBotToken()
 
     // Kullanıcının profil fotoğraflarını al
     const url = `https://api.telegram.org/bot${token}/getUserProfilePhotos`
@@ -108,16 +125,18 @@ export async function sendTelegramMessage(chatId: number, message: string): Prom
   }
 }
 
+// ✅ OPTIMIZASYON: Type safety için interface ekle
+interface GroupAdmin {
+  userId: number
+  firstName: string
+  lastName?: string
+  username?: string
+}
+
 // Grup adminlerini getir
-export async function getGroupAdmins(chatId: string): Promise<Array<{ userId: number; firstName: string; lastName?: string; username?: string }>> {
+export async function getGroupAdmins(chatId: string): Promise<GroupAdmin[]> {
   try {
-    const tokenSetting = await prisma.settings.findUnique({
-      where: { key: 'telegram_bot_token' }
-    })
-    const token = tokenSetting?.value || process.env.TELEGRAM_BOT_TOKEN
-    if (!token) {
-      throw new Error('TELEGRAM_BOT_TOKEN bulunamadı')
-    }
+    const token = await getCachedBotToken()
 
     // Telegram Bot API'den grup adminlerini çek
     const url = `https://api.telegram.org/bot${token}/getChatAdministrators?chat_id=${chatId}`
@@ -128,10 +147,21 @@ export async function getGroupAdmins(chatId: string): Promise<Array<{ userId: nu
       throw new Error(data.description || 'Adminler alınamadı')
     }
 
+    // ✅ Type safety: Explicit typing
+    interface TelegramAdmin {
+      user: {
+        id: number
+        is_bot: boolean
+        first_name: string
+        last_name?: string
+        username?: string
+      }
+    }
+
     // Adminleri formatla
-    const admins = data.result
-      .filter((admin: any) => !admin.user.is_bot) // Bot olmayan adminleri filtrele
-      .map((admin: any) => ({
+    const admins: GroupAdmin[] = (data.result as TelegramAdmin[])
+      .filter((admin) => !admin.user.is_bot) // Bot olmayan adminleri filtrele
+      .map((admin) => ({
         userId: admin.user.id,
         firstName: admin.user.first_name,
         lastName: admin.user.last_name,
