@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getTurkeyDate } from '@/lib/utils'
 
 // 6 haneli benzersiz kod oluştur
 function generateConnectionCode(): string {
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
 
     // Mevcut token hala geçerliyse onu döndür
     if (user.telegramConnectionToken && user.telegramConnectionTokenExpiry) {
-      const now = new Date()
+      const now = getTurkeyDate()
       if (user.telegramConnectionTokenExpiry > now) {
         return NextResponse.json({
           token: user.telegramConnectionToken,
@@ -50,7 +51,8 @@ export async function GET(request: NextRequest) {
 
     // Yeni token oluştur (10 dakika geçerli)
     const token = generateConnectionCode()
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 dakika
+    const now = getTurkeyDate()
+    const expiresAt = new Date(now.getTime() + 10 * 60 * 1000) // 10 dakika
 
     await prisma.user.update({
       where: { id: user.id },
