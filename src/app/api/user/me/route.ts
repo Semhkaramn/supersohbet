@@ -112,7 +112,6 @@ export async function GET(request: NextRequest) {
           select: { createdAt: true }
         })
 
-        const now = new Date()
         const today = getTurkeyToday()
         const weekAgo = getTurkeyDateAgo(7)
         const monthAgo = getTurkeyDateAgo(30)
