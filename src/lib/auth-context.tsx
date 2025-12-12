@@ -149,20 +149,19 @@ export function useAuthActions() {
   return context
 }
 
-export function useModals() {
+export function useModalState() {
   const context = useContext(ModalContext)
   if (context === undefined) {
-    throw new Error('useModals must be used within an AuthProvider')
+    throw new Error('useModalState must be used within an AuthProvider')
   }
   return context
 }
 
-// ✅ Backward compatibility: Eski useAuth hook'u tüm değerleri döndürür
-// Yavaş yavaş useAuthState, useAuthActions, useModals'a geçiş yapılmalı
+// ✅ UYUMLULUK: Eski useAuth hook'u için wrapper (geriye dönük uyumluluk)
 export function useAuth() {
   const state = useAuthState()
   const actions = useAuthActions()
-  const modals = useModals()
+  const modals = useModalState()
 
   return {
     ...state,
