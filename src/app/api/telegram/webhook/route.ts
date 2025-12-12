@@ -541,7 +541,7 @@ Bot özelliklerini kullanmanız engellenmiştir.
           const webUser = await prisma.user.findFirst({
             where: {
               telegramConnectionToken: startParam,
-              telegramConnectionTokenExpiry: { gte: new Date() }, // Token geçerli mi?
+              telegramConnectionTokenExpiry: { gte: getTurkeyDate() }, // Token geçerli mi? (Türkiye saati)
               telegramId: null // Henüz bağlanmamış
             }
           })
@@ -745,7 +745,7 @@ Siteye Butondan ulaşabilirsiniz
         where: { id: telegramGroupUser.id },
         data: {
           messageCount: { increment: 1 },
-          lastMessageAt: new Date()
+          lastMessageAt: getTurkeyDate() // Türkiye saati
         }
       })
 
@@ -813,7 +813,7 @@ Siteye Butondan ulaşabilirsiniz
       // TÜM MESAJLARI İSTATİSTİK İÇİN KAYDET (KURALLARDAN BAĞIMSIZ)
       await prisma.messageStats.create({
         data: {
-          userId: user.id,
+          telegramUserId: telegramGroupUser.id, // ✅ DÜZELTME: userId yerine telegramUserId
           content: messageText.substring(0, 500),
           messageLength: messageText.length,
           earnedReward: false // Varsayılan olarak false, ödül verilirse güncellenecek
@@ -861,7 +861,7 @@ Siteye Butondan ulaşabilirsiniz
       // Bu mesajın ödül kazandığını işaretle
       await prisma.messageStats.updateMany({
         where: {
-          userId: user.id,
+          telegramUserId: telegramGroupUser.id, // ✅ DÜZELTME: userId yerine telegramUserId
           createdAt: { gte: new Date(getTurkeyDate().getTime() - 2000) } // Son 2 saniyedeki mesaj (Türkiye saati)
         },
         data: {
