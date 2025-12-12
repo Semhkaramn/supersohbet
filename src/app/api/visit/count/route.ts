@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getTurkeyToday } from '@/lib/utils'
 
 export async function GET() {
   try {
     // Toplam ziyaret sayısını al
     const totalVisits = await prisma.siteVisit.count()
 
-    // Bugünkü ziyaretleri al
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    // Bugünkü ziyaretleri al (İstanbul saatine göre)
+    const today = getTurkeyToday()
 
     const todayVisits = await prisma.siteVisit.count({
       where: {
