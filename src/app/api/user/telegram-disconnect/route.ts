@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
+import { getTurkeyDate } from '@/lib/utils'
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
         firstName: null,
         lastName: null,
         photoUrl: null,
-        telegramUnlinkedAt: new Date(),
+        telegramUnlinkedAt: getTurkeyDate(),
         hadStart: false
       }
     })
