@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react'
 
 interface UserData {
   id: string
@@ -20,10 +20,21 @@ interface UserData {
   leaderboardRank?: number
 }
 
-interface AuthContextType {
+// ✅ OPTIMIZASYON: State ve Actions için ayrı context'ler
+interface AuthStateContextType {
   user: UserData | null
   loading: boolean
   isAuthenticated: boolean
+}
+
+interface AuthActionsContextType {
+  refreshUser: () => Promise<void>
+  logout: () => Promise<void>
+  requireAuth: (redirectUrl: string) => boolean
+}
+
+// ✅ OPTIMIZASYON: Modal state'leri için ayrı context
+interface ModalContextType {
   showLoginModal: boolean
   showRegisterModal: boolean
   showChannelModal: boolean
@@ -32,12 +43,11 @@ interface AuthContextType {
   setShowRegisterModal: (show: boolean) => void
   setShowChannelModal: (show: boolean) => void
   setReturnUrl: (url: string | null) => void
-  refreshUser: () => Promise<void>
-  logout: () => Promise<void>
-  requireAuth: (redirectUrl: string) => boolean
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthStateContext = createContext<AuthStateContextType | undefined>(undefined)
+const AuthActionsContext = createContext<AuthActionsContextType | undefined>(undefined)
+const ModalContext = createContext<ModalContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserData | null>(null)
@@ -47,7 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [showChannelModal, setShowChannelModal] = useState(false)
   const [returnUrl, setReturnUrl] = useState<string | null>(null)
 
-  const refreshUser = async () => {
+  // ✅ OPTIMIZASYON: useCallback ile fonksiyonları memoize et
+  const refreshUser = useCallback(async () => {
     try {
       const response = await fetch('/api/user/me')
       if (response.ok) {
@@ -62,34 +73,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' })
       setUser(null)
     } catch (error) {
       console.error('Error logging out:', error)
     }
-  }
+  }, [])
 
-  const requireAuth = (redirectUrl: string): boolean => {
+  const requireAuth = useCallback((redirectUrl: string): boolean => {
     if (!user && !loading) {
       setReturnUrl(redirectUrl)
       setShowLoginModal(true)
       return false
     }
     return !!user
-  }
+  }, [user, loading])
 
   useEffect(() => {
     refreshUser()
-  }, [])
+  }, [refreshUser])
 
-  const value = {
+  // ✅ OPTIMIZASYON: useMemo ile state değerlerini memoize et
+  const authState = useMemo(() => ({
     user,
     loading,
     isAuthenticated: !!user,
+  }), [user, loading])
+
+  const authActions = useMemo(() => ({
+    refreshUser,
+    logout,
+    requireAuth
+  }), [refreshUser, logout, requireAuth])
+
+  const modalState = useMemo(() => ({
     showLoginModal,
     showRegisterModal,
     showChannelModal,
@@ -98,18 +119,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setShowRegisterModal,
     setShowChannelModal,
     setReturnUrl,
-    refreshUser,
-    logout,
-    requireAuth
-  }
+  }), [showLoginModal, showRegisterModal, showChannelModal, returnUrl])
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthStateContext.Provider value={authState}>
+      <AuthActionsContext.Provider value={authActions}>
+        <ModalContext.Provider value={modalState}>
+          {children}
+        </ModalContext.Provider>
+      </AuthActionsContext.Provider>
+    </AuthStateContext.Provider>
+  )
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext)
+// ✅ OPTIMIZASYON: State ve actions için ayrı hook'lar
+export function useAuthState() {
+  const context = useContext(AuthStateContext)
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
+    throw new Error('useAuthState must be used within an AuthProvider')
   }
   return context
+}
+
+export function useAuthActions() {
+  const context = useContext(AuthActionsContext)
+  if (context === undefined) {
+    throw new Error('useAuthActions must be used within an AuthProvider')
+  }
+  return context
+}
+
+export function useModals() {
+  const context = useContext(ModalContext)
+  if (context === undefined) {
+    throw new Error('useModals must be used within an AuthProvider')
+  }
+  return context
+}
+
+// ✅ Backward compatibility: Eski useAuth hook'u tüm değerleri döndürür
+// Yavaş yavaş useAuthState, useAuthActions, useModals'a geçiş yapılmalı
+export function useAuth() {
+  const state = useAuthState()
+  const actions = useAuthActions()
+  const modals = useModals()
+
+  return {
+    ...state,
+    ...actions,
+    ...modals
+  }
 }
