@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
+import { getTurkeyDate } from '@/lib/utils'
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Kodun süresinin dolup dolmadığını kontrol et
-    if (new Date() > user.emailVerificationTokenExpiry) {
+    if (getTurkeyDate() > user.emailVerificationTokenExpiry) {
       return NextResponse.json(
         { error: 'Doğrulama kodunun süresi dolmuş. Lütfen yeni kod isteyin' },
         { status: 400 }
