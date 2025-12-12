@@ -1,15 +1,16 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { Suspense, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
+import { useSponsors } from '@/lib/hooks/useSponsors'
+import { useVisitStats } from '@/lib/hooks/useVisitStats'
 import { optimizeCloudinaryImage } from '@/lib/utils'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import DashboardLayout from '@/components/DashboardLayout'
 import { Heart, TrendingUp, Crown, Sparkles, Search, Users, Eye } from 'lucide-react'
-
 import Image from 'next/image'
 
 interface Sponsor {
@@ -32,49 +33,25 @@ function SponsorsContent() {
   const router = useRouter()
   const { user } = useAuth()
 
-  const [sponsors, setSponsors] = useState<Sponsor[]>([])
-  const [loading, setLoading] = useState(true)
+  // Use React Query hooks for data fetching
+  const { data: sponsorsData, isLoading: loadingSponsors } = useSponsors()
+  const { data: visitStats } = useVisitStats()
+
   const [searchTerm, setSearchTerm] = useState('')
-  const [visitStats, setVisitStats] = useState<VisitStats | null>(null)
 
-  useEffect(() => {
-    loadSponsors()
-    loadVisitStats()
-  }, [])
-
-  async function loadSponsors() {
-    try {
-      const response = await fetch('/api/sponsors')
-      const data = await response.json()
-      // VIP sponsorları üste getir
-      const sorted = (data.sponsors || []).sort((a: Sponsor, b: Sponsor) => {
-        if (a.category === 'vip' && b.category !== 'vip') return -1
-        if (a.category !== 'vip' && b.category === 'vip') return 1
-        return 0
-      })
-      setSponsors(sorted)
-    } catch (error) {
-      console.error('Error loading sponsors:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function loadVisitStats() {
-    try {
-      const response = await fetch('/api/visit/count')
-      const data = await response.json()
-      setVisitStats(data)
-    } catch (error) {
-      console.error('Error loading visit stats:', error)
-    }
-  }
+  // Data processing - only during render
+  const sponsors = sponsorsData || []
+  const sortedSponsors = [...sponsors].sort((a: Sponsor, b: Sponsor) => {
+    if (a.category === 'vip' && b.category !== 'vip') return -1
+    if (a.category !== 'vip' && b.category === 'vip') return 1
+    return 0
+  })
 
   async function visitSponsor(sponsorId: string, websiteUrl?: string) {
     if (!websiteUrl) return
 
     try {
-      // Tıklama kaydı (sadece giriş yapmış kullanıcılar için)
+      // Track click (only for logged-in users)
       if (user) {
         await fetch('/api/sponsors/click', {
           method: 'POST',
@@ -89,7 +66,7 @@ function SponsorsContent() {
     }
   }
 
-  if (loading) {
+  if (loadingSponsors) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -98,13 +75,13 @@ function SponsorsContent() {
   }
 
   // Filter sponsors based on search term
-  const filteredSponsors = sponsors.filter(s =>
+  const filteredSponsors = sortedSponsors.filter((s: Sponsor) =>
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (s.description && s.description.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
-  const vipSponsors = filteredSponsors.filter(s => s.category === 'vip')
-  const normalSponsors = filteredSponsors.filter(s => s.category !== 'vip')
+  const vipSponsors = filteredSponsors.filter((s: Sponsor) => s.category === 'vip')
+  const normalSponsors = filteredSponsors.filter((s: Sponsor) => s.category !== 'vip')
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 pb-8">
