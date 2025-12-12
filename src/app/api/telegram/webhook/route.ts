@@ -211,49 +211,44 @@ Daha fazla bilgi için Ödül Merkezi'ne git!
     // Mesaj varsa işle
     if (update.message && update.message.text) {
       const message = update.message
-
-      // 🔍 KONTROL: message.from var mı? (anonymous admin/channel mesajlarında olmayabilir)
-      if (!message.from || !message.from.id) {
-        console.log('⚠️ message.from YOK veya message.from.id YOK - Anonymous admin veya channel mesajı')
-        return NextResponse.json({ ok: true, message: 'No from.id - anonymous/channel message' })
-      }
-
       const chatId = message.chat.id
-      const chatType = message.chat.type
       const userId = String(message.from.id)
       const username = message.from.username
       const firstName = message.from.first_name
       const lastName = message.from.last_name
       const messageText = message.text
 
-      // 🚨 ÖNEMLİ: AKTİF GRUP KONTROLÜ - SADECE AKTİF GRUPTA DİNLE
+      // Aktif grup kontrolü - Sadece GRUP mesajlarında kontrol et, private chat'leri geçir
+      const chatType = message.chat.type
       const activityGroupId = getSetting('activity_group_id', '')
 
-      // Private chat'i kabul et (sadece /start komutu için)
-      const isPrivateChat = chatType === 'private'
-
-      // Grup mesajıysa, SADECE aktif grup olmalı
-      if (!isPrivateChat) {
-        if (!activityGroupId || activityGroupId.trim() === '') {
-          console.log('⚠️ Aktif grup ayarlanmamış - grup mesajları dinlenmiyor')
-          return NextResponse.json({ ok: true, message: 'No activity group set' })
-        }
-
+      // Eğer grup veya supergroup ise ve activity_group_id ayarlanmışsa kontrol et
+      if ((chatType === 'group' || chatType === 'supergroup') && activityGroupId && activityGroupId.trim() !== '') {
         const chatIdStr = String(chatId)
         const isActivityGroup = chatIdStr === activityGroupId
 
+        console.log(`🔍 Grup Kontrolü:`, {
+          chatType,
+          messageChatId: chatIdStr,
+          chatTitle: message.chat.title || 'Başlık yok',
+          activityGroupId: activityGroupId,
+          isMatch: isActivityGroup,
+          from: `${firstName || username || userId}`,
+          willEarnPoints: isActivityGroup ? 'EVET ✅' : 'HAYIR ❌'
+        })
+
         if (!isActivityGroup) {
+          console.log(`⏭️ Mesaj aktif grupta değil - atlandı`)
+          console.log(`💡 İPUCU: Bu grubu aktif yapmak için grup ID'sini ayarlara ekleyin: ${chatIdStr}`)
           return NextResponse.json({ ok: true, message: 'Not activity group' })
         }
 
-        console.log(`✅ Mesaj aktif grupta - işleniyor: ${firstName || username || userId}`)
+        console.log(`✅ Mesaj aktif grupta - işleniyor`)
+      } else if (chatType === 'private') {
+        console.log(`💬 Private mesaj - işleniyor (grup kontrolü atlandı)`)
       } else {
-        // Private chat - sadece /start komutları için devam et
-        if (messageText !== '/start' && !messageText.startsWith('/start ')) {
-          console.log(`⏭️ Private chat - sadece /start kabul ediliyor`)
-          return NextResponse.json({ ok: true, message: 'Private chat - only /start allowed' })
-        }
-        console.log(`💬 Private chat /start komutu - işleniyor`)
+        console.log(`⚠️ Aktif grup ayarlanmamış veya private chat - tüm mesajlar işleniyor`)
+        console.log(`📍 Mevcut Grup ID: ${String(chatId)} - Grup: ${message.chat.title || 'Başlık yok'}`)
       }
 
       // /start komutu hariç her şey için ban kontrolü
@@ -272,7 +267,7 @@ Bot özelliklerini kullanmanız engellenmiştir.
         }
       }
 
-      // ROLL SİSTEMİ - Sadece gruplarda çalışır (zaten aktif grupta olduğumuzu biliyoruz)
+      // ROLL SİSTEMİ - Sadece gruplarda çalışır
       if (chatType === 'group' || chatType === 'supergroup') {
         const groupId = String(chatId)
         const text = messageText.trim()
@@ -290,15 +285,27 @@ Bot özelliklerini kullanmanız engellenmiştir.
           }
         }
 
-        // "liste" komutu - Herkes kullanabilir
+        // Aktif grup kontrolü - Roll sistemi sadece aktif grupta çalışır
+        const activeGroupId = getSetting('activity_group_id', '')
+        const isActiveGroup = activeGroupId === groupId
+
+        // "liste" komutu - Herkes kullanabilir (sadece aktif grupta)
         if (text.toLowerCase() === 'liste') {
+          if (!isActiveGroup) {
+            return NextResponse.json({ ok: true })
+          }
+
           const statusMsg = getStatusList(groupId)
           await sendTelegramMessage(chatId, statusMsg)
           return NextResponse.json({ ok: true })
         }
 
-        // Roll komutları - Sadece adminler
+        // Roll komutları - Sadece adminler (sadece aktif grupta)
         if (text.startsWith('roll ') || text === 'roll') {
+          if (!isActiveGroup) {
+            return NextResponse.json({ ok: true })
+          }
+
           const isAdmin = await checkAdmin(chatId, Number(userId))
 
           const parts = text.split(' ')
@@ -449,8 +456,8 @@ Bot özelliklerini kullanmanız engellenmiştir.
           return NextResponse.json({ ok: true })
         }
 
-        // Normal mesaj - tracking aktifse kaydet
-        if (rollEnabled) {
+        // Normal mesaj - tracking aktifse kaydet (sadece aktif grupta)
+        if (isActiveGroup && rollEnabled) {
           const state = getRollState(groupId)
           if (state.status === 'active' || state.status === 'locked') {
             trackUserMessage(groupId, userId, username || null, firstName || null)
@@ -699,7 +706,11 @@ Siteye Butondan ulaşabilirsiniz
       const messagesForXp = parseInt(getSetting('messages_for_xp', '1'))
       const allowNewUsers = getSetting('allow_new_users', 'true') === 'true'
 
-      // NOT: Private chat kontrolü artık en başta yapılıyor, buraya sadece grup mesajları geliyor
+      // PUAN KAZANMA SADECE GRUPLARDA OLUR - Private chat'te puan verilmez
+      if (chatType === 'private') {
+        console.log(`💬 Private chat mesajı - puan verilmez`)
+        return NextResponse.json({ ok: true, message: 'Private chat - no points' })
+      }
 
       // ========== YENİ: TÜM TELEGRAM KULLANICILARINI KAYDET ==========
       // Telegram grup kullanıcısını oluştur veya güncelle (siteye kayıt olmamış bile olsa)
@@ -752,63 +763,19 @@ Siteye Butondan ulaşabilirsiniz
       console.log(`📝 Telegram grup mesajı kaydedildi: ${userId} - ${telegramGroupUser.messageCount + 1} mesaj`)
       // ========== YENİ BİTİŞ ==========
 
-      // 🔍 DEBUG: userId değerini detaylı logla
-      console.log(`🔍 DB ARAMA - userId:`, {
-        value: userId,
-        type: typeof userId,
-        length: userId.length,
-        charCodes: [...userId].map(c => c.charCodeAt(0))
+      // Kullanıcıyı bul (artık otomatik oluşturulmaz)
+      const user = await prisma.user.findUnique({
+        where: { telegramId: userId }
       })
 
-      // Kullanıcıyı bul - Önce telegramId ile, yoksa linkedUserId ile
-      let user = null
-
-      // Önce linkedUserId kontrol et (TelegramGroupUser üzerinden)
-      if (telegramGroupUser.linkedUserId) {
-        user = await prisma.user.findUnique({
-          where: { id: telegramGroupUser.linkedUserId }
-        })
-        if (user) {
-          console.log(`✅ Kullanıcı linkedUserId ile bulundu: ${user?.email || user?.siteUsername}`)
-        }
-      }
-
-      // linkedUserId ile bulunamadıysa, User.telegramId ile dene
-      if (!user) {
-        user = await prisma.user.findUnique({
-          where: { telegramId: userId }
-        })
-        if (user) {
-          console.log(`✅ Kullanıcı telegramId ile bulundu: ${user?.email || user?.siteUsername}`)
-
-          // ÖNEMLİ: Eğer telegramId ile bulundu ama linkedUserId set edilmemişse, şimdi set et
-          if (!telegramGroupUser.linkedUserId) {
-            await prisma.telegramGroupUser.update({
-              where: { id: telegramGroupUser.id },
-              data: { linkedUserId: user.id }
-            })
-            console.log(`🔗 TelegramGroupUser linkedUserId bağlantısı kuruldu: ${telegramGroupUser.id} -> ${user.id}`)
-          }
-        }
-      }
-
-      console.log(`🔍 DB SONUÇ - User bulundu mu:`, {
-        found: !!user,
-        userId: user?.id,
-        telegramId: user?.telegramId,
-        email: user?.email,
-        siteUsername: user?.siteUsername,
-        foundVia: user ? (telegramGroupUser.linkedUserId ? 'linkedUserId' : 'telegramId') : 'not_found'
-      })
-
-      // Kullanıcı yoksa (web'den kayıt olmamış ve bağlantı yapmamış), mesajı kaydettik ama puan vermiyoruz
+      // Kullanıcı yoksa (web'den kayıt olmamış), mesajı kaydettik ama puan vermiyoruz
       if (!user) {
         console.log(`⚠️ Kullanıcı siteye kayıtlı değil - mesaj kaydedildi ama puan verilmedi: ${userId}`)
         return NextResponse.json({ ok: true, message: 'Message saved - user not registered on website' })
       }
 
-      // Sitede kayıtlı olması yeterli - /start şartı kaldırıldı
-      const canEarnPoints = true
+      // hadStart yapmamışlara puan verilmez
+      const canEarnPoints = user.hadStart
 
       // TÜM MESAJLARI İSTATİSTİK İÇİN KAYDET (KURALLARDAN BAĞIMSIZ)
       await prisma.messageStats.create({
@@ -827,6 +794,12 @@ Siteye Butondan ulaşabilirsiniz
           totalMessages: { increment: 1 }
         }
       })
+
+      // Puan kazanamayanlar için buradan çık
+      if (!canEarnPoints) {
+        console.log(`⚠️ Kullanıcı /start yapmamış - sadece mesaj kaydedildi, puan verilmedi (userId: ${userId})`)
+        return NextResponse.json({ ok: true, message: 'Message saved, no points (hadStart required)' })
+      }
 
       // Mesaj uzunluğu kontrolü (ÖDÜL İÇİN)
       if (messageText.length < minMessageLength) {
