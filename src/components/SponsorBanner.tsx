@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import { optimizeCloudinaryImage } from '@/lib/utils'
 
 interface Sponsor {
   id: string
@@ -104,11 +105,11 @@ export default function SponsorBanner() {
               }`}>
                 {sponsor.logoUrl ? (
                   <Image
-                    src={sponsor.logoUrl}
+                    src={optimizeCloudinaryImage(sponsor.logoUrl, 168, 84)}
                     alt={sponsor.name}
-                    fill
-                    className="object-contain p-2"
-                    unoptimized
+                    width={112}
+                    height={56}
+                    className="object-contain p-2 w-full h-full"
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full text-white/40 text-xs font-semibold p-2 text-center">
