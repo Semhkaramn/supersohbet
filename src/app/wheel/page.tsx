@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
+import { useWheelData, useSpinWheel } from '@/lib/hooks/useWheel'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -41,43 +42,11 @@ function WheelContent() {
   const router = useRouter()
   const { user, setShowLoginModal } = useAuth()
 
-  const [prizes, setPrizes] = useState<WheelPrize[]>([])
-  const [userData, setUserData] = useState<UserData | null>(null)
-  const [recentWinners, setRecentWinners] = useState<RecentWinner[]>([])
+  const { prizes, winners: recentWinners, isLoading: loading } = useWheelData()
+  const spinMutation = useSpinWheel()
+
   const [spinning, setSpinning] = useState(false)
   const [rotation, setRotation] = useState(0)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    loadData()
-  }, [user])
-
-  async function loadData() {
-    try {
-      const prizesRes = await fetch('/api/wheel/prizes')
-      const winnersRes = await fetch('/api/wheel/recent-winners')
-
-      const prizesData = await prizesRes.json()
-      const winnersData = await winnersRes.json()
-
-      setPrizes(prizesData.prizes || [])
-      setRecentWinners(winnersData.winners || [])
-
-      // Only load user data if logged in
-      if (user) {
-        const userRes = await fetch('/api/user/me')
-        if (userRes.ok) {
-          const userData = await userRes.json()
-          setUserData(userData)
-        }
-      }
-    } catch (error) {
-      console.error('Error loading wheel data:', error)
-      toast.error('Veriler yüklenirken hata oluştu')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   async function spinWheel() {
     // Check if user is logged in
@@ -87,7 +56,7 @@ function WheelContent() {
       return
     }
 
-    if (!userData || userData.dailySpinsLeft <= 0) {
+    if (!user.dailySpinsLeft || user.dailySpinsLeft <= 0) {
       toast.error('Günlük çark hakkınız kalmadı!')
       return
     }
@@ -95,37 +64,20 @@ function WheelContent() {
     setSpinning(true)
 
     try {
-      const response = await fetch('/api/wheel/spin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
-
-      if (response.status === 401) {
-        toast.error('Oturum süreniz doldu. Lütfen tekrar giriş yapın.')
-        setShowLoginModal(true)
-        return
-      }
-
-      const data = await response.json()
+      const data = await spinMutation.mutateAsync()
 
       if (data.success) {
-        const prizeIndex = data.prizeIndex
+        // Kazanan ödülü bul
+        const prizeIndex = prizes.findIndex(p => p.id === data.prize.id)
 
         // Profesyonel çark hesaplaması
-        // Her segment kaç derece?
         const segmentAngle = 360 / prizes.length
-
-        // Kazanan segment'in başlangıç açısı (SVG -90°'den başlıyor)
         const prizeStartAngle = -90 + (prizeIndex * segmentAngle)
-
-        // Segment'in ortasını bul
         const prizeMidAngle = prizeStartAngle + (segmentAngle / 2)
 
-        // Ok üstte (-90°) sabit, kazanan dilimi ok altına getir
-        // Çarkı saat yönünde döndüreceğiz
         let targetAngle = -90 - prizeMidAngle
 
-        // Açıyı normalize et (pozitif yap)
+        // Açıyı normalize et
         while (targetAngle < 0) {
           targetAngle += 360
         }
@@ -133,8 +85,6 @@ function WheelContent() {
 
         // 5-10 tam tur random
         const randomSpins = 5 + Math.floor(Math.random() * 5)
-
-        // Toplam rotasyon
         const totalRotation = (randomSpins * 360) + targetAngle
 
         // Animasyonu başlat
@@ -144,15 +94,11 @@ function WheelContent() {
         setTimeout(() => {
           toast.success(`🎉 Tebrikler! ${data.pointsWon} puan kazandınız!`)
           setSpinning(false)
-          loadData()
         }, 4000)
-      } else {
-        toast.error(data.error || 'Çark çevrilemedi')
-        setSpinning(false)
       }
     } catch (error) {
-      console.error('Spin error:', error)
-      toast.error('Bir hata oluştu')
+      const errorMessage = error instanceof Error ? error.message : 'Çark çevrilemedi'
+      toast.error(errorMessage)
       setSpinning(false)
     }
   }
@@ -175,11 +121,9 @@ function WheelContent() {
         <div className="text-center mb-6">
           <p className="text-green-400 font-semibold text-sm mb-1">✨ Tamamen Ücretsiz</p>
           {user ? (
-            userData && (
-              <p className="text-white/60 text-xs">
-                Kalan hak: {userData.dailySpinsLeft} çevirme
-              </p>
-            )
+            <p className="text-white/60 text-xs">
+              Kalan hak: {user.dailySpinsLeft} çevirme
+            </p>
           ) : (
             <p className="text-yellow-400 text-xs">
               Çevrim hakkınızı görmek için giriş yapın
