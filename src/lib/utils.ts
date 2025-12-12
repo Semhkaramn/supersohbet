@@ -146,3 +146,42 @@ export async function checkAndResetWheelSpins(
     return null;
   }
 }
+
+/**
+ * Optimize Cloudinary image URL for better performance
+ * - Convert to WebP format (auto)
+ * - Resize to appropriate dimensions
+ * - Apply quality optimization
+ */
+export function optimizeCloudinaryImage(url: string, width?: number, height?: number): string {
+  if (!url.includes('cloudinary.com')) {
+    return url
+  }
+
+  // Extract the upload path
+  const uploadIndex = url.indexOf('/upload/')
+  if (uploadIndex === -1) return url
+
+  const beforeUpload = url.substring(0, uploadIndex + 8)
+  const afterUpload = url.substring(uploadIndex + 8)
+
+  // Build transformations
+  const transformations = []
+
+  // Add dimensions if provided
+  if (width || height) {
+    const w = width ? `w_${width}` : ''
+    const h = height ? `h_${height}` : ''
+    const dims = [w, h].filter(Boolean).join(',')
+    if (dims) transformations.push(dims)
+  }
+
+  // Add format and quality optimizations
+  transformations.push('f_auto')       // Auto format (WebP on supported browsers)
+  transformations.push('q_auto:good')  // Auto quality optimization
+  transformations.push('c_limit')      // Don't upscale images
+
+  const transformString = transformations.join(',')
+
+  return `${beforeUpload}${transformString}/${afterUpload}`
+}
