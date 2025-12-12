@@ -4,10 +4,20 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth-context";
 import { QueryProvider } from "@/lib/query-provider";
-import LoginModal from "@/components/LoginModal";
-import RegisterModal from "@/components/RegisterModal";
-import TelegramConnectionModal from "@/components/TelegramConnectionModal";
 import VisitTracker from "@/components/VisitTracker";
+import dynamic from 'next/dynamic';
+
+const LoginModal = dynamic(() => import('@/components/LoginModal'), {
+  ssr: false,
+});
+
+const RegisterModal = dynamic(() => import('@/components/RegisterModal'), {
+  ssr: false,
+});
+
+const TelegramConnectionModal = dynamic(() => import('@/components/TelegramConnectionModal'), {
+  ssr: false,
+});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
