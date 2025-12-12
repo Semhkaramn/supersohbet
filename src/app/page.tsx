@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
+import { optimizeCloudinaryImage } from '@/lib/utils'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -163,10 +164,11 @@ function SponsorsContent() {
                       {sponsor.logoUrl && (
                         <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-yellow-400/20 to-amber-600/20 flex-shrink-0 relative overflow-hidden border-2 border-yellow-400/30 shadow-lg shadow-yellow-500/20 group-hover:shadow-yellow-400/40 transition-all">
                           <Image
-                            src={sponsor.logoUrl}
+                            src={optimizeCloudinaryImage(sponsor.logoUrl, 144, 144)}
                             alt={sponsor.name}
-                            fill
-                            className="object-contain p-3"
+                            width={96}
+                            height={96}
+                            className="object-contain p-3 w-full h-full"
                             loading="lazy"
                           />
                         </div>
@@ -223,10 +225,11 @@ function SponsorsContent() {
                       {sponsor.logoUrl && (
                         <div className="w-20 h-20 rounded-lg bg-white/10 flex-shrink-0 relative overflow-hidden border border-white/10 group-hover:border-white/20 transition-all">
                           <Image
-                            src={sponsor.logoUrl}
+                            src={optimizeCloudinaryImage(sponsor.logoUrl, 120, 120)}
                             alt={sponsor.name}
-                            fill
-                            className="object-contain p-2"
+                            width={80}
+                            height={80}
+                            className="object-contain p-2 w-full h-full"
                             loading="lazy"
                           />
                         </div>
