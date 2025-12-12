@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { announceRandyStart } from '@/lib/randy'
+import { getTurkeyDate } from '@/lib/utils'
 
 // GET - Randy schedule'ları getir
 export async function GET(request: NextRequest) {
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Ödül açıklaması gerekli' }, { status: 400 })
     }
 
-    const start = startTime ? new Date(startTime) : new Date()
+    const start = startTime ? new Date(startTime) : getTurkeyDate()
 
     // Schedule oluştur
     const schedule = await prisma.randySchedule.create({
