@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
+import { getTurkeyDate } from '@/lib/utils'
 
 // 6 haneli doğrulama kodu oluştur
 function generateVerificationCode(): string {
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     // Rate limiting: Son kod gönderiminden 1 dakika geçmeli
     if (user.emailVerificationTokenExpiry) {
-      const now = new Date()
+      const now = getTurkeyDate()
       const timeSinceLastSend = now.getTime() - user.emailVerificationTokenExpiry.getTime()
       const oneMinute = 60 * 1000
 
@@ -52,7 +53,8 @@ export async function POST(request: NextRequest) {
 
     // Doğrulama kodu oluştur
     const verificationCode = generateVerificationCode()
-    const expiryDate = new Date(Date.now() + 10 * 60 * 1000) // 10 dakika geçerli
+    const now = getTurkeyDate()
+    const expiryDate = new Date(now.getTime() + 10 * 60 * 1000) // 10 dakika geçerli
 
     // Kodu veritabanına kaydet
     await prisma.user.update({
