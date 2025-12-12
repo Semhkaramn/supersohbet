@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// ✅ OPTIMIZASYON: Cache revalidation - 10 dakika
+export const revalidate = 600
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
@@ -35,10 +38,26 @@ export async function GET(request: NextRequest) {
         })
       )
 
-      return NextResponse.json({ items: itemsWithPurchaseCount })
+      // ✅ User-specific data için daha kısa cache
+      return NextResponse.json(
+        { items: itemsWithPurchaseCount },
+        {
+          headers: {
+            'Cache-Control': 'private, max-age=60'
+          }
+        }
+      )
     }
 
-    return NextResponse.json({ items })
+    // ✅ Genel liste için daha uzun cache
+    return NextResponse.json(
+      { items },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200'
+        }
+      }
+    )
   } catch (error) {
     console.error('Get shop items error:', error)
     return NextResponse.json(
