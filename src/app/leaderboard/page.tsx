@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/auth-context'
+import { useAuthState, useModals } from '@/lib/auth-context'
+import { useLeaderboard } from '@/lib/hooks/useLeaderboard'
 import { Card } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -28,70 +29,28 @@ interface LeaderboardUser {
 
 function LeaderboardContent() {
   const router = useRouter()
-  const { user, setShowLoginModal } = useAuth()
-
-  const [pointsLeaderboard, setPointsLeaderboard] = useState<LeaderboardUser[]>([])
-  const [xpLeaderboard, setXpLeaderboard] = useState<LeaderboardUser[]>([])
-  const [pointsCurrentUser, setPointsCurrentUser] = useState<LeaderboardUser | null>(null)
-  const [xpCurrentUser, setXpCurrentUser] = useState<LeaderboardUser | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { user } = useAuthState()
+  const { setShowLoginModal } = useModals()
   const [activeTab, setActiveTab] = useState('points')
 
-  useEffect(() => {
-    loadLeaderboards()
-  }, [user])
+  // ✅ OPTIMIZASYON: React Query hooks - Her tab için ayrı hook
+  const {
+    data: pointsData,
+    isLoading: loadingPoints
+  } = useLeaderboard('points', user?.id)
 
-  async function loadLeaderboards() {
-    setLoading(true)
-    try {
-      const userId = user?.id || ''
+  const {
+    data: xpData,
+    isLoading: loadingXp
+  } = useLeaderboard('xp', user?.id)
 
-      console.log('📊 Leaderboard yükleniyor...', { userId: userId || 'Giriş yapmamış' })
+  const loading = loadingPoints || loadingXp
 
-      const [pointsRes, xpRes] = await Promise.all([
-        fetch(`/api/leaderboard?sortBy=points${userId ? `&userId=${userId}` : ''}`),
-        fetch(`/api/leaderboard?sortBy=xp${userId ? `&userId=${userId}` : ''}`)
-      ])
-
-      // Response kontrolü - detaylı log
-      if (!pointsRes.ok || !xpRes.ok) {
-        const pointsError = !pointsRes.ok ? await pointsRes.text().catch(() => 'Okunamadı') : null
-        const xpError = !xpRes.ok ? await xpRes.text().catch(() => 'Okunamadı') : null
-
-        console.error('❌ Leaderboard API hatası:', {
-          pointsStatus: pointsRes.status,
-          xpStatus: xpRes.status,
-          pointsError,
-          xpError
-        })
-        throw new Error('Leaderboard API başarısız oldu')
-      }
-
-      const pointsData = await pointsRes.json()
-      const xpData = await xpRes.json()
-
-      console.log('✅ Leaderboard yüklendi:', {
-        pointsCount: pointsData.leaderboard?.length || 0,
-        xpCount: xpData.leaderboard?.length || 0,
-        hasCurrentUser: !!pointsData.currentUser
-      })
-
-      // Giriş yapmasa bile leaderboard'ı göster
-      setPointsLeaderboard(pointsData.leaderboard || [])
-      setPointsCurrentUser(pointsData.currentUser || null)
-      setXpLeaderboard(xpData.leaderboard || [])
-      setXpCurrentUser(xpData.currentUser || null)
-    } catch (error) {
-      console.error('❌ Leaderboard yükleme hatası:', error)
-      // Hata durumunda bile boş array set et (UI çökmemeli)
-      setPointsLeaderboard([])
-      setXpLeaderboard([])
-      setPointsCurrentUser(null)
-      setXpCurrentUser(null)
-    } finally {
-      setLoading(false)
-    }
-  }
+  // ✅ OPTIMIZASYON: Data destructuring
+  const pointsLeaderboard = pointsData?.leaderboard || []
+  const pointsCurrentUser = pointsData?.currentUser || null
+  const xpLeaderboard = xpData?.leaderboard || []
+  const xpCurrentUser = xpData?.currentUser || null
 
   const getPositionIcon = (position: number) => {
     switch (position) {
